@@ -202,6 +202,11 @@ export const floorPlans: Record<string, Record<number, string>> = {
     1: '/plans/building_a_first_floor.pdf',
     2: '/plans/building_a_second_floor.pdf',
   },
+  B: {
+    0: '/plans/building_b_ground_floor.pdf',
+    1: '/plans/building_b_first_floor.pdf',
+    4: '/plans/building_b_fourth_floor.pdf',
+  },
 };
 
 // ── Helper: get all data for a building ──
