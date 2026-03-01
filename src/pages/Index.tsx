@@ -1,14 +1,49 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState, useCallback } from 'react';
+import Dashboard from '@/components/Dashboard';
+import ProcurementTable from '@/components/ProcurementTable';
+import { UserItemData, loadUserData, saveUserData } from '@/data/projectData';
 
-const Index = () => {
+export default function Index() {
+  const [userData, setUserData] = useState<Record<number, UserItemData>>(loadUserData);
+
+  const handleUpdateItem = useCallback((id: number, data: UserItemData) => {
+    setUserData((prev) => {
+      const next = { ...prev, [id]: data };
+      saveUserData(next);
+      return next;
+    });
+  }, []);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="sticky top-0 z-40 border-b bg-primary">
+        <div className="max-w-[1440px] mx-auto px-6 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-md bg-accent flex items-center justify-center">
+              <span className="text-sm font-bold text-accent-foreground">CV</span>
+            </div>
+            <div>
+              <h1 className="text-sm font-semibold text-primary-foreground tracking-wide">CYPRUS VALLEY</h1>
+              <p className="text-[10px] text-primary-foreground/60 uppercase tracking-widest">Procurement Management</p>
+            </div>
+          </div>
+          <span className="text-xs text-primary-foreground/50">338 Units · 9 Buildings · 3 Concepts</span>
+        </div>
+      </header>
+
+      {/* Main */}
+      <main className="max-w-[1440px] mx-auto px-6 py-6 space-y-8">
+        <Dashboard />
+
+        <div>
+          <div className="flex items-center gap-3 mb-4">
+            <h2 className="text-lg font-semibold text-foreground">Procurement List</h2>
+            <span className="text-xs text-muted-foreground">All FF&E items across the project</span>
+          </div>
+          <ProcurementTable userData={userData} onUpdateItem={handleUpdateItem} />
+        </div>
+      </main>
     </div>
   );
-};
-
-export default Index;
+}
