@@ -1,6 +1,10 @@
 import { Building, Home, Package, Layers } from 'lucide-react';
 import { concepts, procurementItems, TOTAL_ITEMS_COUNT } from '@/data/projectData';
 
+interface DashboardProps {
+  onConceptClick?: (conceptId: 'A' | 'B' | 'C') => void;
+}
+
 const kpis = [
   { label: 'Total Units', value: '338', icon: Home, description: 'Across 3 concepts' },
   { label: 'Buildings', value: '9', icon: Building, description: '6 × A, 2 × B, 1 × C' },
@@ -20,7 +24,7 @@ const conceptBorderMap = {
   boutique: 'border-boutique',
 } as const;
 
-export default function Dashboard() {
+export default function Dashboard({ onConceptClick }: DashboardProps) {
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
@@ -51,7 +55,8 @@ export default function Dashboard() {
           return (
             <div
               key={concept.id}
-              className={`bg-card rounded-lg border-l-4 ${conceptBorderMap[concept.colorClass]} p-5 shadow-sm animate-fade-in`}
+              onClick={() => onConceptClick?.(concept.id as 'A' | 'B' | 'C')}
+              className={`bg-card rounded-lg border-l-4 ${conceptBorderMap[concept.colorClass]} p-5 shadow-sm animate-fade-in cursor-pointer hover:shadow-md hover:scale-[1.01] transition-all`}
               style={{ animationDelay: `${(i + 4) * 80}ms` }}
             >
               <div className="flex items-center gap-3 mb-3">
@@ -60,7 +65,7 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-foreground">{concept.name}</h3>
-                  <p className="text-xs text-muted-foreground">Concept {concept.id}</p>
+                  <p className="text-xs text-muted-foreground">Concept {concept.id} · Click to drill down</p>
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-3 text-center">
