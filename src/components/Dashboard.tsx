@@ -1,16 +1,12 @@
+import { useMemo } from 'react';
 import { Building, Home, Package, Layers } from 'lucide-react';
-import { concepts, procurementItems, TOTAL_ITEMS_COUNT } from '@/data/projectData';
+import { concepts, categoryEmojis } from '@/data/projectData';
+import { MasterRow, computeProcurementItems, computeTotalItemsCount } from '@/data/masterData';
 
 interface DashboardProps {
   onConceptClick?: (conceptId: 'A' | 'B' | 'C') => void;
+  masterData: MasterRow[];
 }
-
-const kpis = [
-  { label: 'Total Units', value: '338', icon: Home, description: 'Across 3 concepts' },
-  { label: 'Buildings', value: '9', icon: Building, description: '6 × A, 2 × B, 1 × C' },
-  { label: 'Item Types', value: '36', icon: Package, description: 'FF&E categories' },
-  { label: 'Total Items', value: TOTAL_ITEMS_COUNT.toLocaleString(), icon: Layers, description: 'Grand procurement total' },
-];
 
 const conceptColorMap = {
   happiness: 'bg-happiness',
@@ -24,7 +20,18 @@ const conceptBorderMap = {
   boutique: 'border-boutique',
 } as const;
 
-export default function Dashboard({ onConceptClick }: DashboardProps) {
+export default function Dashboard({ onConceptClick, masterData }: DashboardProps) {
+  const procurementItems = useMemo(() => computeProcurementItems(masterData), [masterData]);
+  const totalItemsCount = useMemo(() => computeTotalItemsCount(masterData), [masterData]);
+  const uniqueItemTypes = useMemo(() => new Set(masterData.map(r => r.itemName)).size, [masterData]);
+
+  const kpis = [
+    { label: 'Total Units', value: '338', icon: Home, description: 'Across 3 concepts' },
+    { label: 'Buildings', value: '9', icon: Building, description: '6 × A, 2 × B, 1 × C' },
+    { label: 'Item Types', value: String(uniqueItemTypes), icon: Package, description: 'FF&E categories' },
+    { label: 'Total Items', value: totalItemsCount.toLocaleString(), icon: Layers, description: 'Grand procurement total' },
+  ];
+
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
@@ -50,8 +57,8 @@ export default function Dashboard({ onConceptClick }: DashboardProps) {
       {/* Concept Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {concepts.map((concept, i) => {
-          const qtyKey = `qty${concept.id}` as 'qtyA' | 'qtyB' | 'qtyC';
-          const totalItems = procurementItems.reduce((s, item) => s + item[qtyKey], 0);
+          const totalItems = procurementItems
+            .reduce((s, item) => s + (concept.id === 'A' ? item.qtyA : concept.id === 'B' ? item.qtyB : item.qtyC), 0);
           return (
             <div
               key={concept.id}

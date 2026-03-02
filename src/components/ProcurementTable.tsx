@@ -1,9 +1,7 @@
 import { useState, useMemo } from 'react';
 import {
-  procurementItems,
   categoryEmojis,
   UserItemData,
-  Status,
   getUserItemData,
 } from '@/data/projectData';
 import {
@@ -11,12 +9,14 @@ import {
   buildingAUnits,
   buildingBUnits,
   buildingCUnits,
-  buildingAFurniture,
-  buildingBFurniture,
-  buildingCFurniture,
-  FurniturePerUnit,
   UnitType,
 } from '@/data/unitFurnitureData';
+import {
+  MasterRow,
+  ComputedProcurementItem,
+  computeFurnitureForConcept,
+  getUnitCodesForConcept,
+} from '@/data/masterData';
 import StatusBadge from './StatusBadge';
 import FilterBar, { ViewMode } from './FilterBar';
 import ExportButton from './ExportButton';
@@ -25,9 +25,10 @@ import ItemDetailPanel from './ItemDetailPanel';
 interface ProcurementTableProps {
   userData: Record<number, UserItemData>;
   onUpdateItem: (id: number, data: UserItemData) => void;
+  procurementItems: ComputedProcurementItem[];
+  masterData: MasterRow[];
 }
 
-// Extract concept letter from filter string
 function getConceptId(concept: string): 'A' | 'B' | 'C' | null {
   if (concept.includes('A')) return 'A';
   if (concept.includes('B')) return 'B';
@@ -35,7 +36,7 @@ function getConceptId(concept: string): 'A' | 'B' | 'C' | null {
   return null;
 }
 
-export default function ProcurementTable({ userData, onUpdateItem }: ProcurementTableProps) {
+export default function ProcurementTable({ userData, onUpdateItem, procurementItems, masterData }: ProcurementTableProps) {
   const [search, setSearch] = useState('');
   const [selectedConcepts, setSelectedConcepts] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -45,21 +46,18 @@ export default function ProcurementTable({ userData, onUpdateItem }: Procurement
   const [selectedItem, setSelectedItem] = useState<number | null>(null);
   const [roomTypeConceptOverride, setRoomTypeConceptOverride] = useState<'A' | 'B' | 'C'>('A');
 
-  // Available unit codes based on selected concepts
   const availableUnitCodes = useMemo(() => {
     const conceptIds = selectedConcepts.map(c => getConceptId(c)).filter(Boolean) as ('A' | 'B' | 'C')[];
     if (conceptIds.length === 0) return [] as string[];
     const codes: string[] = [];
     conceptIds.forEach(id => {
-      const { units } = getBuildingData(id);
-      units.forEach(u => {
-        if (!codes.includes(u.code)) codes.push(u.code);
+      getUnitCodesForConcept(masterData, id).forEach(c => {
+        if (!codes.includes(c)) codes.push(c);
       });
     });
     return codes.sort();
-  }, [selectedConcepts]);
+  }, [selectedConcepts, masterData]);
 
-  // For "By Room Type" mode, determine which concept to show
   const roomTypeConcept = useMemo((): 'A' | 'B' | 'C' => {
     if (selectedConcepts.length === 1) {
       return getConceptId(selectedConcepts[0]) || roomTypeConceptOverride;
@@ -67,23 +65,20 @@ export default function ProcurementTable({ userData, onUpdateItem }: Procurement
     return roomTypeConceptOverride;
   }, [selectedConcepts, roomTypeConceptOverride]);
 
-  // Get unit codes for the room type view
   const roomTypeUnits = useMemo(() => {
     const { units } = getBuildingData(roomTypeConcept);
     return units;
   }, [roomTypeConcept]);
 
   const roomTypeFurniture = useMemo(() => {
-    const { furniture } = getBuildingData(roomTypeConcept);
-    return furniture;
-  }, [roomTypeConcept]);
+    return computeFurnitureForConcept(masterData, roomTypeConcept);
+  }, [masterData, roomTypeConcept]);
 
   const filteredItems = useMemo(() => {
     return procurementItems.filter((item) => {
       if (search && !item.name.toLowerCase().includes(search.toLowerCase())) return false;
       if (selectedCategories.length > 0 && !selectedCategories.includes(item.category)) return false;
 
-      // Concept filter: OR within concepts
       if (selectedConcepts.length > 0) {
         const matchesConcept = selectedConcepts.some(c => {
           const id = getConceptId(c);
@@ -95,14 +90,13 @@ export default function ProcurementTable({ userData, onUpdateItem }: Procurement
         if (!matchesConcept) return false;
       }
 
-      // Unit code filter
       if (selectedUnitCodes.length > 0) {
         const conceptIds = selectedConcepts.length > 0
           ? selectedConcepts.map(c => getConceptId(c)).filter(Boolean) as ('A' | 'B' | 'C')[]
           : ['A', 'B', 'C'] as const;
 
         const matchesUnit = conceptIds.some(id => {
-          const { furniture } = getBuildingData(id);
+          const furniture = computeFurnitureForConcept(masterData, id);
           const fItem = furniture.find(f => f.itemName === item.name);
           if (!fItem) return false;
           return selectedUnitCodes.some(code => (fItem.quantities[code] || 0) > 0);
@@ -110,7 +104,6 @@ export default function ProcurementTable({ userData, onUpdateItem }: Procurement
         if (!matchesUnit) return false;
       }
 
-      // Status filter
       if (selectedStatuses.length > 0) {
         const ud = getUserItemData(userData, item.id);
         const matchesStatus = selectedStatuses.some(s => {
@@ -122,7 +115,7 @@ export default function ProcurementTable({ userData, onUpdateItem }: Procurement
 
       return true;
     });
-  }, [search, selectedConcepts, selectedCategories, selectedStatuses, selectedUnitCodes, userData]);
+  }, [search, selectedConcepts, selectedCategories, selectedStatuses, selectedUnitCodes, userData, procurementItems, masterData]);
 
   const handleInlineChange = (id: number, field: keyof UserItemData, value: string | number | null) => {
     const current = getUserItemData(userData, id);
@@ -158,10 +151,9 @@ export default function ProcurementTable({ userData, onUpdateItem }: Procurement
           onClearAll={clearAll}
           hasActiveFilters={hasActiveFilters}
         />
-        <ExportButton userData={userData} concepts={selectedConcepts} categories={selectedCategories} statuses={selectedStatuses} />
+        <ExportButton userData={userData} concepts={selectedConcepts} categories={selectedCategories} statuses={selectedStatuses} procurementItems={procurementItems} />
       </div>
 
-      {/* Room Type concept selector (when in byRoomType mode and multiple/no concepts selected) */}
       {viewMode === 'byRoomType' && selectedConcepts.length !== 1 && (
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground font-medium">Show unit columns for:</span>
@@ -233,12 +225,10 @@ export default function ProcurementTable({ userData, onUpdateItem }: Procurement
                 const ud = getUserItemData(userData, item.id);
                 const totalCost = ud.unitPrice ? item.grandTotal * ud.unitPrice : null;
 
-                // For room type view, find the furniture data for this item
                 const roomTypeFItem = viewMode === 'byRoomType'
                   ? roomTypeFurniture.find(f => f.itemName === item.name)
                   : null;
 
-                // Calculate building total for room type view
                 const buildingTotal = roomTypeFItem
                   ? roomTypeUnits.reduce((sum, u) => {
                       const perUnit = roomTypeFItem.quantities[u.code] || 0;
@@ -342,7 +332,6 @@ export default function ProcurementTable({ userData, onUpdateItem }: Procurement
         </div>
       </div>
 
-      {/* Summary row */}
       <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
         <span>Showing {filteredItems.length} of {procurementItems.length} items</span>
         <span>
@@ -350,7 +339,6 @@ export default function ProcurementTable({ userData, onUpdateItem }: Procurement
         </span>
       </div>
 
-      {/* Detail panel */}
       {selected && (
         <ItemDetailPanel
           item={selected}

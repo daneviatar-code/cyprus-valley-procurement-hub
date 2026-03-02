@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
-import { ProcurementItem, UserItemData, Status, categoryEmojis, getUserItemData } from '@/data/projectData';
+import { UserItemData, Status, categoryEmojis, getUserItemData } from '@/data/projectData';
+import { ComputedProcurementItem } from '@/data/masterData';
 
 interface ItemDetailPanelProps {
-  item: ProcurementItem;
+  item: ComputedProcurementItem;
   userData: UserItemData;
   onSave: (id: number, data: UserItemData) => void;
   onClose: () => void;

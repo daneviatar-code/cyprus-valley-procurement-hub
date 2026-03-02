@@ -1,14 +1,16 @@
 import { Download } from 'lucide-react';
-import { procurementItems, UserItemData, getUserItemData } from '@/data/projectData';
+import { UserItemData, getUserItemData } from '@/data/projectData';
+import { ComputedProcurementItem } from '@/data/masterData';
 
 interface ExportButtonProps {
   userData: Record<number, UserItemData>;
   concepts: string[];
   categories: string[];
   statuses: string[];
+  procurementItems: ComputedProcurementItem[];
 }
 
-export default function ExportButton({ userData, concepts, categories, statuses }: ExportButtonProps) {
+export default function ExportButton({ userData, concepts, categories, statuses, procurementItems }: ExportButtonProps) {
   const handleExport = () => {
     let items = [...procurementItems];
 
