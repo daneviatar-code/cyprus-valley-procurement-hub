@@ -1,46 +1,50 @@
 import { useState, useMemo } from 'react';
-import { Building, Layers, ChevronDown, Home, BedDouble, Sofa, TreePine, UtensilsCrossed } from 'lucide-react';
+import { Building, Layers, Home, BedDouble, Sofa, TreePine, UtensilsCrossed } from 'lucide-react';
 import {
   getBuildingData,
-  getRoomTypes,
   getFloors,
-  getUnitCodes,
-  getFurnitureForUnit,
   floorPlans,
 } from '@/data/unitFurnitureData';
 import { categoryEmojis } from '@/data/projectData';
 import { concepts } from '@/data/projectData';
+import { MasterRow, computeFurnitureForUnit } from '@/data/masterData';
 
-const categoryIcons: Record<string, typeof Sofa> = {
-  Dining: UtensilsCrossed,
-  'Living Room': Sofa,
-  Bedroom: BedDouble,
-  Outdoor: TreePine,
-};
+interface RoomExplorerProps {
+  masterData: MasterRow[];
+}
 
 const floorLabel = (f: number) => (f === 0 ? 'Ground Floor' : `Floor ${f}`);
 
-export default function RoomExplorer() {
+export default function RoomExplorer({ masterData }: RoomExplorerProps) {
   const [building, setBuilding] = useState<'A' | 'B' | 'C'>('A');
   const [selectedFloor, setSelectedFloor] = useState<number | ''>('');
   const [selectedRoomType, setSelectedRoomType] = useState('');
   const [selectedUnit, setSelectedUnit] = useState('');
 
   const floors = useMemo(() => getFloors(building), [building]);
-  const roomTypes = useMemo(() => getRoomTypes(building), [building]);
-  const unitCodes = useMemo(
-    () => getUnitCodes(building, selectedFloor === '' ? undefined : selectedFloor, selectedRoomType || undefined),
-    [building, selectedFloor, selectedRoomType]
-  );
+
+  // Room types from master data
+  const roomTypes = useMemo(() => {
+    const types = new Set(masterData.filter(r => r.concept === building).map(r => r.roomType));
+    return [...types].sort();
+  }, [building, masterData]);
+
+  // Unit codes from building structure, optionally filtered
+  const unitCodes = useMemo(() => {
+    const { units } = getBuildingData(building);
+    return units
+      .filter(u => (selectedFloor === '' || u.floors.includes(selectedFloor as number)))
+      .filter(u => (!selectedRoomType || u.description === selectedRoomType))
+      .map(u => u.code);
+  }, [building, selectedFloor, selectedRoomType]);
 
   const furniture = useMemo(() => {
     if (!selectedUnit) return [];
-    return getFurnitureForUnit(building, selectedUnit);
-  }, [building, selectedUnit]);
+    return computeFurnitureForUnit(masterData, building, selectedUnit);
+  }, [building, selectedUnit, masterData]);
 
   const totalItems = furniture.reduce((s, f) => s + f.qty, 0);
 
-  // Get unit description
   const unitDescription = useMemo(() => {
     if (!selectedUnit) return '';
     const { units } = getBuildingData(building);
@@ -48,13 +52,11 @@ export default function RoomExplorer() {
     return unit?.description || '';
   }, [building, selectedUnit]);
 
-  // Floor plan
   const planUrl = useMemo(() => {
     if (selectedFloor === '') return null;
     return floorPlans[building]?.[selectedFloor] || null;
   }, [building, selectedFloor]);
 
-  // Reset dependent filters on building change
   const handleBuildingChange = (b: 'A' | 'B' | 'C') => {
     setBuilding(b);
     setSelectedFloor('');
@@ -77,7 +79,6 @@ export default function RoomExplorer() {
   const selectClass =
     'h-10 rounded-lg border bg-card px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent/50 cursor-pointer';
 
-  // Group furniture by category
   const groupedFurniture = useMemo(() => {
     const groups: Record<string, typeof furniture> = {};
     furniture.forEach(f => {
@@ -89,13 +90,11 @@ export default function RoomExplorer() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h2 className="text-lg font-semibold text-foreground">Room Explorer</h2>
         <p className="text-sm text-muted-foreground">Select a building, floor, room type, and unit to view its furniture list</p>
       </div>
 
-      {/* Building selector tabs */}
       <div className="flex gap-2">
         {(['A', 'B', 'C'] as const).map(b => {
           const concept = concepts.find(c => c.id === b)!;
@@ -117,10 +116,8 @@ export default function RoomExplorer() {
         })}
       </div>
 
-      {/* Filters row */}
       <div className="bg-card rounded-xl border p-4">
         <div className="flex flex-wrap items-end gap-4">
-          {/* Floor filter */}
           <div className="space-y-1.5">
             <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Floor</label>
             <select
@@ -135,7 +132,6 @@ export default function RoomExplorer() {
             </select>
           </div>
 
-          {/* Room type filter */}
           <div className="space-y-1.5">
             <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Room Type</label>
             <select
@@ -150,7 +146,6 @@ export default function RoomExplorer() {
             </select>
           </div>
 
-          {/* Unit code filter */}
           <div className="space-y-1.5">
             <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Unit Code</label>
             <select
@@ -165,7 +160,6 @@ export default function RoomExplorer() {
             </select>
           </div>
 
-          {/* Unit info badge */}
           {selectedUnit && unitDescription && (
             <div className="flex items-center gap-2 px-3 py-2 bg-accent/10 rounded-lg border border-accent/20">
               <Home className="h-4 w-4 text-accent" />
@@ -177,9 +171,7 @@ export default function RoomExplorer() {
         </div>
       </div>
 
-      {/* Content area: Floor Plan + Furniture List */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Floor Plan */}
         <div className="bg-card rounded-xl border overflow-hidden">
           <div className="px-4 py-3 border-b bg-muted/30">
             <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -223,7 +215,6 @@ export default function RoomExplorer() {
           </div>
         </div>
 
-        {/* Furniture List */}
         <div className="bg-card rounded-xl border overflow-hidden">
           <div className="px-4 py-3 border-b bg-muted/30 flex items-center justify-between">
             <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -276,7 +267,6 @@ export default function RoomExplorer() {
         </div>
       </div>
 
-      {/* Units grid for selected floor */}
       {selectedFloor !== '' && (
         <div className="bg-card rounded-xl border overflow-hidden">
           <div className="px-4 py-3 border-b bg-muted/30">

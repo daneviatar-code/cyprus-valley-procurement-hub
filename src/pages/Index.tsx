@@ -1,14 +1,23 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import Dashboard from '@/components/Dashboard';
 import ProcurementTable from '@/components/ProcurementTable';
 import RoomExplorer from '@/components/RoomExplorer';
 import BuildingDrillDown from '@/components/BuildingDrillDown';
+import ProjectDataTable from '@/components/ProjectDataTable';
 import { UserItemData, loadUserData, saveUserData } from '@/data/projectData';
+import {
+  MasterRow,
+  loadMasterData,
+  saveMasterData,
+  computeProcurementItems,
+  computeTotalItemsCount,
+} from '@/data/masterData';
 
-type Tab = 'procurement' | 'rooms';
+type Tab = 'procurement' | 'rooms' | 'projectData';
 
 export default function Index() {
   const [userData, setUserData] = useState<Record<number, UserItemData>>(loadUserData);
+  const [masterData, setMasterData] = useState<MasterRow[]>(loadMasterData);
   const [activeTab, setActiveTab] = useState<Tab>('procurement');
   const [drillDownConcept, setDrillDownConcept] = useState<'A' | 'B' | 'C' | null>(null);
 
@@ -19,6 +28,20 @@ export default function Index() {
       return next;
     });
   }, []);
+
+  const handleUpdateMasterData = useCallback((data: MasterRow[]) => {
+    setMasterData(data);
+    saveMasterData(data);
+  }, []);
+
+  const procurementItems = useMemo(() => computeProcurementItems(masterData), [masterData]);
+  const totalItemsCount = useMemo(() => computeTotalItemsCount(masterData), [masterData]);
+
+  const tabs: { key: Tab; label: string }[] = [
+    { key: 'procurement', label: 'Procurement' },
+    { key: 'rooms', label: 'Room Explorer' },
+    { key: 'projectData', label: 'Project Data' },
+  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -37,26 +60,19 @@ export default function Index() {
 
           {/* Tab navigation */}
           <div className="flex items-center gap-1 bg-primary-foreground/10 rounded-lg p-0.5">
-            <button
-              onClick={() => setActiveTab('procurement')}
-              className={`px-4 py-1.5 rounded-md text-xs font-medium transition-all ${
-                activeTab === 'procurement'
-                  ? 'bg-accent text-accent-foreground shadow-sm'
-                  : 'text-primary-foreground/70 hover:text-primary-foreground'
-              }`}
-            >
-              Procurement
-            </button>
-            <button
-              onClick={() => setActiveTab('rooms')}
-              className={`px-4 py-1.5 rounded-md text-xs font-medium transition-all ${
-                activeTab === 'rooms'
-                  ? 'bg-accent text-accent-foreground shadow-sm'
-                  : 'text-primary-foreground/70 hover:text-primary-foreground'
-              }`}
-            >
-              Room Explorer
-            </button>
+            {tabs.map(t => (
+              <button
+                key={t.key}
+                onClick={() => setActiveTab(t.key)}
+                className={`px-4 py-1.5 rounded-md text-xs font-medium transition-all ${
+                  activeTab === t.key
+                    ? 'bg-accent text-accent-foreground shadow-sm'
+                    : 'text-primary-foreground/70 hover:text-primary-foreground'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
           </div>
 
           <span className="text-xs text-primary-foreground/50">338 Units · 9 Buildings · 3 Concepts</span>
@@ -65,7 +81,12 @@ export default function Index() {
 
       {/* Main */}
       <main className="max-w-[1440px] mx-auto px-6 py-6 space-y-8">
-        <Dashboard onConceptClick={(id) => setDrillDownConcept(id)} />
+        {activeTab !== 'projectData' && (
+          <Dashboard
+            onConceptClick={(id) => setDrillDownConcept(id)}
+            masterData={masterData}
+          />
+        )}
 
         {activeTab === 'procurement' && (
           <div>
@@ -73,11 +94,20 @@ export default function Index() {
               <h2 className="text-lg font-semibold text-foreground">Procurement List</h2>
               <span className="text-xs text-muted-foreground">All FF&E items across the project</span>
             </div>
-            <ProcurementTable userData={userData} onUpdateItem={handleUpdateItem} />
+            <ProcurementTable
+              userData={userData}
+              onUpdateItem={handleUpdateItem}
+              procurementItems={procurementItems}
+              masterData={masterData}
+            />
           </div>
         )}
 
-        {activeTab === 'rooms' && <RoomExplorer />}
+        {activeTab === 'rooms' && <RoomExplorer masterData={masterData} />}
+
+        {activeTab === 'projectData' && (
+          <ProjectDataTable masterData={masterData} onUpdate={handleUpdateMasterData} />
+        )}
       </main>
 
       {/* Building Drill-Down Modal */}
@@ -85,6 +115,7 @@ export default function Index() {
         <BuildingDrillDown
           conceptId={drillDownConcept}
           onClose={() => setDrillDownConcept(null)}
+          masterData={masterData}
         />
       )}
     </div>

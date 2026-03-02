@@ -1,16 +1,17 @@
 import { useState, useMemo } from 'react';
 import { X, Building, Layers, Home } from 'lucide-react';
-import { concepts, procurementItems, categoryEmojis, Category } from '@/data/projectData';
+import { concepts, categoryEmojis, Category } from '@/data/projectData';
 import {
   getBuildingData,
   getFloors,
   UnitType,
-  FurniturePerUnit,
 } from '@/data/unitFurnitureData';
+import { MasterRow, computeFurnitureForConcept } from '@/data/masterData';
 
 interface BuildingDrillDownProps {
   conceptId: 'A' | 'B' | 'C';
   onClose: () => void;
+  masterData: MasterRow[];
 }
 
 type DrillView = 'floor' | 'unitType' | 'category';
@@ -27,24 +28,23 @@ const conceptBorderMap: Record<string, string> = {
   C: 'border-boutique',
 };
 
-export default function BuildingDrillDown({ conceptId, onClose }: BuildingDrillDownProps) {
+export default function BuildingDrillDown({ conceptId, onClose, masterData }: BuildingDrillDownProps) {
   const [view, setView] = useState<DrillView>('floor');
   const concept = concepts.find(c => c.id === conceptId)!;
-  const { units, furniture } = getBuildingData(conceptId);
+  const { units } = getBuildingData(conceptId);
+  const furniture = useMemo(() => computeFurnitureForConcept(masterData, conceptId), [masterData, conceptId]);
   const floors = getFloors(conceptId);
 
-  // Compute total qty per unit code across all floors (accounting for unit count per floor)
   const unitTotalInstances = useMemo(() => {
     const map: Record<string, number> = {};
     units.forEach(u => {
       let total = 0;
       u.floors.forEach(f => { total += u.unitsPerFloor[f] || 0; });
-      map[u.code] = (total) * concept.buildings;
+      map[u.code] = total * concept.buildings;
     });
     return map;
   }, [units, concept.buildings]);
 
-  // Floor view: for each floor, show unit types and their item totals
   const floorData = useMemo(() => {
     return floors.map(floor => {
       const floorUnits = units.filter(u => u.floors.includes(floor));
@@ -70,7 +70,6 @@ export default function BuildingDrillDown({ conceptId, onClose }: BuildingDrillD
     });
   }, [floors, units, furniture, concept.buildings]);
 
-  // Unit type view: group by description (Studio, 1BD, 2BD, etc.)
   const unitTypeData = useMemo(() => {
     const descMap: Record<string, UnitType[]> = {};
     units.forEach(u => {
@@ -103,7 +102,6 @@ export default function BuildingDrillDown({ conceptId, onClose }: BuildingDrillD
     });
   }, [units, unitTotalInstances, furniture]);
 
-  // Category view
   const categoryData = useMemo(() => {
     const categories: Category[] = ['Dining', 'Living Room', 'Bedroom', 'Outdoor'];
     return categories.map(cat => {
@@ -134,7 +132,6 @@ export default function BuildingDrillDown({ conceptId, onClose }: BuildingDrillD
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-12 px-4">
       <div className="absolute inset-0 bg-foreground/20" onClick={onClose} />
       <div className="relative w-full max-w-4xl max-h-[85vh] bg-card rounded-xl shadow-xl border overflow-hidden animate-fade-in flex flex-col">
-        {/* Header */}
         <div className={`px-6 py-4 border-b flex items-center justify-between border-l-4 ${conceptBorderMap[conceptId]}`}>
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-lg ${conceptColorMap[conceptId]} flex items-center justify-center`}>
@@ -152,7 +149,6 @@ export default function BuildingDrillDown({ conceptId, onClose }: BuildingDrillD
           </button>
         </div>
 
-        {/* View toggle */}
         <div className="px-6 py-3 border-b bg-muted/30 flex items-center gap-2">
           {(['floor', 'unitType', 'category'] as DrillView[]).map(v => (
             <button
@@ -169,7 +165,6 @@ export default function BuildingDrillDown({ conceptId, onClose }: BuildingDrillD
           ))}
         </div>
 
-        {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {view === 'floor' && floorData.map(fd => (
             <div key={fd.floor} className="bg-muted/20 rounded-lg border overflow-hidden">
@@ -183,12 +178,7 @@ export default function BuildingDrillDown({ conceptId, onClose }: BuildingDrillD
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className={thClass}>Item</th>
-                      <th className={`${thClass} text-right`}>Quantity</th>
-                    </tr>
-                  </thead>
+                  <thead><tr className="border-b"><th className={thClass}>Item</th><th className={`${thClass} text-right`}>Quantity</th></tr></thead>
                   <tbody>
                     {Object.entries(fd.items).sort(([,a],[,b]) => b - a).map(([name, qty]) => (
                       <tr key={name} className="border-b last:border-0 hover:bg-muted/30">
@@ -217,12 +207,7 @@ export default function BuildingDrillDown({ conceptId, onClose }: BuildingDrillD
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className={thClass}>Item</th>
-                      <th className={`${thClass} text-right`}>Quantity</th>
-                    </tr>
-                  </thead>
+                  <thead><tr className="border-b"><th className={thClass}>Item</th><th className={`${thClass} text-right`}>Quantity</th></tr></thead>
                   <tbody>
                     {Object.entries(ut.items).sort(([,a],[,b]) => b - a).map(([name, qty]) => (
                       <tr key={name} className="border-b last:border-0 hover:bg-muted/30">
@@ -247,12 +232,7 @@ export default function BuildingDrillDown({ conceptId, onClose }: BuildingDrillD
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className={thClass}>Item</th>
-                      <th className={`${thClass} text-right`}>Quantity</th>
-                    </tr>
-                  </thead>
+                  <thead><tr className="border-b"><th className={thClass}>Item</th><th className={`${thClass} text-right`}>Quantity</th></tr></thead>
                   <tbody>
                     {Object.entries(cd.items).sort(([,a],[,b]) => b - a).map(([name, qty]) => (
                       <tr key={name} className="border-b last:border-0 hover:bg-muted/30">
