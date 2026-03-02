@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import Dashboard from '@/components/Dashboard';
 import ProcurementTable from '@/components/ProcurementTable';
 import RoomExplorer from '@/components/RoomExplorer';
+import BuildingDrillDown from '@/components/BuildingDrillDown';
 import { UserItemData, loadUserData, saveUserData } from '@/data/projectData';
 
 type Tab = 'procurement' | 'rooms';
@@ -9,6 +10,7 @@ type Tab = 'procurement' | 'rooms';
 export default function Index() {
   const [userData, setUserData] = useState<Record<number, UserItemData>>(loadUserData);
   const [activeTab, setActiveTab] = useState<Tab>('procurement');
+  const [drillDownConcept, setDrillDownConcept] = useState<'A' | 'B' | 'C' | null>(null);
 
   const handleUpdateItem = useCallback((id: number, data: UserItemData) => {
     setUserData((prev) => {
@@ -63,7 +65,7 @@ export default function Index() {
 
       {/* Main */}
       <main className="max-w-[1440px] mx-auto px-6 py-6 space-y-8">
-        <Dashboard />
+        <Dashboard onConceptClick={(id) => setDrillDownConcept(id)} />
 
         {activeTab === 'procurement' && (
           <div>
@@ -77,6 +79,14 @@ export default function Index() {
 
         {activeTab === 'rooms' && <RoomExplorer />}
       </main>
+
+      {/* Building Drill-Down Modal */}
+      {drillDownConcept && (
+        <BuildingDrillDown
+          conceptId={drillDownConcept}
+          onClose={() => setDrillDownConcept(null)}
+        />
+      )}
     </div>
   );
 }
