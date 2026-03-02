@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Building, Layers, Home, BedDouble, Sofa, TreePine, UtensilsCrossed } from 'lucide-react';
+import { Building, Layers, Home, Sofa } from 'lucide-react';
 import {
   getBuildingData,
   getFloors,
@@ -7,7 +7,16 @@ import {
 } from '@/data/unitFurnitureData';
 import { categoryEmojis } from '@/data/projectData';
 import { concepts } from '@/data/projectData';
-import { MasterRow, computeFurnitureForUnit } from '@/data/masterData';
+import {
+  MasterRow,
+  computeFurnitureForUnit,
+  getRoomNumbersForUnit,
+  generateRoomNumbers,
+  ALL_BUILDINGS,
+  ALL_BUILDING_LIST,
+  conceptForBuilding,
+  Concept,
+} from '@/data/masterData';
 
 interface RoomExplorerProps {
   masterData: MasterRow[];
@@ -16,49 +25,53 @@ interface RoomExplorerProps {
 const floorLabel = (f: number) => (f === 0 ? 'Ground Floor' : `Floor ${f}`);
 
 export default function RoomExplorer({ masterData }: RoomExplorerProps) {
-  const [building, setBuilding] = useState<'A' | 'B' | 'C'>('A');
+  const [selectedBuilding, setSelectedBuilding] = useState('A1');
   const [selectedFloor, setSelectedFloor] = useState<number | ''>('');
   const [selectedRoomType, setSelectedRoomType] = useState('');
   const [selectedUnit, setSelectedUnit] = useState('');
 
-  const floors = useMemo(() => getFloors(building), [building]);
+  const concept = conceptForBuilding(selectedBuilding) as 'A' | 'B' | 'C';
+  const floors = useMemo(() => getFloors(concept), [concept]);
 
-  // Room types from master data
   const roomTypes = useMemo(() => {
-    const types = new Set(masterData.filter(r => r.concept === building).map(r => r.roomType));
+    const types = new Set(masterData.filter(r => r.building === selectedBuilding).map(r => r.roomType));
     return [...types].sort();
-  }, [building, masterData]);
+  }, [selectedBuilding, masterData]);
 
-  // Unit codes from building structure, optionally filtered
   const unitCodes = useMemo(() => {
-    const { units } = getBuildingData(building);
+    const { units } = getBuildingData(concept);
     return units
       .filter(u => (selectedFloor === '' || u.floors.includes(selectedFloor as number)))
       .filter(u => (!selectedRoomType || u.description === selectedRoomType))
       .map(u => u.code);
-  }, [building, selectedFloor, selectedRoomType]);
+  }, [concept, selectedFloor, selectedRoomType]);
 
   const furniture = useMemo(() => {
     if (!selectedUnit) return [];
-    return computeFurnitureForUnit(masterData, building, selectedUnit);
-  }, [building, selectedUnit, masterData]);
+    return computeFurnitureForUnit(masterData, concept, selectedUnit, selectedBuilding);
+  }, [concept, selectedBuilding, selectedUnit, masterData]);
 
   const totalItems = furniture.reduce((s, f) => s + f.qty, 0);
 
   const unitDescription = useMemo(() => {
     if (!selectedUnit) return '';
-    const { units } = getBuildingData(building);
+    const { units } = getBuildingData(concept);
     const unit = units.find(u => u.code === selectedUnit);
     return unit?.description || '';
-  }, [building, selectedUnit]);
+  }, [concept, selectedUnit]);
+
+  const roomNumbers = useMemo(() => {
+    if (!selectedUnit) return [];
+    return getRoomNumbersForUnit(concept, selectedUnit);
+  }, [concept, selectedUnit]);
 
   const planUrl = useMemo(() => {
     if (selectedFloor === '') return null;
-    return floorPlans[building]?.[selectedFloor] || null;
-  }, [building, selectedFloor]);
+    return floorPlans[concept]?.[selectedFloor] || null;
+  }, [concept, selectedFloor]);
 
-  const handleBuildingChange = (b: 'A' | 'B' | 'C') => {
-    setBuilding(b);
+  const handleBuildingChange = (b: string) => {
+    setSelectedBuilding(b);
     setSelectedFloor('');
     setSelectedRoomType('');
     setSelectedUnit('');
@@ -74,7 +87,7 @@ export default function RoomExplorer({ masterData }: RoomExplorerProps) {
     setSelectedUnit('');
   };
 
-  const conceptInfo = concepts.find(c => c.id === building)!;
+  const conceptInfo = concepts.find(c => c.id === concept)!;
 
   const selectClass =
     'h-10 rounded-lg border bg-card px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent/50 cursor-pointer';
@@ -92,26 +105,35 @@ export default function RoomExplorer({ masterData }: RoomExplorerProps) {
     <div className="space-y-6">
       <div>
         <h2 className="text-lg font-semibold text-foreground">Room Explorer</h2>
-        <p className="text-sm text-muted-foreground">Select a building, floor, room type, and unit to view its furniture list</p>
+        <p className="text-sm text-muted-foreground">Select a building, floor, and unit to view its furniture list and room numbers</p>
       </div>
 
-      <div className="flex gap-2">
-        {(['A', 'B', 'C'] as const).map(b => {
-          const concept = concepts.find(c => c.id === b)!;
-          const isActive = building === b;
+      {/* Building selector — grouped by concept */}
+      <div className="space-y-2">
+        {(['A', 'B', 'C'] as const).map(c => {
+          const ci = concepts.find(x => x.id === c)!;
           return (
-            <button
-              key={b}
-              onClick={() => handleBuildingChange(b)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                isActive
-                  ? `bg-${concept.colorClass} text-primary-foreground shadow-md`
-                  : 'bg-card border text-muted-foreground hover:text-foreground hover:border-accent'
-              }`}
-            >
-              <Building className="h-4 w-4" />
-              <span>{concept.name} ({b})</span>
-            </button>
+            <div key={c} className="flex items-center gap-2">
+              <span className="text-xs font-medium text-muted-foreground w-20">{ci.name}</span>
+              <div className="flex gap-1.5">
+                {ALL_BUILDINGS[c].map(b => {
+                  const isActive = selectedBuilding === b;
+                  return (
+                    <button
+                      key={b}
+                      onClick={() => handleBuildingChange(b)}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                        isActive
+                          ? `bg-${ci.colorClass} text-primary-foreground shadow-md`
+                          : 'bg-card border text-muted-foreground hover:text-foreground hover:border-accent'
+                      }`}
+                    >
+                      {b}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           );
         })}
       </div>
@@ -169,6 +191,20 @@ export default function RoomExplorer({ masterData }: RoomExplorerProps) {
             </div>
           )}
         </div>
+
+        {/* Room numbers for selected unit */}
+        {selectedUnit && roomNumbers.length > 0 && (
+          <div className="mt-3 pt-3 border-t">
+            <span className="text-xs font-medium text-muted-foreground mr-2">Room Numbers ({selectedBuilding}):</span>
+            <div className="inline-flex flex-wrap gap-1 mt-1">
+              {roomNumbers.map(rn => (
+                <span key={rn} className="px-2 py-0.5 bg-accent/10 text-accent text-xs font-mono rounded">
+                  {rn}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -176,7 +212,7 @@ export default function RoomExplorer({ masterData }: RoomExplorerProps) {
           <div className="px-4 py-3 border-b bg-muted/30">
             <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
               <Layers className="h-4 w-4 text-accent" />
-              Floor Plan — Building {building}
+              Floor Plan — {selectedBuilding}
               {selectedFloor !== '' && ` · ${floorLabel(selectedFloor)}`}
             </h3>
           </div>
@@ -187,7 +223,7 @@ export default function RoomExplorer({ masterData }: RoomExplorerProps) {
                   <iframe
                     src={planUrl}
                     className="w-full h-[500px] rounded-lg border"
-                    title={`Floor Plan - Building ${building} ${floorLabel(selectedFloor as number)}`}
+                    title={`Floor Plan - ${selectedBuilding} ${floorLabel(selectedFloor as number)}`}
                   />
                   <a
                     href={planUrl}
@@ -201,7 +237,7 @@ export default function RoomExplorer({ masterData }: RoomExplorerProps) {
               ) : (
                 <img
                   src={planUrl}
-                  alt={`Floor Plan - Building ${building}`}
+                  alt={`Floor Plan - ${selectedBuilding}`}
                   className="w-full rounded-lg"
                 />
               )
@@ -271,16 +307,19 @@ export default function RoomExplorer({ masterData }: RoomExplorerProps) {
         <div className="bg-card rounded-xl border overflow-hidden">
           <div className="px-4 py-3 border-b bg-muted/30">
             <h3 className="text-sm font-semibold text-foreground">
-              Units on {floorLabel(selectedFloor)} — Building {building} ({conceptInfo.name})
+              Units on {floorLabel(selectedFloor)} — {selectedBuilding} ({conceptInfo.name})
             </h3>
           </div>
           <div className="p-4">
             <div className="flex flex-wrap gap-2">
               {(() => {
-                const { units } = getBuildingData(building);
+                const { units } = getBuildingData(concept);
                 const floorUnits = units.filter(u => u.floors.includes(selectedFloor as number));
+                const floorRoomNumbers = generateRoomNumbers(concept).filter(r => r.floor === selectedFloor);
+
                 return floorUnits.map(u => {
                   const isSelected = selectedUnit === u.code;
+                  const unitRooms = floorRoomNumbers.filter(r => r.unitCode === u.code);
                   return (
                     <button
                       key={u.code}
@@ -293,6 +332,11 @@ export default function RoomExplorer({ masterData }: RoomExplorerProps) {
                     >
                       <div className="text-xs font-bold">{u.code}</div>
                       <div className="text-[10px] opacity-70">{u.description}</div>
+                      {unitRooms.length > 0 && (
+                        <div className="text-[9px] text-muted-foreground mt-0.5">
+                          {unitRooms.map(r => r.roomNumber).join(', ')}
+                        </div>
+                      )}
                     </button>
                   );
                 });

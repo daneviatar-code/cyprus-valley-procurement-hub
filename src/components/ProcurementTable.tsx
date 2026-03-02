@@ -6,16 +6,17 @@ import {
 } from '@/data/projectData';
 import {
   getBuildingData,
-  buildingAUnits,
-  buildingBUnits,
-  buildingCUnits,
   UnitType,
 } from '@/data/unitFurnitureData';
 import {
   MasterRow,
   ComputedProcurementItem,
   computeFurnitureForConcept,
+  computeProcurementItems,
   getUnitCodesForConcept,
+  ALL_BUILDINGS,
+  ALL_BUILDING_LIST,
+  conceptForBuilding,
 } from '@/data/masterData';
 import StatusBadge from './StatusBadge';
 import FilterBar, { ViewMode } from './FilterBar';
@@ -39,6 +40,7 @@ function getConceptId(concept: string): 'A' | 'B' | 'C' | null {
 export default function ProcurementTable({ userData, onUpdateItem, procurementItems, masterData }: ProcurementTableProps) {
   const [search, setSearch] = useState('');
   const [selectedConcepts, setSelectedConcepts] = useState<string[]>([]);
+  const [selectedBuildings, setSelectedBuildings] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [selectedUnitCodes, setSelectedUnitCodes] = useState<string[]>([]);
@@ -46,24 +48,51 @@ export default function ProcurementTable({ userData, onUpdateItem, procurementIt
   const [selectedItem, setSelectedItem] = useState<number | null>(null);
   const [roomTypeConceptOverride, setRoomTypeConceptOverride] = useState<'A' | 'B' | 'C'>('A');
 
+  // Available buildings based on concept filter
+  const availableBuildings = useMemo(() => {
+    const conceptIds = selectedConcepts.map(c => getConceptId(c)).filter(Boolean) as ('A' | 'B' | 'C')[];
+    if (conceptIds.length === 0) return ALL_BUILDING_LIST;
+    return conceptIds.flatMap(id => ALL_BUILDINGS[id]);
+  }, [selectedConcepts]);
+
+  // Recompute procurement items when building filter is active
+  const effectiveProcurement = useMemo(() => {
+    if (selectedBuildings.length === 0) return procurementItems;
+    const filtered = masterData.filter(r => selectedBuildings.includes(r.building));
+    return computeProcurementItems(filtered);
+  }, [selectedBuildings, masterData, procurementItems]);
+
   const availableUnitCodes = useMemo(() => {
     const conceptIds = selectedConcepts.map(c => getConceptId(c)).filter(Boolean) as ('A' | 'B' | 'C')[];
-    if (conceptIds.length === 0) return [] as string[];
+    if (conceptIds.length === 0 && selectedBuildings.length === 0) return [] as string[];
     const codes: string[] = [];
-    conceptIds.forEach(id => {
-      getUnitCodesForConcept(masterData, id).forEach(c => {
-        if (!codes.includes(c)) codes.push(c);
+    if (selectedBuildings.length > 0) {
+      selectedBuildings.forEach(b => {
+        const concept = conceptForBuilding(b);
+        getUnitCodesForConcept(masterData, concept, b).forEach(c => {
+          if (!codes.includes(c)) codes.push(c);
+        });
       });
-    });
+    } else {
+      conceptIds.forEach(id => {
+        getUnitCodesForConcept(masterData, id).forEach(c => {
+          if (!codes.includes(c)) codes.push(c);
+        });
+      });
+    }
     return codes.sort();
-  }, [selectedConcepts, masterData]);
+  }, [selectedConcepts, selectedBuildings, masterData]);
 
   const roomTypeConcept = useMemo((): 'A' | 'B' | 'C' => {
-    if (selectedConcepts.length === 1) {
-      return getConceptId(selectedConcepts[0]) || roomTypeConceptOverride;
-    }
+    if (selectedBuildings.length === 1) return conceptForBuilding(selectedBuildings[0]);
+    if (selectedConcepts.length === 1) return getConceptId(selectedConcepts[0]) || roomTypeConceptOverride;
     return roomTypeConceptOverride;
-  }, [selectedConcepts, roomTypeConceptOverride]);
+  }, [selectedConcepts, selectedBuildings, roomTypeConceptOverride]);
+
+  const roomTypeBuilding = useMemo((): string | undefined => {
+    if (selectedBuildings.length === 1) return selectedBuildings[0];
+    return undefined;
+  }, [selectedBuildings]);
 
   const roomTypeUnits = useMemo(() => {
     const { units } = getBuildingData(roomTypeConcept);
@@ -71,11 +100,11 @@ export default function ProcurementTable({ userData, onUpdateItem, procurementIt
   }, [roomTypeConcept]);
 
   const roomTypeFurniture = useMemo(() => {
-    return computeFurnitureForConcept(masterData, roomTypeConcept);
-  }, [masterData, roomTypeConcept]);
+    return computeFurnitureForConcept(masterData, roomTypeConcept, roomTypeBuilding);
+  }, [masterData, roomTypeConcept, roomTypeBuilding]);
 
   const filteredItems = useMemo(() => {
-    return procurementItems.filter((item) => {
+    return effectiveProcurement.filter((item) => {
       if (search && !item.name.toLowerCase().includes(search.toLowerCase())) return false;
       if (selectedCategories.length > 0 && !selectedCategories.includes(item.category)) return false;
 
@@ -91,12 +120,13 @@ export default function ProcurementTable({ userData, onUpdateItem, procurementIt
       }
 
       if (selectedUnitCodes.length > 0) {
+        const targetBuilding = selectedBuildings.length === 1 ? selectedBuildings[0] : undefined;
         const conceptIds = selectedConcepts.length > 0
           ? selectedConcepts.map(c => getConceptId(c)).filter(Boolean) as ('A' | 'B' | 'C')[]
           : ['A', 'B', 'C'] as const;
 
         const matchesUnit = conceptIds.some(id => {
-          const furniture = computeFurnitureForConcept(masterData, id);
+          const furniture = computeFurnitureForConcept(masterData, id, targetBuilding);
           const fItem = furniture.find(f => f.itemName === item.name);
           if (!fItem) return false;
           return selectedUnitCodes.some(code => (fItem.quantities[code] || 0) > 0);
@@ -115,7 +145,7 @@ export default function ProcurementTable({ userData, onUpdateItem, procurementIt
 
       return true;
     });
-  }, [search, selectedConcepts, selectedCategories, selectedStatuses, selectedUnitCodes, userData, procurementItems, masterData]);
+  }, [search, selectedConcepts, selectedBuildings, selectedCategories, selectedStatuses, selectedUnitCodes, userData, effectiveProcurement, masterData]);
 
   const handleInlineChange = (id: number, field: keyof UserItemData, value: string | number | null) => {
     const current = getUserItemData(userData, id);
@@ -125,14 +155,15 @@ export default function ProcurementTable({ userData, onUpdateItem, procurementIt
   const clearAll = () => {
     setSearch('');
     setSelectedConcepts([]);
+    setSelectedBuildings([]);
     setSelectedCategories([]);
     setSelectedStatuses([]);
     setSelectedUnitCodes([]);
   };
 
-  const hasActiveFilters = search !== '' || selectedConcepts.length > 0 || selectedCategories.length > 0 || selectedStatuses.length > 0 || selectedUnitCodes.length > 0;
+  const hasActiveFilters = search !== '' || selectedConcepts.length > 0 || selectedBuildings.length > 0 || selectedCategories.length > 0 || selectedStatuses.length > 0 || selectedUnitCodes.length > 0;
 
-  const selected = selectedItem !== null ? procurementItems.find((i) => i.id === selectedItem) : null;
+  const selected = selectedItem !== null ? effectiveProcurement.find((i) => i.id === selectedItem) : null;
 
   const thClass = 'px-3 py-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground text-left whitespace-nowrap';
   const tdClass = 'px-3 py-2.5 text-sm';
@@ -142,7 +173,9 @@ export default function ProcurementTable({ userData, onUpdateItem, procurementIt
       <div className="flex flex-wrap items-start justify-between gap-3">
         <FilterBar
           search={search} onSearchChange={setSearch}
-          concepts={selectedConcepts} onConceptsChange={setSelectedConcepts}
+          concepts={selectedConcepts} onConceptsChange={v => { setSelectedConcepts(v); setSelectedBuildings([]); }}
+          buildings={selectedBuildings} onBuildingsChange={setSelectedBuildings}
+          availableBuildings={availableBuildings}
           categories={selectedCategories} onCategoriesChange={setSelectedCategories}
           statuses={selectedStatuses} onStatusesChange={setSelectedStatuses}
           unitCodes={selectedUnitCodes} onUnitCodesChange={setSelectedUnitCodes}
@@ -151,10 +184,10 @@ export default function ProcurementTable({ userData, onUpdateItem, procurementIt
           onClearAll={clearAll}
           hasActiveFilters={hasActiveFilters}
         />
-        <ExportButton userData={userData} concepts={selectedConcepts} categories={selectedCategories} statuses={selectedStatuses} procurementItems={procurementItems} />
+        <ExportButton userData={userData} concepts={selectedConcepts} buildings={selectedBuildings} categories={selectedCategories} statuses={selectedStatuses} procurementItems={effectiveProcurement} />
       </div>
 
-      {viewMode === 'byRoomType' && selectedConcepts.length !== 1 && (
+      {viewMode === 'byRoomType' && selectedConcepts.length !== 1 && selectedBuildings.length !== 1 && (
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground font-medium">Show unit columns for:</span>
           {(['A', 'B', 'C'] as const).map(id => (
@@ -333,7 +366,7 @@ export default function ProcurementTable({ userData, onUpdateItem, procurementIt
       </div>
 
       <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
-        <span>Showing {filteredItems.length} of {procurementItems.length} items</span>
+        <span>Showing {filteredItems.length} of {effectiveProcurement.length} items</span>
         <span>
           Grand Total: <strong className="text-accent">{filteredItems.reduce((s, i) => s + i.grandTotal, 0).toLocaleString()}</strong> items
         </span>
