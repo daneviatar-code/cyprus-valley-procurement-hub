@@ -5,12 +5,13 @@ import { ComputedProcurementItem } from '@/data/masterData';
 interface ExportButtonProps {
   userData: Record<number, UserItemData>;
   concepts: string[];
+  buildings: string[];
   categories: string[];
   statuses: string[];
   procurementItems: ComputedProcurementItem[];
 }
 
-export default function ExportButton({ userData, concepts, categories, statuses, procurementItems }: ExportButtonProps) {
+export default function ExportButton({ userData, concepts, buildings, categories, statuses, procurementItems }: ExportButtonProps) {
   const handleExport = () => {
     let items = [...procurementItems];
 
@@ -35,11 +36,25 @@ export default function ExportButton({ userData, concepts, categories, statuses,
       });
     }
 
-    const headers = ['Item', 'Category', 'Qty A (Happiness)', 'Qty B (Wellness)', 'Qty C (Boutique)', 'Grand Total', 'Supplier', 'Unit Price (€)', 'Total Cost (€)', 'Status', 'Notes'];
+    // Build per-building columns if building filter is active
+    const buildingCols = buildings.length > 0 ? buildings : [];
+
+    const headers = [
+      'Item', 'Category',
+      'Qty A (Happiness)', 'Qty B (Wellness)', 'Qty C (Boutique)',
+      ...buildingCols.map(b => `Qty ${b}`),
+      'Grand Total', 'Supplier', 'Unit Price (€)', 'Total Cost (€)', 'Status', 'Notes',
+    ];
+
     const rows = items.map((item) => {
       const ud = getUserItemData(userData, item.id);
       const totalCost = ud.unitPrice ? item.grandTotal * ud.unitPrice : '';
-      return [item.name, item.category, item.qtyA, item.qtyB, item.qtyC, item.grandTotal, ud.supplier, ud.unitPrice ?? '', totalCost, ud.status, ud.notes];
+      return [
+        item.name, item.category,
+        item.qtyA, item.qtyB, item.qtyC,
+        ...buildingCols.map(b => item.qtyByBuilding[b] || 0),
+        item.grandTotal, ud.supplier, ud.unitPrice ?? '', totalCost, ud.status, ud.notes,
+      ];
     });
 
     const csv = [headers, ...rows].map((r) => r.map((c) => `"${c}"`).join(',')).join('\n');

@@ -8,6 +8,9 @@ interface FilterBarProps {
   onSearchChange: (v: string) => void;
   concepts: string[];
   onConceptsChange: (v: string[]) => void;
+  buildings: string[];
+  onBuildingsChange: (v: string[]) => void;
+  availableBuildings: string[];
   categories: string[];
   onCategoriesChange: (v: string[]) => void;
   statuses: string[];
@@ -30,6 +33,11 @@ const conceptColors: Record<string, string> = {
   'WELLNESS (B)': 'bg-wellness/15 text-wellness',
   'BOUTIQUE (C)': 'bg-boutique/15 text-boutique',
 };
+
+const buildingColorMap: Record<string, string> = {};
+['A1','A2','A3','A4','A5','A6'].forEach(b => { buildingColorMap[b] = 'bg-happiness/15 text-happiness'; });
+['B1','B2'].forEach(b => { buildingColorMap[b] = 'bg-wellness/15 text-wellness'; });
+buildingColorMap['C1'] = 'bg-boutique/15 text-boutique';
 
 export default function FilterBar(props: FilterBarProps) {
   return (
@@ -82,6 +90,15 @@ export default function FilterBar(props: FilterBarProps) {
           onChange={props.onConceptsChange}
           placeholder="All Concepts"
           colorMap={conceptColors}
+        />
+
+        <MultiSelect
+          label="Building"
+          options={props.availableBuildings}
+          selected={props.buildings}
+          onChange={props.onBuildingsChange}
+          placeholder="All Buildings"
+          colorMap={buildingColorMap}
         />
 
         <MultiSelect

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { UserItemData, Status, categoryEmojis, getUserItemData } from '@/data/projectData';
-import { ComputedProcurementItem } from '@/data/masterData';
+import { ComputedProcurementItem, ALL_BUILDING_LIST } from '@/data/masterData';
 
 interface ItemDetailPanelProps {
   item: ComputedProcurementItem;
@@ -21,6 +21,9 @@ export default function ItemDetailPanel({ item, userData, onSave, onClose }: Ite
   const labelClass = 'block text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1';
   const inputClass = 'w-full h-9 rounded-md border bg-card px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent/50';
 
+  // Per-building breakdown
+  const buildingsWithQty = ALL_BUILDING_LIST.filter(b => (item.qtyByBuilding[b] || 0) > 0);
+
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-foreground/20" onClick={onClose} />
@@ -36,9 +39,9 @@ export default function ItemDetailPanel({ item, userData, onSave, onClose }: Ite
         </div>
 
         <div className="p-6 space-y-5">
-          {/* Quantities */}
+          {/* Concept Quantities */}
           <div>
-            <p className={labelClass}>Quantities</p>
+            <p className={labelClass}>Quantities by Concept</p>
             <div className="grid grid-cols-4 gap-2">
               {[
                 { label: 'Happiness (A)', value: item.qtyA, color: 'border-happiness' },
@@ -53,6 +56,21 @@ export default function ItemDetailPanel({ item, userData, onSave, onClose }: Ite
               ))}
             </div>
           </div>
+
+          {/* Per-Building Breakdown */}
+          {buildingsWithQty.length > 0 && (
+            <div>
+              <p className={labelClass}>Per Building</p>
+              <div className="grid grid-cols-3 gap-1.5">
+                {buildingsWithQty.map(b => (
+                  <div key={b} className="rounded-md bg-muted/30 px-2 py-1.5 text-center">
+                    <p className="text-sm font-bold text-foreground">{item.qtyByBuilding[b]}</p>
+                    <p className="text-[9px] text-muted-foreground font-medium">{b}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Editable Fields */}
           <div>

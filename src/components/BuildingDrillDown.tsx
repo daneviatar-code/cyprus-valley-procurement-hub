@@ -6,7 +6,12 @@ import {
   getFloors,
   UnitType,
 } from '@/data/unitFurnitureData';
-import { MasterRow, computeFurnitureForConcept } from '@/data/masterData';
+import {
+  MasterRow,
+  computeFurnitureForConcept,
+  ALL_BUILDINGS,
+  conceptForBuilding,
+} from '@/data/masterData';
 
 interface BuildingDrillDownProps {
   conceptId: 'A' | 'B' | 'C';
@@ -30,20 +35,23 @@ const conceptBorderMap: Record<string, string> = {
 
 export default function BuildingDrillDown({ conceptId, onClose, masterData }: BuildingDrillDownProps) {
   const [view, setView] = useState<DrillView>('floor');
+  const [selectedBuilding, setSelectedBuilding] = useState(ALL_BUILDINGS[conceptId][0]);
+
   const concept = concepts.find(c => c.id === conceptId)!;
   const { units } = getBuildingData(conceptId);
-  const furniture = useMemo(() => computeFurnitureForConcept(masterData, conceptId), [masterData, conceptId]);
+  const furniture = useMemo(() => computeFurnitureForConcept(masterData, conceptId, selectedBuilding), [masterData, conceptId, selectedBuilding]);
   const floors = getFloors(conceptId);
 
+  // Instances per unit in ONE building (no multiplier)
   const unitTotalInstances = useMemo(() => {
     const map: Record<string, number> = {};
     units.forEach(u => {
       let total = 0;
       u.floors.forEach(f => { total += u.unitsPerFloor[f] || 0; });
-      map[u.code] = total * concept.buildings;
+      map[u.code] = total;
     });
     return map;
-  }, [units, concept.buildings]);
+  }, [units]);
 
   const floorData = useMemo(() => {
     return floors.map(floor => {
@@ -51,7 +59,7 @@ export default function BuildingDrillDown({ conceptId, onClose, masterData }: Bu
       const itemTotals: Record<string, number> = {};
 
       floorUnits.forEach(u => {
-        const countOnFloor = (u.unitsPerFloor[floor] || 0) * concept.buildings;
+        const countOnFloor = u.unitsPerFloor[floor] || 0;
         furniture.forEach(f => {
           const perUnit = f.quantities[u.code] || 0;
           if (perUnit > 0) {
@@ -68,7 +76,7 @@ export default function BuildingDrillDown({ conceptId, onClose, masterData }: Bu
         items: itemTotals,
       };
     });
-  }, [floors, units, furniture, concept.buildings]);
+  }, [floors, units, furniture]);
 
   const unitTypeData = useMemo(() => {
     const descMap: Record<string, UnitType[]> = {};
@@ -140,7 +148,7 @@ export default function BuildingDrillDown({ conceptId, onClose, masterData }: Bu
             <div>
               <h2 className="text-lg font-semibold text-foreground">{concept.name} — Building Drill-Down</h2>
               <p className="text-xs text-muted-foreground">
-                {concept.buildings} buildings · {concept.totalUnits} units · {floors.length} floors
+                Viewing {selectedBuilding} · {floors.length} floors
               </p>
             </div>
           </div>
@@ -149,20 +157,40 @@ export default function BuildingDrillDown({ conceptId, onClose, masterData }: Bu
           </button>
         </div>
 
-        <div className="px-6 py-3 border-b bg-muted/30 flex items-center gap-2">
-          {(['floor', 'unitType', 'category'] as DrillView[]).map(v => (
-            <button
-              key={v}
-              onClick={() => setView(v)}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                view === v ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {v === 'floor' && '🏢 By Floor'}
-              {v === 'unitType' && '🏠 By Unit Type'}
-              {v === 'category' && '📦 By Category'}
-            </button>
-          ))}
+        {/* Building selector + view mode */}
+        <div className="px-6 py-3 border-b bg-muted/30 flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-medium text-muted-foreground">Building:</span>
+            {ALL_BUILDINGS[conceptId].map(b => (
+              <button
+                key={b}
+                onClick={() => setSelectedBuilding(b)}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                  selectedBuilding === b
+                    ? `${conceptColorMap[conceptId]} text-primary-foreground`
+                    : 'bg-card text-muted-foreground hover:text-foreground border'
+                }`}
+              >
+                {b}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2">
+            {(['floor', 'unitType', 'category'] as DrillView[]).map(v => (
+              <button
+                key={v}
+                onClick={() => setView(v)}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                  view === v ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {v === 'floor' && '🏢 By Floor'}
+                {v === 'unitType' && '🏠 By Unit Type'}
+                {v === 'category' && '📦 By Category'}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
