@@ -262,6 +262,11 @@ export const unitFloorPlans: Record<string, Record<string, string>> = {
     Dm: '/plans/units/B_Dm.png',
     E: '/plans/units/B_E.png',
     Em: '/plans/units/B_Em.png',
+    ET: '/plans/units/B_ET.png',
+    Etm: '/plans/units/B_Etm.png',
+    F: '/plans/units/B_F.png',
+    Fm: '/plans/units/B_Fm.png',
+    G: '/plans/units/B_G.png',
   },
   C: {},
 };
