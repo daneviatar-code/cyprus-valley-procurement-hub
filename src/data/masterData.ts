@@ -31,7 +31,7 @@ export interface MasterRow {
   qtyPerUnit: number;
 }
 
-const STORAGE_KEY = 'cyprus-valley-master-data-v3';
+const STORAGE_KEY = 'cyprus-valley-master-data-v4';
 
 // ── Room number generation ──
 export interface RoomNumberEntry {
