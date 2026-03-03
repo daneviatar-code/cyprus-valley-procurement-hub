@@ -268,7 +268,16 @@ export const unitFloorPlans: Record<string, Record<string, string>> = {
     Fm: '/plans/units/B_Fm.png',
     G: '/plans/units/B_G.png',
   },
-  C: {},
+  C: {
+    A: '/plans/units/C_A.png',
+    Am: '/plans/units/C_Am.png',
+    B: '/plans/units/C_B.png',
+    Bm: '/plans/units/C_Bm.png',
+    C: '/plans/units/C_C.png',
+    Cm: '/plans/units/C_Cm.png',
+    D: '/plans/units/C_D.png',
+    Dm: '/plans/units/C_Dm.png',
+  },
 };
 
 // ── Helper: get unit floor plan image ──
