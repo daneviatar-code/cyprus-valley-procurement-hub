@@ -195,7 +195,7 @@ export const buildingCFurniture: FurniturePerUnit[] = [
   { itemName: 'Outdoor two seater sofa', category: 'Outdoor', quantities: { A: 1, Am: 1, B: 1, Bm: 1, C: 1, Cm: 1, D: 0, Dm: 0 } },
 ];
 
-// ── Floor plan images ──
+// ── Floor plan images (per floor) ──
 export const floorPlans: Record<string, Record<number, string>> = {
   A: {
     0: '/plans/building_a_ground_floor.jpg',
@@ -213,6 +213,29 @@ export const floorPlans: Record<string, Record<number, string>> = {
     3: '/plans/building_c_third_floor.pdf',
   },
 };
+
+// ── Unit floor plan images (per unit code per concept) ──
+// Key format: concept -> unitCode -> image path
+// Each unit code (including mirrors) has its own separate image
+export const unitFloorPlans: Record<string, Record<string, string>> = {
+  A: {
+    AT: '/plans/units/A_AT.png',
+    Atm: '/plans/units/A_Atm.png',
+    A: '/plans/units/A_A.png',
+    Am: '/plans/units/A_Am.png',
+    BT: '/plans/units/A_BT.png',
+    BTm: '/plans/units/A_BTm.png',
+    B: '/plans/units/A_B.png',
+    Bm: '/plans/units/A_Bm.png',
+  },
+  B: {},
+  C: {},
+};
+
+// ── Helper: get unit floor plan image ──
+export function getUnitFloorPlanUrl(concept: 'A' | 'B' | 'C', unitCode: string): string | null {
+  return unitFloorPlans[concept]?.[unitCode] || null;
+}
 
 // ── Helper: get all data for a building ──
 export function getBuildingData(building: 'A' | 'B' | 'C') {
