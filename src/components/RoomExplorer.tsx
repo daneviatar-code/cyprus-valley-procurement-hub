@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
-import { Building, Layers, Home, Sofa } from 'lucide-react';
+import { Building, Layers, Home, Sofa, ImageOff } from 'lucide-react';
 import {
   getBuildingData,
   getFloors,
   floorPlans,
+  getUnitFloorPlanUrl,
 } from '@/data/unitFurnitureData';
 import { categoryEmojis } from '@/data/projectData';
 import { concepts } from '@/data/projectData';
@@ -17,6 +18,7 @@ import {
   conceptForBuilding,
   Concept,
 } from '@/data/masterData';
+import ZoomableImage from './ZoomableImage';
 
 interface RoomExplorerProps {
   masterData: MasterRow[];
@@ -65,10 +67,10 @@ export default function RoomExplorer({ masterData }: RoomExplorerProps) {
     return getRoomNumbersForUnit(concept, selectedUnit);
   }, [concept, selectedUnit]);
 
-  const planUrl = useMemo(() => {
-    if (selectedFloor === '') return null;
-    return floorPlans[concept]?.[selectedFloor] || null;
-  }, [concept, selectedFloor]);
+  const unitPlanUrl = useMemo(() => {
+    if (!selectedUnit) return null;
+    return getUnitFloorPlanUrl(concept, selectedUnit);
+  }, [concept, selectedUnit]);
 
   const handleBuildingChange = (b: string) => {
     setSelectedBuilding(b);
@@ -105,7 +107,7 @@ export default function RoomExplorer({ masterData }: RoomExplorerProps) {
     <div className="space-y-6">
       <div>
         <h2 className="text-lg font-semibold text-foreground">Room Explorer</h2>
-        <p className="text-sm text-muted-foreground">Select a building, floor, and unit to view its furniture list and room numbers</p>
+        <p className="text-sm text-muted-foreground">Select a building, floor, and unit to view its furniture list and floor plan</p>
       </div>
 
       {/* Building selector — grouped by concept */}
@@ -207,102 +209,111 @@ export default function RoomExplorer({ masterData }: RoomExplorerProps) {
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-card rounded-xl border overflow-hidden">
-          <div className="px-4 py-3 border-b bg-muted/30">
-            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-              <Layers className="h-4 w-4 text-accent" />
-              Floor Plan — {selectedBuilding}
-              {selectedFloor !== '' && ` · ${floorLabel(selectedFloor)}`}
-            </h3>
-          </div>
-          <div className="p-4">
-            {planUrl ? (
-              planUrl.endsWith('.pdf') ? (
-                <div className="space-y-3">
-                  <iframe
-                    src={planUrl}
-                    className="w-full h-[500px] rounded-lg border"
-                    title={`Floor Plan - ${selectedBuilding} ${floorLabel(selectedFloor as number)}`}
-                  />
-                  <a
-                    href={planUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs text-accent hover:underline"
-                  >
-                    Open in new tab ↗
-                  </a>
-                </div>
-              ) : (
-                <img
-                  src={planUrl}
-                  alt={`Floor Plan - ${selectedBuilding}`}
-                  className="w-full rounded-lg"
+      {/* Split-screen: Unit Floor Plan (left) + Furniture List (right) */}
+      {selectedUnit && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Unit Floor Plan */}
+          <div className="bg-card rounded-xl border overflow-hidden">
+            <div className="px-4 py-3 border-b bg-muted/30">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Layers className="h-4 w-4 text-accent" />
+                Floor Plan — Unit {selectedUnit}
+                <span className="text-xs text-muted-foreground font-normal ml-1">({unitDescription})</span>
+              </h3>
+            </div>
+            <div className="p-2">
+              {unitPlanUrl ? (
+                <ZoomableImage
+                  src={unitPlanUrl}
+                  alt={`Floor Plan - Unit ${selectedUnit} (${unitDescription})`}
                 />
-              )
-            ) : (
-              <div className="flex items-center justify-center h-[300px] text-muted-foreground text-sm">
-                {selectedFloor === ''
-                  ? 'Select a floor to view the plan'
-                  : 'No floor plan available for this floor'}
-              </div>
-            )}
+              ) : (
+                <div className="flex flex-col items-center justify-center h-[400px] text-muted-foreground rounded-lg bg-muted/10 border border-dashed">
+                  <ImageOff className="h-10 w-10 mb-3 opacity-40" />
+                  <span className="text-sm font-medium">{selectedUnit}</span>
+                  <span className="text-xs mt-1">No floor plan image available</span>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
 
-        <div className="bg-card rounded-xl border overflow-hidden">
-          <div className="px-4 py-3 border-b bg-muted/30 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-              <Sofa className="h-4 w-4 text-accent" />
-              Furniture List
-            </h3>
-            {selectedUnit && (
+          {/* Furniture List */}
+          <div className="bg-card rounded-xl border overflow-hidden">
+            <div className="px-4 py-3 border-b bg-muted/30 flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Sofa className="h-4 w-4 text-accent" />
+                Furniture List
+              </h3>
               <span className="text-xs text-muted-foreground">
                 {furniture.length} items · {totalItems} pcs total
               </span>
-            )}
-          </div>
-          <div className="p-4">
-            {!selectedUnit ? (
-              <div className="flex items-center justify-center h-[300px] text-muted-foreground text-sm">
-                Select a unit code to view its furniture list
-              </div>
-            ) : furniture.length === 0 ? (
-              <div className="flex items-center justify-center h-[300px] text-muted-foreground text-sm">
-                No furniture assigned to this unit
-              </div>
-            ) : (
-              <div className="space-y-5 max-h-[500px] overflow-y-auto pr-1">
-                {Object.entries(groupedFurniture).map(([cat, items]) => {
-                  const emoji = categoryEmojis[cat as keyof typeof categoryEmojis] || '📦';
-                  return (
-                    <div key={cat}>
-                      <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
-                        <span>{emoji}</span> {cat}
-                      </h4>
-                      <div className="space-y-1">
-                        {items.map(item => (
-                          <div
-                            key={item.itemName}
-                            className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-muted/50 transition-colors"
-                          >
-                            <span className="text-sm text-foreground">{item.itemName}</span>
-                            <span className="text-sm font-semibold text-accent min-w-[40px] text-right">
-                              ×{item.qty}
-                            </span>
-                          </div>
-                        ))}
+            </div>
+            <div className="p-4">
+              {furniture.length === 0 ? (
+                <div className="flex items-center justify-center h-[300px] text-muted-foreground text-sm">
+                  No furniture assigned to this unit
+                </div>
+              ) : (
+                <div className="space-y-5 max-h-[500px] overflow-y-auto pr-1">
+                  {Object.entries(groupedFurniture).map(([cat, items]) => {
+                    const emoji = categoryEmojis[cat as keyof typeof categoryEmojis] || '📦';
+                    return (
+                      <div key={cat}>
+                        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+                          <span>{emoji}</span> {cat}
+                        </h4>
+                        <div className="space-y-1">
+                          {items.map(item => (
+                            <div
+                              key={item.itemName}
+                              className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-muted/50 transition-colors"
+                            >
+                              <span className="text-sm text-foreground">{item.itemName}</span>
+                              <span className="text-sm font-semibold text-accent min-w-[40px] text-right">
+                                ×{item.qty}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
+      {/* Prompt to select unit when none selected */}
+      {!selectedUnit && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-card rounded-xl border overflow-hidden">
+            <div className="px-4 py-3 border-b bg-muted/30">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Layers className="h-4 w-4 text-accent" />
+                Unit Floor Plan
+              </h3>
+            </div>
+            <div className="flex items-center justify-center h-[300px] text-muted-foreground text-sm">
+              Select a unit code to view its floor plan
+            </div>
+          </div>
+          <div className="bg-card rounded-xl border overflow-hidden">
+            <div className="px-4 py-3 border-b bg-muted/30">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Sofa className="h-4 w-4 text-accent" />
+                Furniture List
+              </h3>
+            </div>
+            <div className="flex items-center justify-center h-[300px] text-muted-foreground text-sm">
+              Select a unit code to view its furniture list
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Units on selected floor */}
       {selectedFloor !== '' && (
         <div className="bg-card rounded-xl border overflow-hidden">
           <div className="px-4 py-3 border-b bg-muted/30">
@@ -320,6 +331,7 @@ export default function RoomExplorer({ masterData }: RoomExplorerProps) {
                 return floorUnits.map(u => {
                   const isSelected = selectedUnit === u.code;
                   const unitRooms = floorRoomNumbers.filter(r => r.unitCode === u.code);
+                  const hasImage = !!getUnitFloorPlanUrl(concept, u.code);
                   return (
                     <button
                       key={u.code}
@@ -330,7 +342,10 @@ export default function RoomExplorer({ masterData }: RoomExplorerProps) {
                           : 'bg-muted/30 text-foreground border-transparent hover:border-accent/30'
                       }`}
                     >
-                      <div className="text-xs font-bold">{u.code}</div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-bold">{u.code}</span>
+                        {hasImage && <span className="text-[8px] text-accent">📐</span>}
+                      </div>
                       <div className="text-[10px] opacity-70">{u.description}</div>
                       {unitRooms.length > 0 && (
                         <div className="text-[9px] text-muted-foreground mt-0.5">
