@@ -10,6 +10,8 @@ export interface Selection {
   supplier: string;
   unitPrice: number;
   notes: string;
+  imageUrl?: string;
+  productUrl?: string;
 }
 
 export type SelectionMap = Record<string, Selection>; // key = itemName
