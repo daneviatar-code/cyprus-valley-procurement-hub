@@ -100,6 +100,15 @@ export const buildingCUnits: UnitType[] = [
   { code: 'Cm', description: '1BD', floors: [1, 2, 3], unitsPerFloor: { 1: 1, 2: 1, 3: 1 } },
   { code: 'D', description: 'Studio', floors: [1, 2, 3], unitsPerFloor: { 1: 2, 2: 2, 3: 2 } },
   { code: 'Dm', description: 'Studio', floors: [1, 2, 3], unitsPerFloor: { 1: 2, 2: 2, 3: 2 } },
+  // Zones (common areas)
+  { code: 'LOBBY', description: 'Public Areas', floors: [0], unitsPerFloor: { 0: 1 }, isZone: true },
+  { code: 'RESTAURANT', description: 'Restaurant & F&B', floors: [0], unitsPerFloor: { 0: 1 }, isZone: true },
+  { code: 'SPA', description: 'Spa & Wellness', floors: [0], unitsPerFloor: { 0: 1 }, isZone: true },
+  { code: 'POOL', description: 'Pool Area', floors: [0], unitsPerFloor: { 0: 1 }, isZone: true },
+  { code: 'MEETING', description: 'Meeting Rooms', floors: [0], unitsPerFloor: { 0: 1 }, isZone: true },
+  { code: 'BOH', description: 'Back of House', floors: [0], unitsPerFloor: { 0: 1 }, isZone: true },
+  { code: 'GYM', description: 'Gym & Fitness', floors: [0], unitsPerFloor: { 0: 1 }, isZone: true },
+  { code: 'ROOFTOP', description: 'Rooftop & Terrace', floors: [0], unitsPerFloor: { 0: 1 }, isZone: true },
 ];
 
 // ── Furniture quantities per unit type ──
