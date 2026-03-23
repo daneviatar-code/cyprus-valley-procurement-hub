@@ -32,6 +32,7 @@ export default function RoomExplorer({ masterData }: RoomExplorerProps) {
   const [selectedFloor, setSelectedFloor] = useState<number | ''>('');
   const [selectedRoomType, setSelectedRoomType] = useState('');
   const [selectedUnit, setSelectedUnit] = useState('');
+  const [showProductSheet, setShowProductSheet] = useState(false);
 
   const concept = conceptForBuilding(selectedBuilding) as 'A' | 'B' | 'C';
   const floors = useMemo(() => getFloors(concept), [concept]);
