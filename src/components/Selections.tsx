@@ -136,11 +136,15 @@ export default function Selections() {
     setVersion(v => v + 1);
   }
 
-  function handleClearSelection(concept: Concept, unitCode: string, itemName: string) {
-    const sels = loadSelections(concept, unitCode);
-    delete sels[itemName];
-    saveSelections(concept, unitCode, sels);
+  const [deleteTarget, setDeleteTarget] = useState<{ concept: Concept; unitCode: string; itemName: string } | null>(null);
+
+  function confirmClearSelection() {
+    if (!deleteTarget) return;
+    const sels = loadSelections(deleteTarget.concept, deleteTarget.unitCode);
+    delete sels[deleteTarget.itemName];
+    saveSelections(deleteTarget.concept, deleteTarget.unitCode, sels);
     setVersion(v => v + 1);
+    setDeleteTarget(null);
   }
 
   // Summary stats
