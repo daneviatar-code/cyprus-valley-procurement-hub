@@ -9,6 +9,7 @@ import {
 } from '@/data/unitFurnitureData';
 import { loadPackage, PackageItem } from '@/data/packageData';
 import { concepts } from '@/data/projectData';
+import { loadSelections, Selection } from '@/data/selectionData';
 
 const CONCEPTS: { id: Concept; label: string }[] = [
   { id: 'A', label: 'Happiness (A)' },
