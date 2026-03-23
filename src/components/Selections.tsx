@@ -165,6 +165,71 @@ export default function Selections() {
     setDeleteTarget(null);
   }
 
+  // ── Order Quantity Summary ──
+  // For each unique selected product, calculate total order qty across all buildings
+  const orderSummary = useMemo(() => {
+    const productMap = new Map<string, {
+      productName: string;
+      supplier: string;
+      unitPrice: number;
+      imageUrl?: string;
+      productUrl?: string;
+      // entries: concept + unitCode + qtyPerUnit + unitCount (across buildings)
+      entries: { concept: Concept; unitCode: string; qtyPerUnit: number }[];
+    }>();
+
+    allCards.forEach(card => {
+      card.items.forEach(item => {
+        const sel = card.selections[item.itemName];
+        if (!sel) return;
+        const key = sel.productName.trim().toLowerCase();
+        if (!key) return;
+        if (!productMap.has(key)) {
+          productMap.set(key, {
+            productName: sel.productName,
+            supplier: sel.supplier,
+            unitPrice: sel.unitPrice,
+            imageUrl: sel.imageUrl,
+            productUrl: sel.productUrl,
+            entries: [],
+          });
+        }
+        productMap.get(key)!.entries.push({
+          concept: card.concept,
+          unitCode: card.unitCode,
+          qtyPerUnit: item.quantity,
+        });
+      });
+    });
+
+    // Calculate totals: for each entry, multiply qtyPerUnit by the number of
+    // actual units of that type across all buildings of that concept
+    return Array.from(productMap.values()).map(p => {
+      let totalQty = 0;
+      p.entries.forEach(e => {
+        const units = getUnitsForConcept(e.concept);
+        const unitType = units.find(u => u.code === e.unitCode);
+        if (!unitType) return;
+        // Count total instances of this unit type across all buildings of the concept
+        const buildingsOfConcept = ALL_BUILDINGS[e.concept];
+        const instancesPerBuilding = Object.values(unitType.unitsPerFloor).reduce((s, n) => s + n, 0);
+        totalQty += e.qtyPerUnit * instancesPerBuilding * buildingsOfConcept.length;
+      });
+      return {
+        productName: p.productName,
+        supplier: p.supplier,
+        unitPrice: p.unitPrice,
+        totalQty,
+        totalValue: totalQty * p.unitPrice,
+        imageUrl: p.imageUrl,
+        productUrl: p.productUrl,
+        roomTypes: p.entries.map(e => `${e.concept}-${e.unitCode}`),
+      };
+    }).sort((a, b) => b.totalQty - a.totalQty);
+  }, [allCards]);
+
+  const [showOrderSummary, setShowOrderSummary] = useState(true);
+
   // Summary stats
   const totalItems = allCards.reduce((s, c) => s + c.totalCount, 0);
   const totalSelected = allCards.reduce((s, c) => s + c.selectedCount, 0);
