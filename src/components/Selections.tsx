@@ -35,9 +35,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Check, Clock, Pencil, Search, Trash2 } from 'lucide-react';
+import { Check, Clock, ExternalLink, Image, Pencil, Search, ShoppingCart, Trash2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Concept, ALL_BUILDINGS } from '@/data/masterData';
 import { loadPackage, PackageItem } from '@/data/packageData';
 import { Selection, SelectionMap, loadSelections, saveSelections } from '@/data/selectionData';
