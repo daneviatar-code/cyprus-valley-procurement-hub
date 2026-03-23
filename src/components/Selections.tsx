@@ -130,7 +130,7 @@ export default function Selections() {
 
   const openSelection = useCallback((concept: Concept, unitCode: string, itemName: string, existing?: Selection) => {
     setEditTarget({ concept, unitCode, itemName });
-    setSelForm(existing || { productName: '', supplier: '', unitPrice: 0, notes: '' });
+    setSelForm(existing || { productName: '', supplier: '', unitPrice: 0, notes: '', imageUrl: '', productUrl: '' });
     setApplyToRoomTypes([`${concept}-${unitCode}`]);
   }, []);
 
