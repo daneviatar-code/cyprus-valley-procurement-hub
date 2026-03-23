@@ -62,6 +62,9 @@ export default function PackageEditor() {
     });
   }, [units]);
 
+  const regularUnits = useMemo(() => unitCodes.filter(u => !u.isZone), [unitCodes]);
+  const zoneUnits = useMemo(() => unitCodes.filter(u => u.isZone), [unitCodes]);
+
   // Reset unit code when concept changes
   const activeUnitCode = selectedUnitCode && unitCodes.some(u => u.code === selectedUnitCode)
     ? selectedUnitCode
@@ -98,21 +101,46 @@ export default function PackageEditor() {
       </div>
 
       {/* Unit code tabs */}
-      <div className="flex flex-wrap gap-1 bg-card border rounded-lg p-1.5">
-        {unitCodes.map(u => (
-          <button
-            key={u.code}
-            onClick={() => setSelectedUnitCode(u.code)}
-            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-              activeUnitCode === u.code
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
-            }`}
-          >
-            {u.code}
-            <span className="ml-1 opacity-60">({u.description})</span>
-          </button>
-        ))}
+      <div className="bg-card border rounded-lg p-1.5 space-y-2">
+        <div className="flex flex-wrap gap-1">
+          {regularUnits.map(u => (
+            <button
+              key={u.code}
+              onClick={() => setSelectedUnitCode(u.code)}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                activeUnitCode === u.code
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+              }`}
+            >
+              {u.code}
+              <span className="ml-1 opacity-60">({u.description})</span>
+            </button>
+          ))}
+        </div>
+        {zoneUnits.length > 0 && (
+          <>
+            <div className="border-t pt-2">
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold ml-1">Common Areas / Zones</span>
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {zoneUnits.map(u => (
+                <button
+                  key={u.code}
+                  onClick={() => setSelectedUnitCode(u.code)}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                    activeUnitCode === u.code
+                      ? 'bg-accent text-accent-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+                  }`}
+                >
+                  {u.code}
+                  <span className="ml-1 opacity-60">({u.description})</span>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Package content */}

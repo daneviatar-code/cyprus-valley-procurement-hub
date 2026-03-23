@@ -44,9 +44,11 @@ export default function RoomExplorer({ masterData }: RoomExplorerProps) {
     const { units } = getBuildingData(concept);
     return units
       .filter(u => (selectedFloor === '' || u.floors.includes(selectedFloor as number)))
-      .filter(u => (!selectedRoomType || u.description === selectedRoomType))
-      .map(u => u.code);
+      .filter(u => (!selectedRoomType || u.description === selectedRoomType));
   }, [concept, selectedFloor, selectedRoomType]);
+
+  const regularUnitCodes = useMemo(() => unitCodes.filter(u => !u.isZone), [unitCodes]);
+  const zoneUnitCodes = useMemo(() => unitCodes.filter(u => u.isZone), [unitCodes]);
 
   const furniture = useMemo(() => {
     if (!selectedUnit) return [];
@@ -171,16 +173,27 @@ export default function RoomExplorer({ masterData }: RoomExplorerProps) {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Unit Code</label>
+            <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Unit / Zone</label>
             <select
               value={selectedUnit}
               onChange={e => setSelectedUnit(e.target.value)}
               className={selectClass}
             >
               <option value="">Select unit...</option>
-              {unitCodes.map(uc => (
-                <option key={uc} value={uc}>{uc}</option>
-              ))}
+              {regularUnitCodes.length > 0 && (
+                <optgroup label="Units">
+                  {regularUnitCodes.map(u => (
+                    <option key={u.code} value={u.code}>{u.code} ({u.description})</option>
+                  ))}
+                </optgroup>
+              )}
+              {zoneUnitCodes.length > 0 && (
+                <optgroup label="Common Areas / Zones">
+                  {zoneUnitCodes.map(u => (
+                    <option key={u.code} value={u.code}>{u.code} — {u.description}</option>
+                  ))}
+                </optgroup>
+              )}
             </select>
           </div>
 

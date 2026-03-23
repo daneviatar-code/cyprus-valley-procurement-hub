@@ -173,7 +173,7 @@ export function computeProcurementItems(masterData: MasterRow[]): ComputedProcur
 
   const items: ComputedProcurementItem[] = [];
   let id = 1;
-  const catOrder: RoomType[] = ['Dining', 'Living Room', 'Bedroom', 'Outdoor'];
+  const catOrder: RoomType[] = ['Dining', 'Living Room', 'Bedroom', 'Outdoor', 'Bathroom', 'Kitchen', 'Sauna & Wellness', 'Accessories & Decor', 'Mirrors', 'Electrical & Appliances', 'In-Room Safes', 'Cutlery & Dining Sets', 'Curtains & Window Treatments'];
   const sorted = [...map.entries()].sort((a, b) => {
     const catDiff = catOrder.indexOf(a[1].category) - catOrder.indexOf(b[1].category);
     if (catDiff !== 0) return catDiff;

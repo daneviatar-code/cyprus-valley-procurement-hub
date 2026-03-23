@@ -20,7 +20,7 @@ interface ProjectDataTableProps {
 }
 
 const conceptLabels: Record<Concept, string> = { A: 'HAPPINESS (A)', B: 'WELLNESS (B)', C: 'BOUTIQUE (C)' };
-const roomTypes: RoomType[] = ['Dining', 'Living Room', 'Bedroom', 'Outdoor'];
+const roomTypes: RoomType[] = ['Dining', 'Living Room', 'Bedroom', 'Outdoor', 'Bathroom', 'Kitchen', 'Sauna & Wellness', 'Accessories & Decor', 'Mirrors', 'Electrical & Appliances', 'In-Room Safes', 'Cutlery & Dining Sets', 'Curtains & Window Treatments'];
 
 function getUnitCodesForConcept(concept: Concept): string[] {
   const units = concept === 'A' ? buildingAUnits : concept === 'B' ? buildingBUnits : buildingCUnits;
