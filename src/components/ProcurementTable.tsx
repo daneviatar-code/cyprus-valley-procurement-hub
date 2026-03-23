@@ -39,6 +39,7 @@ function getConceptId(concept: string): 'A' | 'B' | 'C' | null {
 }
 
 export default function ProcurementTable({ userData, onUpdateItem, procurementItems, masterData }: ProcurementTableProps) {
+  const allSelections = useMemo(() => loadAllSelections(), []);
   const [search, setSearch] = useState('');
   const [selectedConcepts, setSelectedConcepts] = useState<string[]>([]);
   const [selectedBuildings, setSelectedBuildings] = useState<string[]>([]);
