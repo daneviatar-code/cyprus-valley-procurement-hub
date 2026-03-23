@@ -259,9 +259,19 @@ export default function RoomExplorer({ masterData }: RoomExplorerProps) {
                 <Sofa className="h-4 w-4 text-accent" />
                 Furniture List
               </h3>
-              <span className="text-xs text-muted-foreground">
-                {furniture.length} items · {totalItems} pcs total
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-muted-foreground">
+                  {furniture.length} items · {totalItems} pcs total
+                </span>
+                {furniture.length > 0 && (
+                  <button
+                    onClick={() => setShowProductSheet(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors"
+                  >
+                    <FileText className="h-3.5 w-3.5" /> Product Sheet
+                  </button>
+                )}
+              </div>
             </div>
             <div className="p-4">
               {furniture.length === 0 ? (
