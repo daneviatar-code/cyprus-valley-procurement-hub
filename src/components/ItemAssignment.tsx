@@ -217,6 +217,20 @@ export default function ItemAssignment({ masterData, onUpdate }: Props) {
     saveItemMeta(newMeta);
   }
 
+  // ── Filter state ──
+  const [searchText, setSearchText] = useState('');
+  const [filterCategory, setFilterCategory] = useState<string>('all');
+  const [filterBuilding, setFilterBuilding] = useState<string>('all');
+
+  const filteredRows = useMemo(() => {
+    return itemRows.filter(item => {
+      if (searchText && !item.name.toLowerCase().includes(searchText.toLowerCase())) return false;
+      if (filterCategory !== 'all' && item.category !== filterCategory) return false;
+      if (filterBuilding !== 'all' && !item.assignments.some(a => a.building === filterBuilding)) return false;
+      return true;
+    });
+  }, [itemRows, searchText, filterCategory, filterBuilding]);
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -227,6 +241,38 @@ export default function ItemAssignment({ masterData, onUpdate }: Props) {
         <Button size="sm" onClick={openAdd}>
           <Plus className="w-4 h-4 mr-1" /> Add Item
         </Button>
+      </div>
+
+      {/* Search & Filter Bar */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Search items..."
+            value={searchText}
+            onChange={e => setSearchText(e.target.value)}
+            className="pl-9 h-9"
+          />
+        </div>
+        <Select value={filterCategory} onValueChange={setFilterCategory}>
+          <SelectTrigger className="h-9 w-[180px]"><SelectValue placeholder="Category" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Categories</SelectItem>
+            {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filterBuilding} onValueChange={setFilterBuilding}>
+          <SelectTrigger className="h-9 w-[140px]"><SelectValue placeholder="Building" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Buildings</SelectItem>
+            {ALL_BUILDING_LIST.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        {(searchText || filterCategory !== 'all' || filterBuilding !== 'all') && (
+          <Button variant="ghost" size="sm" className="h-9 text-xs" onClick={() => { setSearchText(''); setFilterCategory('all'); setFilterBuilding('all'); }}>
+            Clear filters
+          </Button>
+        )}
       </div>
 
       {/* Items Table */}
@@ -243,14 +289,14 @@ export default function ItemAssignment({ masterData, onUpdate }: Props) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {itemRows.length === 0 && (
+            {filteredRows.length === 0 && (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
-                  No items yet. Click "Add Item" to get started.
+                  {itemRows.length === 0 ? 'No items yet. Click "Add Item" to get started.' : 'No items match your filters.'}
                 </TableCell>
               </TableRow>
             )}
-            {itemRows.map(item => (
+            {filteredRows.map(item => (
               <TableRow key={item.name}>
                 <TableCell className="font-medium text-sm">{item.name}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">{item.category}</TableCell>
