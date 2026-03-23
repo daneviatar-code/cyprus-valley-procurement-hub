@@ -128,13 +128,26 @@ export default function Selections() {
   const openSelection = useCallback((concept: Concept, unitCode: string, itemName: string, existing?: Selection) => {
     setEditTarget({ concept, unitCode, itemName });
     setSelForm(existing || { productName: '', supplier: '', unitPrice: 0, notes: '' });
+    setApplyToRoomTypes([`${concept}-${unitCode}`]);
   }, []);
+
+  // All room types that have this same item name (for multi-apply)
+  const roomTypesWithItem = useMemo(() => {
+    if (!editTarget) return [];
+    return allCards
+      .filter(card => card.items.some(i => i.itemName === editTarget.itemName))
+      .map(card => ({ key: `${card.concept}-${card.unitCode}`, label: `${card.concept} — ${card.unitCode}` }));
+  }, [editTarget, allCards]);
 
   function handleSaveSelection() {
     if (!editTarget) return;
-    const sels = loadSelections(editTarget.concept, editTarget.unitCode);
-    sels[editTarget.itemName] = { ...selForm };
-    saveSelections(editTarget.concept, editTarget.unitCode, sels);
+    const selData = { ...selForm };
+    applyToRoomTypes.forEach(key => {
+      const [concept, unitCode] = key.split('-') as [Concept, string];
+      const sels = loadSelections(concept, unitCode);
+      sels[editTarget.itemName] = { ...selData };
+      saveSelections(concept, unitCode, sels);
+    });
     setEditTarget(null);
     setVersion(v => v + 1);
   }
