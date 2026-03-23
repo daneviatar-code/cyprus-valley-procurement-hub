@@ -186,7 +186,7 @@ export default function PricingSheet() {
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {pkg.items.map((item, i) => (
+                {enrichedItems.map((item, i) => (
                   <tr key={item.id} className="hover:bg-muted/20">
                     <td className="px-4 py-2 text-muted-foreground">{i + 1}</td>
                     <td className="px-4 py-2 font-medium text-foreground">{item.itemName || '—'}</td>
