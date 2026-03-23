@@ -320,7 +320,7 @@ export default function ProcurementTable({ userData, onUpdateItem, procurementIt
                         className="h-7 w-28 rounded border bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-accent/50"
                         value={ud.supplier}
                         onChange={(e) => handleInlineChange(item.id, 'supplier', e.target.value)}
-                        placeholder="—"
+                        placeholder={sel?.supplier || '—'}
                       />
                     </td>
                     <td className={tdClass} onClick={(e) => e.stopPropagation()}>
