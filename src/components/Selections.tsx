@@ -126,6 +126,13 @@ export default function Selections() {
     setVersion(v => v + 1);
   }
 
+  function handleClearSelection(concept: Concept, unitCode: string, itemName: string) {
+    const sels = loadSelections(concept, unitCode);
+    delete sels[itemName];
+    saveSelections(concept, unitCode, sels);
+    setVersion(v => v + 1);
+  }
+
   // Summary stats
   const totalItems = allCards.reduce((s, c) => s + c.totalCount, 0);
   const totalSelected = allCards.reduce((s, c) => s + c.selectedCount, 0);
