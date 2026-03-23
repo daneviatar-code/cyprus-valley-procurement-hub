@@ -385,6 +385,19 @@ export default function RoomExplorer({ masterData }: RoomExplorerProps) {
           </div>
         </div>
       )}
+
+      {/* Room Product Sheet Modal */}
+      {showProductSheet && selectedUnit && (
+        <RoomProductSheet
+          concept={concept}
+          unitCode={selectedUnit}
+          unitDescription={unitDescription}
+          building={selectedBuilding}
+          roomNumber={roomNumbers[0]}
+          furniture={furniture}
+          onClose={() => setShowProductSheet(false)}
+        />
+      )}
     </div>
   );
 }
