@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { Building, Layers, Home, Sofa, ImageOff } from 'lucide-react';
+import { Building, Layers, Home, Sofa, ImageOff, FileText } from 'lucide-react';
+import RoomProductSheet from './RoomProductSheet';
 import {
   getBuildingData,
   getFloors,
@@ -31,6 +32,7 @@ export default function RoomExplorer({ masterData }: RoomExplorerProps) {
   const [selectedFloor, setSelectedFloor] = useState<number | ''>('');
   const [selectedRoomType, setSelectedRoomType] = useState('');
   const [selectedUnit, setSelectedUnit] = useState('');
+  const [showProductSheet, setShowProductSheet] = useState(false);
 
   const concept = conceptForBuilding(selectedBuilding) as 'A' | 'B' | 'C';
   const floors = useMemo(() => getFloors(concept), [concept]);
@@ -257,9 +259,19 @@ export default function RoomExplorer({ masterData }: RoomExplorerProps) {
                 <Sofa className="h-4 w-4 text-accent" />
                 Furniture List
               </h3>
-              <span className="text-xs text-muted-foreground">
-                {furniture.length} items · {totalItems} pcs total
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-muted-foreground">
+                  {furniture.length} items · {totalItems} pcs total
+                </span>
+                {furniture.length > 0 && (
+                  <button
+                    onClick={() => setShowProductSheet(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors"
+                  >
+                    <FileText className="h-3.5 w-3.5" /> Product Sheet
+                  </button>
+                )}
+              </div>
             </div>
             <div className="p-4">
               {furniture.length === 0 ? (
@@ -372,6 +384,19 @@ export default function RoomExplorer({ masterData }: RoomExplorerProps) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Room Product Sheet Modal */}
+      {showProductSheet && selectedUnit && (
+        <RoomProductSheet
+          concept={concept}
+          unitCode={selectedUnit}
+          unitDescription={unitDescription}
+          building={selectedBuilding}
+          roomNumber={roomNumbers[0]}
+          furniture={furniture}
+          onClose={() => setShowProductSheet(false)}
+        />
       )}
     </div>
   );
