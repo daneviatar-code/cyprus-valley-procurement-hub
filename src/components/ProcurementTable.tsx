@@ -329,7 +329,7 @@ export default function ProcurementTable({ userData, onUpdateItem, procurementIt
                         className="h-7 w-20 rounded border bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-accent/50"
                         value={ud.unitPrice ?? ''}
                         onChange={(e) => handleInlineChange(item.id, 'unitPrice', e.target.value ? Number(e.target.value) : null)}
-                        placeholder="—"
+                        placeholder={sel?.unitPrice ? `${sel.unitPrice}` : '—'}
                       />
                     </td>
                     <td className={`${tdClass} font-mono text-xs whitespace-nowrap`}>
