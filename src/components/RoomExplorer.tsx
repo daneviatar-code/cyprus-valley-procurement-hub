@@ -44,9 +44,11 @@ export default function RoomExplorer({ masterData }: RoomExplorerProps) {
     const { units } = getBuildingData(concept);
     return units
       .filter(u => (selectedFloor === '' || u.floors.includes(selectedFloor as number)))
-      .filter(u => (!selectedRoomType || u.description === selectedRoomType))
-      .map(u => u.code);
+      .filter(u => (!selectedRoomType || u.description === selectedRoomType));
   }, [concept, selectedFloor, selectedRoomType]);
+
+  const regularUnitCodes = useMemo(() => unitCodes.filter(u => !u.isZone), [unitCodes]);
+  const zoneUnitCodes = useMemo(() => unitCodes.filter(u => u.isZone), [unitCodes]);
 
   const furniture = useMemo(() => {
     if (!selectedUnit) return [];
