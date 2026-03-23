@@ -44,7 +44,6 @@ import { loadPackage, PackageItem } from '@/data/packageData';
 import { Selection, SelectionMap, loadSelections, saveSelections } from '@/data/selectionData';
 import { buildingAUnits, buildingBUnits, buildingCUnits, UnitType } from '@/data/unitFurnitureData';
 import { Separator } from '@/components/ui/separator';
-import { buildingAUnits, buildingBUnits, buildingCUnits, UnitType } from '@/data/unitFurnitureData';
 
 function getUnitsForConcept(concept: Concept): UnitType[] {
   switch (concept) {
