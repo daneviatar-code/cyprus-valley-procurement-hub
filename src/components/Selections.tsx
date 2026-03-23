@@ -25,7 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Check, Clock, Pencil, Search } from 'lucide-react';
+import { Check, Clock, Pencil, Search, Trash2 } from 'lucide-react';
 import { Concept, ALL_BUILDINGS } from '@/data/masterData';
 import { loadPackage, PackageItem } from '@/data/packageData';
 import { Selection, SelectionMap, loadSelections, saveSelections } from '@/data/selectionData';
@@ -123,6 +123,13 @@ export default function Selections() {
     sels[editTarget.itemName] = { ...selForm };
     saveSelections(editTarget.concept, editTarget.unitCode, sels);
     setEditTarget(null);
+    setVersion(v => v + 1);
+  }
+
+  function handleClearSelection(concept: Concept, unitCode: string, itemName: string) {
+    const sels = loadSelections(concept, unitCode);
+    delete sels[itemName];
+    saveSelections(concept, unitCode, sels);
     setVersion(v => v + 1);
   }
 
@@ -285,14 +292,26 @@ export default function Selections() {
                             {sel?.unitPrice ? `€${sel.unitPrice.toLocaleString()}` : '—'}
                           </TableCell>
                           <TableCell className="text-center">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={() => openSelection(card.concept, card.unitCode, item.itemName, sel || undefined)}
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                            </Button>
+                            <div className="flex items-center justify-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => openSelection(card.concept, card.unitCode, item.itemName, sel || undefined)}
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </Button>
+                              {sel && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  onClick={() => handleClearSelection(card.concept, card.unitCode, item.itemName)}
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
+                              )}
+                            </div>
                           </TableCell>
                         </TableRow>
                       );
