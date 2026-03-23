@@ -7,6 +7,7 @@ import BuildingDrillDown from '@/components/BuildingDrillDown';
 import PackageEditor from '@/components/PackageEditor';
 import ProjectDataTable from '@/components/ProjectDataTable';
 import ItemAssignment from '@/components/ItemAssignment';
+import Selections from '@/components/Selections';
 import { UserItemData, loadUserData, saveUserData } from '@/data/projectData';
 import {
   MasterRow,
@@ -16,7 +17,7 @@ import {
   computeTotalItemsCount,
 } from '@/data/masterData';
 
-type Tab = 'procurement' | 'rooms' | 'packages' | 'pricing' | 'projectData' | 'itemAssignment';
+type Tab = 'procurement' | 'rooms' | 'packages' | 'pricing' | 'projectData' | 'itemAssignment' | 'selections';
 
 export default function Index() {
   const [userData, setUserData] = useState<Record<number, UserItemData>>(loadUserData);
@@ -47,6 +48,7 @@ export default function Index() {
     { key: 'pricing', label: 'Pricing Sheet' },
     { key: 'projectData', label: 'Project Data' },
     { key: 'itemAssignment', label: 'Item Assignment' },
+    { key: 'selections', label: 'Selections' },
   ];
 
   return (
@@ -122,6 +124,8 @@ export default function Index() {
         {activeTab === 'itemAssignment' && (
           <ItemAssignment masterData={masterData} onUpdate={handleUpdateMasterData} />
         )}
+
+        {activeTab === 'selections' && <Selections />}
       </main>
 
       {/* Building Drill-Down Modal */}
