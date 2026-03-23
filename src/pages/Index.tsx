@@ -123,6 +123,8 @@ export default function Index() {
         {activeTab === 'itemAssignment' && (
           <ItemAssignment masterData={masterData} onUpdate={handleUpdateMasterData} />
         )}
+
+        {activeTab === 'selections' && <Selections />}
       </main>
 
       {/* Building Drill-Down Modal */}
