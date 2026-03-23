@@ -111,6 +111,8 @@ export default function Index() {
 
         {activeTab === 'packages' && <PackageEditor />}
 
+        {activeTab === 'pricing' && <PricingSheet />}
+
         {activeTab === 'projectData' && (
           <ProjectDataTable masterData={masterData} onUpdate={handleUpdateMasterData} />
         )}
