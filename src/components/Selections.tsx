@@ -392,6 +392,10 @@ export default function Selections() {
                               )}
                             </div>
                           </TableCell>
+                          <TableCell className="text-right font-mono text-sm">{item.quantity}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{item.category}</TableCell>
+                          <TableCell className="text-sm">
+                            {sel ? sel.productName : <span className="text-muted-foreground italic">—</span>}
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground">
                             {sel?.supplier || '—'}
