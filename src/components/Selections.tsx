@@ -565,12 +565,32 @@ export default function Selections() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Image URL (optional)</label>
-                <Input
-                  value={selForm.imageUrl || ''}
-                  onChange={e => setSelForm(p => ({ ...p, imageUrl: e.target.value }))}
-                  placeholder="https://..."
-                />
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Image (optional)</label>
+                <div className="flex gap-2">
+                  <Input
+                    value={selForm.imageUrl?.startsWith('data:') ? '' : (selForm.imageUrl || '')}
+                    onChange={e => setSelForm(p => ({ ...p, imageUrl: e.target.value }))}
+                    placeholder="https://..."
+                    className="flex-1"
+                  />
+                  <label className="cursor-pointer inline-flex items-center gap-1 px-3 h-10 rounded-md border border-input bg-background text-xs font-medium hover:bg-accent hover:text-accent-foreground transition-colors shrink-0">
+                    <Upload className="w-3.5 h-3.5" />
+                    Upload
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={e => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = () => setSelForm(p => ({ ...p, imageUrl: reader.result as string }));
+                        reader.readAsDataURL(file);
+                        e.target.value = '';
+                      }}
+                    />
+                  </label>
+                </div>
                 {selForm.imageUrl && (
                   <img src={selForm.imageUrl} alt="Preview" className="mt-1.5 w-16 h-16 rounded object-cover border border-border" />
                 )}
