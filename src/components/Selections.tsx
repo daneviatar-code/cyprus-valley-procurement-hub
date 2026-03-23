@@ -479,6 +479,27 @@ export default function Selections() {
                 placeholder="Optional notes..."
               />
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Image URL (optional)</label>
+                <Input
+                  value={selForm.imageUrl || ''}
+                  onChange={e => setSelForm(p => ({ ...p, imageUrl: e.target.value }))}
+                  placeholder="https://..."
+                />
+                {selForm.imageUrl && (
+                  <img src={selForm.imageUrl} alt="Preview" className="mt-1.5 w-16 h-16 rounded object-cover border border-border" />
+                )}
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Product URL (optional)</label>
+                <Input
+                  value={selForm.productUrl || ''}
+                  onChange={e => setSelForm(p => ({ ...p, productUrl: e.target.value }))}
+                  placeholder="https://..."
+                />
+              </div>
+            </div>
 
             {/* Multi-apply to room types */}
             {roomTypesWithItem.length > 1 && (
