@@ -79,6 +79,15 @@ export const buildingBUnits: UnitType[] = [
   { code: 'Fm', description: 'Studio', floors: [1, 2, 3, 4], unitsPerFloor: { 1: 1, 2: 1, 3: 1, 4: 1 } },
   { code: 'G', description: '4BD Penthouse', floors: [4], unitsPerFloor: { 4: 1 } },
   { code: 'Gm', description: '4BD Penthouse', floors: [4], unitsPerFloor: { 4: 1 } },
+  // Zones (common areas)
+  { code: 'LOBBY', description: 'Public Areas', floors: [0], unitsPerFloor: { 0: 1 }, isZone: true },
+  { code: 'RESTAURANT', description: 'Restaurant & F&B', floors: [0], unitsPerFloor: { 0: 1 }, isZone: true },
+  { code: 'SPA', description: 'Spa & Wellness', floors: [0], unitsPerFloor: { 0: 1 }, isZone: true },
+  { code: 'POOL', description: 'Pool Area', floors: [0], unitsPerFloor: { 0: 1 }, isZone: true },
+  { code: 'MEETING', description: 'Meeting Rooms', floors: [0], unitsPerFloor: { 0: 1 }, isZone: true },
+  { code: 'BOH', description: 'Back of House', floors: [0], unitsPerFloor: { 0: 1 }, isZone: true },
+  { code: 'GYM', description: 'Gym & Fitness', floors: [0], unitsPerFloor: { 0: 1 }, isZone: true },
+  { code: 'ROOFTOP', description: 'Rooftop & Terrace', floors: [0], unitsPerFloor: { 0: 1 }, isZone: true },
 ];
 
 // ── Building C unit types ──
