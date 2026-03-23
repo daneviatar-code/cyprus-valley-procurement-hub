@@ -25,7 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Check, Clock, Pencil, Search } from 'lucide-react';
+import { Check, Clock, Pencil, Search, Trash2 } from 'lucide-react';
 import { Concept, ALL_BUILDINGS } from '@/data/masterData';
 import { loadPackage, PackageItem } from '@/data/packageData';
 import { Selection, SelectionMap, loadSelections, saveSelections } from '@/data/selectionData';
