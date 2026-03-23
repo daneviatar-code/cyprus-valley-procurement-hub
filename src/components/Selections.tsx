@@ -573,13 +573,12 @@ export default function Selections() {
                     placeholder="https://..."
                     className="flex-1"
                   />
-                  <label className="cursor-pointer inline-flex items-center gap-1 px-3 h-10 rounded-md border border-input bg-background text-xs font-medium hover:bg-accent hover:text-accent-foreground transition-colors shrink-0">
-                    <Upload className="w-3.5 h-3.5" />
-                    Upload
+                  <div className="shrink-0">
                     <input
+                      id="sel-image-upload"
                       type="file"
                       accept="image/*"
-                      className="hidden"
+                      className="sr-only"
                       onChange={e => {
                         const file = e.target.files?.[0];
                         if (!file) return;
@@ -589,7 +588,16 @@ export default function Selections() {
                         e.target.value = '';
                       }}
                     />
-                  </label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-10 text-xs"
+                      onClick={() => document.getElementById('sel-image-upload')?.click()}
+                    >
+                      📁 Upload from computer
+                    </Button>
+                  </div>
                 </div>
                 {selForm.imageUrl && (
                   <img src={selForm.imageUrl} alt="Preview" className="mt-1.5 w-16 h-16 rounded object-cover border border-border" />
