@@ -62,6 +62,9 @@ export default function PackageEditor() {
     });
   }, [units]);
 
+  const regularUnits = useMemo(() => unitCodes.filter(u => !u.isZone), [unitCodes]);
+  const zoneUnits = useMemo(() => unitCodes.filter(u => u.isZone), [unitCodes]);
+
   // Reset unit code when concept changes
   const activeUnitCode = selectedUnitCode && unitCodes.some(u => u.code === selectedUnitCode)
     ? selectedUnitCode
