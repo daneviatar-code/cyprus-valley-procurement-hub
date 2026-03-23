@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Pencil, Trash2, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Search } from 'lucide-react';
 import { MasterRow, Concept, RoomType, ALL_BUILDING_LIST, conceptForBuilding } from '@/data/masterData';
 import { buildingAUnits, buildingBUnits, buildingCUnits, UnitType } from '@/data/unitFurnitureData';
 
