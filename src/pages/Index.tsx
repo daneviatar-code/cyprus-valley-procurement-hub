@@ -45,6 +45,7 @@ export default function Index() {
     { key: 'packages', label: 'Package Editor' },
     { key: 'pricing', label: 'Pricing Sheet' },
     { key: 'projectData', label: 'Project Data' },
+    { key: 'itemAssignment', label: 'Item Assignment' },
   ];
 
   return (
