@@ -173,16 +173,27 @@ export default function RoomExplorer({ masterData }: RoomExplorerProps) {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Unit Code</label>
+            <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Unit / Zone</label>
             <select
               value={selectedUnit}
               onChange={e => setSelectedUnit(e.target.value)}
               className={selectClass}
             >
               <option value="">Select unit...</option>
-              {unitCodes.map(uc => (
-                <option key={uc} value={uc}>{uc}</option>
-              ))}
+              {regularUnitCodes.length > 0 && (
+                <optgroup label="Units">
+                  {regularUnitCodes.map(u => (
+                    <option key={u.code} value={u.code}>{u.code} ({u.description})</option>
+                  ))}
+                </optgroup>
+              )}
+              {zoneUnitCodes.length > 0 && (
+                <optgroup label="Common Areas / Zones">
+                  {zoneUnitCodes.map(u => (
+                    <option key={u.code} value={u.code}>{u.code} — {u.description}</option>
+                  ))}
+                </optgroup>
+              )}
             </select>
           </div>
 
