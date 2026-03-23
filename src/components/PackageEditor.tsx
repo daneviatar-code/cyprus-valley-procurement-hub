@@ -24,7 +24,7 @@ const CONCEPTS: { id: Concept; label: string; color: string }[] = [
   { id: 'C', label: 'Boutique (C)', color: 'bg-[hsl(var(--boutique))] text-[hsl(var(--boutique-foreground))]' },
 ];
 
-const CATEGORIES: PackageCategory[] = ['Dining', 'Living Room', 'Bedroom', 'Outdoor'];
+const CATEGORIES: PackageCategory[] = ['Dining', 'Living Room', 'Bedroom', 'Outdoor', 'Bathroom', 'Kitchen', 'Sauna & Wellness', 'Accessories & Decor', 'Mirrors', 'Electrical & Appliances', 'In-Room Safes', 'Cutlery & Dining Sets', 'Curtains & Window Treatments'];
 
 function getUnitsForConcept(concept: Concept): UnitType[] {
   switch (concept) {
