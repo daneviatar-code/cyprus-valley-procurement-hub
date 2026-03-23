@@ -436,7 +436,83 @@ export default function Selections() {
         })}
       </div>
 
-      {/* Selection Dialog */}
+      {/* Order Quantity Summary */}
+      {orderSummary.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3 cursor-pointer" onClick={() => setShowOrderSummary(v => !v)}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ShoppingCart className="w-4 h-4 text-primary" />
+                <CardTitle className="text-base">Order Quantity Summary</CardTitle>
+                <Badge variant="secondary" className="text-[10px]">{orderSummary.length} products</Badge>
+              </div>
+              <span className="text-xs text-muted-foreground">{showOrderSummary ? 'Click to collapse' : 'Click to expand'}</span>
+            </div>
+          </CardHeader>
+          {showOrderSummary && (
+            <CardContent className="pt-0">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/30">
+                    <TableHead></TableHead>
+                    <TableHead>Product Name</TableHead>
+                    <TableHead>Supplier</TableHead>
+                    <TableHead className="text-right">Unit Price €</TableHead>
+                    <TableHead className="text-right">Total Qty</TableHead>
+                    <TableHead className="text-right">Total Value €</TableHead>
+                    <TableHead>Room Types</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {orderSummary.map((row, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell className="w-10">
+                        {row.imageUrl ? (
+                          <img src={row.imageUrl} alt="" className="w-8 h-8 rounded object-cover border border-border" />
+                        ) : (
+                          <div className="w-8 h-8 rounded bg-muted flex items-center justify-center">
+                            <Image className="w-3.5 h-3.5 text-muted-foreground" />
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="font-medium text-sm">
+                        <div className="flex items-center gap-1.5">
+                          {row.productName}
+                          {row.productUrl && (
+                            <a href={row.productUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{row.supplier || '—'}</TableCell>
+                      <TableCell className="text-right font-mono text-sm">
+                        {row.unitPrice ? `€${row.unitPrice.toLocaleString()}` : '—'}
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-sm font-bold">{row.totalQty.toLocaleString()}</TableCell>
+                      <TableCell className="text-right font-mono text-sm font-semibold text-primary">
+                        €{row.totalValue.toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {row.roomTypes.join(', ')}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  <TableRow className="bg-muted/30 font-semibold">
+                    <TableCell colSpan={4} className="text-right text-sm">Totals</TableCell>
+                    <TableCell className="text-right font-mono text-sm">{orderSummary.reduce((s, r) => s + r.totalQty, 0).toLocaleString()}</TableCell>
+                    <TableCell className="text-right font-mono text-sm text-primary">
+                      €{orderSummary.reduce((s, r) => s + r.totalValue, 0).toLocaleString()}
+                    </TableCell>
+                    <TableCell></TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </CardContent>
+          )}
+        </Card>
+      )}
+
       <Dialog open={!!editTarget} onOpenChange={open => { if (!open) setEditTarget(null); }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
