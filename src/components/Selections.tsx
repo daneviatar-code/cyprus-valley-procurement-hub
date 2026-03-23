@@ -401,10 +401,44 @@ export default function Selections() {
                 placeholder="Optional notes..."
               />
             </div>
+
+            {/* Multi-apply to room types */}
+            {roomTypesWithItem.length > 1 && (
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-2 block">
+                  Apply to room types ({applyToRoomTypes.length}/{roomTypesWithItem.length} selected)
+                </label>
+                <ScrollArea className="h-[140px] rounded-md border p-3">
+                  <div className="space-y-2">
+                    {roomTypesWithItem.map(rt => (
+                      <label key={rt.key} className="flex items-center gap-2 cursor-pointer text-sm">
+                        <Checkbox
+                          checked={applyToRoomTypes.includes(rt.key)}
+                          onCheckedChange={(checked) => {
+                            setApplyToRoomTypes(prev =>
+                              checked
+                                ? [...prev, rt.key]
+                                : prev.filter(k => k !== rt.key)
+                            );
+                          }}
+                        />
+                        <span className={rt.key === `${editTarget?.concept}-${editTarget?.unitCode}` ? 'font-medium text-foreground' : 'text-muted-foreground'}>
+                          {rt.label}
+                          {rt.key === `${editTarget?.concept}-${editTarget?.unitCode}` && (
+                            <span className="text-[10px] ml-1 text-primary">(current)</span>
+                          )}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
+
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={() => setEditTarget(null)}>Cancel</Button>
-              <Button onClick={handleSaveSelection} disabled={!selForm.productName.trim()}>
-                Save Selection
+              <Button onClick={handleSaveSelection} disabled={!selForm.productName.trim() || applyToRoomTypes.length === 0}>
+                Save Selection{applyToRoomTypes.length > 1 ? ` (${applyToRoomTypes.length} types)` : ''}
               </Button>
             </div>
           </div>
