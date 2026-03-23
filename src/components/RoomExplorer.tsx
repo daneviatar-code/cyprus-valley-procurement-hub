@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { Building, Layers, Home, Sofa, ImageOff } from 'lucide-react';
+import { Building, Layers, Home, Sofa, ImageOff, FileText } from 'lucide-react';
+import RoomProductSheet from './RoomProductSheet';
 import {
   getBuildingData,
   getFloors,
