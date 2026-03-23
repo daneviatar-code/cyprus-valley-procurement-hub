@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
-import { Building, Home, Package, Layers } from 'lucide-react';
+import { Building, Home, Package, Layers, CheckCircle } from 'lucide-react';
 import { concepts, categoryEmojis } from '@/data/projectData';
 import { MasterRow, computeProcurementItems, computeTotalItemsCount } from '@/data/masterData';
+import { loadAllSelections } from '@/data/selectionData';
 
 interface DashboardProps {
   onConceptClick?: (conceptId: 'A' | 'B' | 'C') => void;
@@ -25,17 +26,22 @@ export default function Dashboard({ onConceptClick, masterData }: DashboardProps
   const totalItemsCount = useMemo(() => computeTotalItemsCount(masterData), [masterData]);
   const uniqueItemTypes = useMemo(() => new Set(masterData.map(r => r.itemName)).size, [masterData]);
 
+  const allSelections = useMemo(() => loadAllSelections(), []);
+  const selectionCount = Object.keys(allSelections).length;
+  const selectionPct = uniqueItemTypes > 0 ? Math.round((selectionCount / uniqueItemTypes) * 100) : 0;
+
   const kpis = [
     { label: 'Total Units', value: '338', icon: Home, description: 'Across 3 concepts' },
     { label: 'Buildings', value: '9', icon: Building, description: '6 × A, 2 × B, 1 × C' },
     { label: 'Item Types', value: String(uniqueItemTypes), icon: Package, description: 'FF&E categories' },
     { label: 'Total Items', value: totalItemsCount.toLocaleString(), icon: Layers, description: 'Grand procurement total' },
+    { label: 'Selections', value: `${selectionPct}%`, icon: CheckCircle, description: `${selectionCount} of ${uniqueItemTypes} items selected` },
   ];
 
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {kpis.map((kpi, i) => (
           <div
             key={kpi.label}

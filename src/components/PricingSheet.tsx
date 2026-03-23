@@ -9,6 +9,7 @@ import {
 } from '@/data/unitFurnitureData';
 import { loadPackage, PackageItem } from '@/data/packageData';
 import { concepts } from '@/data/projectData';
+import { loadSelections, Selection } from '@/data/selectionData';
 
 const CONCEPTS: { id: Concept; label: string }[] = [
   { id: 'A', label: 'Happiness (A)' },
@@ -47,10 +48,23 @@ export default function PricingSheet() {
     : units[0]?.code || '';
 
   const pkg = useMemo(() => loadPackage(concept, activeUnit), [concept, activeUnit]);
+  const selections = useMemo(() => loadSelections(concept, activeUnit), [concept, activeUnit]);
+
+  // Merge selection data into package items
+  const enrichedItems = useMemo(() => {
+    return pkg.items.map(item => {
+      const sel = selections[item.itemName];
+      return {
+        ...item,
+        supplier: sel?.supplier || item.supplier,
+        unitPrice: sel?.unitPrice ?? item.unitPrice,
+      };
+    });
+  }, [pkg.items, selections]);
 
   const grandTotal = useMemo(
-    () => pkg.items.reduce((s, it) => s + it.quantity * it.unitPrice, 0),
-    [pkg.items]
+    () => enrichedItems.reduce((s, it) => s + it.quantity * it.unitPrice, 0),
+    [enrichedItems]
   );
 
   const conceptInfo = concepts.find(c => c.id === concept);
@@ -172,7 +186,7 @@ export default function PricingSheet() {
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {pkg.items.map((item, i) => (
+                {enrichedItems.map((item, i) => (
                   <tr key={item.id} className="hover:bg-muted/20">
                     <td className="px-4 py-2 text-muted-foreground">{i + 1}</td>
                     <td className="px-4 py-2 font-medium text-foreground">{item.itemName || '—'}</td>

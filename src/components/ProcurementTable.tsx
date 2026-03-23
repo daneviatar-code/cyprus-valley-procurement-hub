@@ -4,6 +4,7 @@ import {
   UserItemData,
   getUserItemData,
 } from '@/data/projectData';
+import { loadAllSelections } from '@/data/selectionData';
 import {
   getBuildingData,
   UnitType,
@@ -38,6 +39,7 @@ function getConceptId(concept: string): 'A' | 'B' | 'C' | null {
 }
 
 export default function ProcurementTable({ userData, onUpdateItem, procurementItems, masterData }: ProcurementTableProps) {
+  const allSelections = useMemo(() => loadAllSelections(), []);
   const [search, setSearch] = useState('');
   const [selectedConcepts, setSelectedConcepts] = useState<string[]>([]);
   const [selectedBuildings, setSelectedBuildings] = useState<string[]>([]);
@@ -256,7 +258,10 @@ export default function ProcurementTable({ userData, onUpdateItem, procurementIt
             <tbody>
               {filteredItems.map((item, idx) => {
                 const ud = getUserItemData(userData, item.id);
-                const totalCost = ud.unitPrice ? item.grandTotal * ud.unitPrice : null;
+                const sel = allSelections[item.name];
+                const effectiveSupplier = ud.supplier || sel?.supplier || '';
+                const effectivePrice = ud.unitPrice ?? sel?.unitPrice ?? null;
+                const totalCost = effectivePrice ? item.grandTotal * effectivePrice : null;
 
                 const roomTypeFItem = viewMode === 'byRoomType'
                   ? roomTypeFurniture.find(f => f.itemName === item.name)
@@ -314,7 +319,7 @@ export default function ProcurementTable({ userData, onUpdateItem, procurementIt
                         className="h-7 w-28 rounded border bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-accent/50"
                         value={ud.supplier}
                         onChange={(e) => handleInlineChange(item.id, 'supplier', e.target.value)}
-                        placeholder="—"
+                        placeholder={sel?.supplier || '—'}
                       />
                     </td>
                     <td className={tdClass} onClick={(e) => e.stopPropagation()}>
@@ -323,7 +328,7 @@ export default function ProcurementTable({ userData, onUpdateItem, procurementIt
                         className="h-7 w-20 rounded border bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-accent/50"
                         value={ud.unitPrice ?? ''}
                         onChange={(e) => handleInlineChange(item.id, 'unitPrice', e.target.value ? Number(e.target.value) : null)}
-                        placeholder="—"
+                        placeholder={sel?.unitPrice ? `${sel.unitPrice}` : '—'}
                       />
                     </td>
                     <td className={`${tdClass} font-mono text-xs whitespace-nowrap`}>
