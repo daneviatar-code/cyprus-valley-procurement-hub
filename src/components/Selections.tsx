@@ -320,7 +320,7 @@ export default function Selections() {
                                   variant="ghost"
                                   size="icon"
                                   className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                  onClick={() => handleClearSelection(card.concept, card.unitCode, item.itemName)}
+                                  onClick={() => setDeleteTarget({ concept: card.concept, unitCode: card.unitCode, itemName: item.itemName })}
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </Button>
