@@ -12,7 +12,7 @@ import {
   FurniturePerUnit,
 } from './unitFurnitureData';
 
-export type PackageCategory = 'Dining' | 'Living Room' | 'Bedroom' | 'Outdoor';
+export type PackageCategory = 'Dining' | 'Living Room' | 'Bedroom' | 'Outdoor' | 'Bathroom' | 'Kitchen' | 'Sauna & Wellness' | 'Accessories & Decor' | 'Mirrors' | 'Electrical & Appliances' | 'In-Room Safes' | 'Cutlery & Dining Sets' | 'Curtains & Window Treatments';
 
 export interface PackageItem {
   id: string;

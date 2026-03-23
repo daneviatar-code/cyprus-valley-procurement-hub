@@ -1,4 +1,4 @@
-export type Category = 'Dining' | 'Living Room' | 'Bedroom' | 'Outdoor';
+export type Category = 'Dining' | 'Living Room' | 'Bedroom' | 'Outdoor' | 'Bathroom' | 'Kitchen' | 'Sauna & Wellness' | 'Accessories & Decor' | 'Mirrors' | 'Electrical & Appliances' | 'In-Room Safes' | 'Cutlery & Dining Sets' | 'Curtains & Window Treatments';
 export type Status = '' | 'Pending' | 'Ordered' | 'Delivered' | 'Issue';
 
 export const categoryEmojis: Record<Category, string> = {
@@ -6,6 +6,15 @@ export const categoryEmojis: Record<Category, string> = {
   'Living Room': '🛋',
   'Bedroom': '🛏',
   'Outdoor': '🌿',
+  'Bathroom': '🚿',
+  'Kitchen': '🍳',
+  'Sauna & Wellness': '🧖',
+  'Accessories & Decor': '🎨',
+  'Mirrors': '🪞',
+  'Electrical & Appliances': '🔌',
+  'In-Room Safes': '🔐',
+  'Cutlery & Dining Sets': '🍴',
+  'Curtains & Window Treatments': '🪟',
 };
 
 export interface ProcurementItem {

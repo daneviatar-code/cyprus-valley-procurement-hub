@@ -25,7 +25,7 @@ interface FilterBarProps {
 }
 
 const conceptOptions = ['HAPPINESS (A)', 'WELLNESS (B)', 'BOUTIQUE (C)'];
-const categoryOptions = ['Dining', 'Living Room', 'Bedroom', 'Outdoor'];
+const categoryOptions = ['Dining', 'Living Room', 'Bedroom', 'Outdoor', 'Bathroom', 'Kitchen', 'Sauna & Wellness', 'Accessories & Decor', 'Mirrors', 'Electrical & Appliances', 'In-Room Safes', 'Cutlery & Dining Sets', 'Curtains & Window Treatments'];
 const statusOptions = ['Pending', 'Ordered', 'Delivered', 'Issue', 'No Status'];
 
 const conceptColors: Record<string, string> = {

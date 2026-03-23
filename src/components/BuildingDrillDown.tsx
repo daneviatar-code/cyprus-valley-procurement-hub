@@ -111,7 +111,7 @@ export default function BuildingDrillDown({ conceptId, onClose, masterData }: Bu
   }, [units, unitTotalInstances, furniture]);
 
   const categoryData = useMemo(() => {
-    const categories: Category[] = ['Dining', 'Living Room', 'Bedroom', 'Outdoor'];
+    const categories: Category[] = ['Dining', 'Living Room', 'Bedroom', 'Outdoor', 'Bathroom', 'Kitchen', 'Sauna & Wellness', 'Accessories & Decor', 'Mirrors', 'Electrical & Appliances', 'In-Room Safes', 'Cutlery & Dining Sets', 'Curtains & Window Treatments'];
     return categories.map(cat => {
       const catFurniture = furniture.filter(f => f.category === cat);
       let totalQty = 0;
