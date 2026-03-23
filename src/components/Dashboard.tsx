@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
-import { Building, Home, Package, Layers } from 'lucide-react';
+import { Building, Home, Package, Layers, CheckCircle } from 'lucide-react';
 import { concepts, categoryEmojis } from '@/data/projectData';
 import { MasterRow, computeProcurementItems, computeTotalItemsCount } from '@/data/masterData';
+import { loadAllSelections } from '@/data/selectionData';
 
 interface DashboardProps {
   onConceptClick?: (conceptId: 'A' | 'B' | 'C') => void;
