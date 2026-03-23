@@ -42,6 +42,15 @@ export const buildingAUnits: UnitType[] = [
   { code: 'I', description: '2BD', floors: [3], unitsPerFloor: { 3: 1 } },
   { code: 'Im', description: '2BD', floors: [3], unitsPerFloor: { 3: 1 } },
   { code: 'J', description: '3BD', floors: [3], unitsPerFloor: { 3: 1 } },
+  // Zones (common areas)
+  { code: 'LOBBY', description: 'Public Areas', floors: [0], unitsPerFloor: { 0: 1 }, isZone: true },
+  { code: 'RESTAURANT', description: 'Restaurant & F&B', floors: [0], unitsPerFloor: { 0: 1 }, isZone: true },
+  { code: 'SPA', description: 'Spa & Wellness', floors: [0], unitsPerFloor: { 0: 1 }, isZone: true },
+  { code: 'POOL', description: 'Pool Area', floors: [0], unitsPerFloor: { 0: 1 }, isZone: true },
+  { code: 'MEETING', description: 'Meeting Rooms', floors: [0], unitsPerFloor: { 0: 1 }, isZone: true },
+  { code: 'BOH', description: 'Back of House', floors: [0], unitsPerFloor: { 0: 1 }, isZone: true },
+  { code: 'GYM', description: 'Gym & Fitness', floors: [0], unitsPerFloor: { 0: 1 }, isZone: true },
+  { code: 'ROOFTOP', description: 'Rooftop & Terrace', floors: [0], unitsPerFloor: { 0: 1 }, isZone: true },
 ];
 
 // ── Building B unit types ──
