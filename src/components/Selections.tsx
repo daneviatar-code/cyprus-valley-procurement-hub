@@ -70,6 +70,7 @@ export default function Selections() {
   // Selection dialog
   const [editTarget, setEditTarget] = useState<{ concept: Concept; unitCode: string; itemName: string } | null>(null);
   const [selForm, setSelForm] = useState<Selection>({ productName: '', supplier: '', unitPrice: 0, notes: '' });
+  const [applyToRoomTypes, setApplyToRoomTypes] = useState<string[]>([]); // "concept-unitCode" keys
 
   // Force re-render after saves
   const [version, setVersion] = useState(0);
