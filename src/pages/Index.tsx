@@ -117,6 +117,10 @@ export default function Index() {
         {activeTab === 'projectData' && (
           <ProjectDataTable masterData={masterData} onUpdate={handleUpdateMasterData} />
         )}
+
+        {activeTab === 'itemAssignment' && (
+          <ItemAssignment masterData={masterData} onUpdate={handleUpdateMasterData} />
+        )}
       </main>
 
       {/* Building Drill-Down Modal */}
