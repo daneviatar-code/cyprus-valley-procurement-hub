@@ -35,7 +35,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Check, Clock, ExternalLink, Image, Pencil, Search, ShoppingCart, Trash2 } from 'lucide-react';
+import { Check, Clock, ExternalLink, Image, Pencil, Search, ShoppingCart, Trash2, Upload } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
