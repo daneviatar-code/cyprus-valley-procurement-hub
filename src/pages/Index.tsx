@@ -43,6 +43,7 @@ export default function Index() {
     { key: 'procurement', label: 'Procurement' },
     { key: 'rooms', label: 'Room Explorer' },
     { key: 'packages', label: 'Package Editor' },
+    { key: 'pricing', label: 'Pricing Sheet' },
     { key: 'projectData', label: 'Project Data' },
   ];
 
