@@ -8,6 +8,7 @@ export interface UnitType {
   description: string;
   floors: number[]; // which floors this unit appears on (0-indexed)
   unitsPerFloor: Record<number, number>; // floor -> count of this unit type
+  isZone?: boolean; // true for common areas (lobby, spa, etc.)
 }
 
 export interface FurniturePerUnit {
