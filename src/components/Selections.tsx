@@ -377,11 +377,6 @@ export default function Selections() {
                               <div className="w-5 h-5 rounded-full border-2 border-status-pending" />
                             )}
                           </TableCell>
-                          <TableCell className="w-10">
-                            {sel?.imageUrl ? (
-                              <img src={sel.imageUrl} alt="" className="w-8 h-8 rounded object-cover border border-border" />
-                            ) : null}
-                          </TableCell>
                           <TableCell className="font-medium text-sm">
                             <div className="flex items-center gap-1.5">
                               {item.itemName}
@@ -395,7 +390,16 @@ export default function Selections() {
                           <TableCell className="text-right font-mono text-sm">{item.quantity}</TableCell>
                           <TableCell className="text-xs text-muted-foreground">{item.category}</TableCell>
                           <TableCell className="text-sm">
-                            {sel ? sel.productName : <span className="text-muted-foreground italic">—</span>}
+                            {sel ? (
+                              <div className="flex items-center gap-2">
+                                {sel.imageUrl && (
+                                  <a href={sel.imageUrl} target="_blank" rel="noopener noreferrer" className="shrink-0">
+                                    <img src={sel.imageUrl} alt={sel.productName} className="w-10 h-10 rounded object-cover border border-border hover:opacity-80 transition-opacity" />
+                                  </a>
+                                )}
+                                <span>{sel.productName}</span>
+                              </div>
+                            ) : <span className="text-muted-foreground italic">—</span>}
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground">
                             {sel?.supplier || '—'}
