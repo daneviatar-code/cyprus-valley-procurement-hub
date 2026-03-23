@@ -35,13 +35,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Check, Clock, Pencil, Search, Trash2 } from 'lucide-react';
+import { Check, Clock, ExternalLink, Image, Pencil, Search, ShoppingCart, Trash2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Concept, ALL_BUILDINGS } from '@/data/masterData';
 import { loadPackage, PackageItem } from '@/data/packageData';
 import { Selection, SelectionMap, loadSelections, saveSelections } from '@/data/selectionData';
 import { buildingAUnits, buildingBUnits, buildingCUnits, UnitType } from '@/data/unitFurnitureData';
+import { Separator } from '@/components/ui/separator';
 
 function getUnitsForConcept(concept: Concept): UnitType[] {
   switch (concept) {
@@ -69,7 +71,7 @@ export default function Selections() {
 
   // Selection dialog
   const [editTarget, setEditTarget] = useState<{ concept: Concept; unitCode: string; itemName: string } | null>(null);
-  const [selForm, setSelForm] = useState<Selection>({ productName: '', supplier: '', unitPrice: 0, notes: '' });
+  const [selForm, setSelForm] = useState<Selection>({ productName: '', supplier: '', unitPrice: 0, notes: '', imageUrl: '', productUrl: '' });
   const [applyToRoomTypes, setApplyToRoomTypes] = useState<string[]>([]); // "concept-unitCode" keys
 
   // Force re-render after saves
@@ -127,7 +129,7 @@ export default function Selections() {
 
   const openSelection = useCallback((concept: Concept, unitCode: string, itemName: string, existing?: Selection) => {
     setEditTarget({ concept, unitCode, itemName });
-    setSelForm(existing || { productName: '', supplier: '', unitPrice: 0, notes: '' });
+    setSelForm(existing || { productName: '', supplier: '', unitPrice: 0, notes: '', imageUrl: '', productUrl: '' });
     setApplyToRoomTypes([`${concept}-${unitCode}`]);
   }, []);
 
@@ -162,6 +164,71 @@ export default function Selections() {
     setVersion(v => v + 1);
     setDeleteTarget(null);
   }
+
+  // ── Order Quantity Summary ──
+  // For each unique selected product, calculate total order qty across all buildings
+  const orderSummary = useMemo(() => {
+    const productMap = new Map<string, {
+      productName: string;
+      supplier: string;
+      unitPrice: number;
+      imageUrl?: string;
+      productUrl?: string;
+      // entries: concept + unitCode + qtyPerUnit + unitCount (across buildings)
+      entries: { concept: Concept; unitCode: string; qtyPerUnit: number }[];
+    }>();
+
+    allCards.forEach(card => {
+      card.items.forEach(item => {
+        const sel = card.selections[item.itemName];
+        if (!sel) return;
+        const key = sel.productName.trim().toLowerCase();
+        if (!key) return;
+        if (!productMap.has(key)) {
+          productMap.set(key, {
+            productName: sel.productName,
+            supplier: sel.supplier,
+            unitPrice: sel.unitPrice,
+            imageUrl: sel.imageUrl,
+            productUrl: sel.productUrl,
+            entries: [],
+          });
+        }
+        productMap.get(key)!.entries.push({
+          concept: card.concept,
+          unitCode: card.unitCode,
+          qtyPerUnit: item.quantity,
+        });
+      });
+    });
+
+    // Calculate totals: for each entry, multiply qtyPerUnit by the number of
+    // actual units of that type across all buildings of that concept
+    return Array.from(productMap.values()).map(p => {
+      let totalQty = 0;
+      p.entries.forEach(e => {
+        const units = getUnitsForConcept(e.concept);
+        const unitType = units.find(u => u.code === e.unitCode);
+        if (!unitType) return;
+        // Count total instances of this unit type across all buildings of the concept
+        const buildingsOfConcept = ALL_BUILDINGS[e.concept];
+        const instancesPerBuilding = Object.values(unitType.unitsPerFloor).reduce((s, n) => s + n, 0);
+        totalQty += e.qtyPerUnit * instancesPerBuilding * buildingsOfConcept.length;
+      });
+      return {
+        productName: p.productName,
+        supplier: p.supplier,
+        unitPrice: p.unitPrice,
+        totalQty,
+        totalValue: totalQty * p.unitPrice,
+        imageUrl: p.imageUrl,
+        productUrl: p.productUrl,
+        roomTypes: p.entries.map(e => `${e.concept}-${e.unitCode}`),
+      };
+    }).sort((a, b) => b.totalQty - a.totalQty);
+  }, [allCards]);
+
+  const [showOrderSummary, setShowOrderSummary] = useState(true);
 
   // Summary stats
   const totalItems = allCards.reduce((s, c) => s + c.totalCount, 0);
@@ -286,13 +353,14 @@ export default function Selections() {
                   <TableHeader>
                     <TableRow className="bg-muted/30">
                       <TableHead className="w-8">Status</TableHead>
+                      <TableHead></TableHead>
                       <TableHead>Required Item</TableHead>
                       <TableHead className="w-[100px] text-right">Qty</TableHead>
                       <TableHead>Category</TableHead>
                       <TableHead>Selected Product</TableHead>
                       <TableHead>Supplier</TableHead>
                       <TableHead className="text-right">Price €</TableHead>
-                      <TableHead className="w-[80px] text-center">Action</TableHead>
+                      <TableHead className="w-[90px] text-center">Action</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -309,7 +377,21 @@ export default function Selections() {
                               <div className="w-5 h-5 rounded-full border-2 border-status-pending" />
                             )}
                           </TableCell>
-                          <TableCell className="font-medium text-sm">{item.itemName}</TableCell>
+                          <TableCell className="w-10">
+                            {sel?.imageUrl ? (
+                              <img src={sel.imageUrl} alt="" className="w-8 h-8 rounded object-cover border border-border" />
+                            ) : null}
+                          </TableCell>
+                          <TableCell className="font-medium text-sm">
+                            <div className="flex items-center gap-1.5">
+                              {item.itemName}
+                              {sel?.productUrl && (
+                                <a href={sel.productUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
+                                  <ExternalLink className="w-3 h-3" />
+                                </a>
+                              )}
+                            </div>
+                          </TableCell>
                           <TableCell className="text-right font-mono text-sm">{item.quantity}</TableCell>
                           <TableCell className="text-xs text-muted-foreground">{item.category}</TableCell>
                           <TableCell className="text-sm">
@@ -354,7 +436,83 @@ export default function Selections() {
         })}
       </div>
 
-      {/* Selection Dialog */}
+      {/* Order Quantity Summary */}
+      {orderSummary.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3 cursor-pointer" onClick={() => setShowOrderSummary(v => !v)}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ShoppingCart className="w-4 h-4 text-primary" />
+                <CardTitle className="text-base">Order Quantity Summary</CardTitle>
+                <Badge variant="secondary" className="text-[10px]">{orderSummary.length} products</Badge>
+              </div>
+              <span className="text-xs text-muted-foreground">{showOrderSummary ? 'Click to collapse' : 'Click to expand'}</span>
+            </div>
+          </CardHeader>
+          {showOrderSummary && (
+            <CardContent className="pt-0">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/30">
+                    <TableHead></TableHead>
+                    <TableHead>Product Name</TableHead>
+                    <TableHead>Supplier</TableHead>
+                    <TableHead className="text-right">Unit Price €</TableHead>
+                    <TableHead className="text-right">Total Qty</TableHead>
+                    <TableHead className="text-right">Total Value €</TableHead>
+                    <TableHead>Room Types</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {orderSummary.map((row, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell className="w-10">
+                        {row.imageUrl ? (
+                          <img src={row.imageUrl} alt="" className="w-8 h-8 rounded object-cover border border-border" />
+                        ) : (
+                          <div className="w-8 h-8 rounded bg-muted flex items-center justify-center">
+                            <Image className="w-3.5 h-3.5 text-muted-foreground" />
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="font-medium text-sm">
+                        <div className="flex items-center gap-1.5">
+                          {row.productName}
+                          {row.productUrl && (
+                            <a href={row.productUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{row.supplier || '—'}</TableCell>
+                      <TableCell className="text-right font-mono text-sm">
+                        {row.unitPrice ? `€${row.unitPrice.toLocaleString()}` : '—'}
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-sm font-bold">{row.totalQty.toLocaleString()}</TableCell>
+                      <TableCell className="text-right font-mono text-sm font-semibold text-primary">
+                        €{row.totalValue.toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {row.roomTypes.join(', ')}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  <TableRow className="bg-muted/30 font-semibold">
+                    <TableCell colSpan={4} className="text-right text-sm">Totals</TableCell>
+                    <TableCell className="text-right font-mono text-sm">{orderSummary.reduce((s, r) => s + r.totalQty, 0).toLocaleString()}</TableCell>
+                    <TableCell className="text-right font-mono text-sm text-primary">
+                      €{orderSummary.reduce((s, r) => s + r.totalValue, 0).toLocaleString()}
+                    </TableCell>
+                    <TableCell></TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </CardContent>
+          )}
+        </Card>
+      )}
+
       <Dialog open={!!editTarget} onOpenChange={open => { if (!open) setEditTarget(null); }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -400,6 +558,27 @@ export default function Selections() {
                 onChange={e => setSelForm(p => ({ ...p, notes: e.target.value }))}
                 placeholder="Optional notes..."
               />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Image URL (optional)</label>
+                <Input
+                  value={selForm.imageUrl || ''}
+                  onChange={e => setSelForm(p => ({ ...p, imageUrl: e.target.value }))}
+                  placeholder="https://..."
+                />
+                {selForm.imageUrl && (
+                  <img src={selForm.imageUrl} alt="Preview" className="mt-1.5 w-16 h-16 rounded object-cover border border-border" />
+                )}
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Product URL (optional)</label>
+                <Input
+                  value={selForm.productUrl || ''}
+                  onChange={e => setSelForm(p => ({ ...p, productUrl: e.target.value }))}
+                  placeholder="https://..."
+                />
+              </div>
             </div>
 
             {/* Multi-apply to room types */}
