@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
+import PricingSheet from '@/components/PricingSheet';
 import Dashboard from '@/components/Dashboard';
 import ProcurementTable from '@/components/ProcurementTable';
 import RoomExplorer from '@/components/RoomExplorer';
@@ -14,7 +15,7 @@ import {
   computeTotalItemsCount,
 } from '@/data/masterData';
 
-type Tab = 'procurement' | 'rooms' | 'packages' | 'projectData';
+type Tab = 'procurement' | 'rooms' | 'packages' | 'pricing' | 'projectData';
 
 export default function Index() {
   const [userData, setUserData] = useState<Record<number, UserItemData>>(loadUserData);
@@ -42,6 +43,7 @@ export default function Index() {
     { key: 'procurement', label: 'Procurement' },
     { key: 'rooms', label: 'Room Explorer' },
     { key: 'packages', label: 'Package Editor' },
+    { key: 'pricing', label: 'Pricing Sheet' },
     { key: 'projectData', label: 'Project Data' },
   ];
 
@@ -83,7 +85,7 @@ export default function Index() {
 
       {/* Main */}
       <main className="max-w-[1440px] mx-auto px-6 py-6 space-y-8">
-        {activeTab !== 'projectData' && activeTab !== 'packages' && (
+        {activeTab !== 'projectData' && activeTab !== 'packages' && activeTab !== 'pricing' && (
           <Dashboard
             onConceptClick={(id) => setDrillDownConcept(id)}
             masterData={masterData}
@@ -108,6 +110,8 @@ export default function Index() {
         {activeTab === 'rooms' && <RoomExplorer masterData={masterData} />}
 
         {activeTab === 'packages' && <PackageEditor />}
+
+        {activeTab === 'pricing' && <PricingSheet />}
 
         {activeTab === 'projectData' && (
           <ProjectDataTable masterData={masterData} onUpdate={handleUpdateMasterData} />
