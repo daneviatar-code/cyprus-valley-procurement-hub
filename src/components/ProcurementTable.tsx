@@ -262,7 +262,6 @@ export default function ProcurementTable({ userData, onUpdateItem, procurementIt
                 const effectiveSupplier = ud.supplier || sel?.supplier || '';
                 const effectivePrice = ud.unitPrice ?? sel?.unitPrice ?? null;
                 const totalCost = effectivePrice ? item.grandTotal * effectivePrice : null;
-                const totalCost = ud.unitPrice ? item.grandTotal * ud.unitPrice : null;
 
                 const roomTypeFItem = viewMode === 'byRoomType'
                   ? roomTypeFurniture.find(f => f.itemName === item.name)
