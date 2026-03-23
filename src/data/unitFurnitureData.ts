@@ -12,7 +12,7 @@ export interface UnitType {
 
 export interface FurniturePerUnit {
   itemName: string;
-  category: 'Dining' | 'Living Room' | 'Bedroom' | 'Outdoor';
+  category: 'Dining' | 'Living Room' | 'Bedroom' | 'Outdoor' | 'Bathroom' | 'Kitchen' | 'Sauna & Wellness' | 'Accessories & Decor' | 'Mirrors' | 'Electrical & Appliances' | 'In-Room Safes' | 'Cutlery & Dining Sets' | 'Curtains & Window Treatments';
   quantities: Record<string, number>; // unitCode -> qty per unit
 }
 

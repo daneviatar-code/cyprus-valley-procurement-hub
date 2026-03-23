@@ -7,7 +7,7 @@
 import { buildingAUnits, buildingBUnits, buildingCUnits, buildingAFurniture, buildingBFurniture, buildingCFurniture, UnitType, FurniturePerUnit } from './unitFurnitureData';
 
 export type Concept = 'A' | 'B' | 'C';
-export type RoomType = 'Dining' | 'Living Room' | 'Bedroom' | 'Outdoor';
+export type RoomType = 'Dining' | 'Living Room' | 'Bedroom' | 'Outdoor' | 'Bathroom' | 'Kitchen' | 'Sauna & Wellness' | 'Accessories & Decor' | 'Mirrors' | 'Electrical & Appliances' | 'In-Room Safes' | 'Cutlery & Dining Sets' | 'Curtains & Window Treatments';
 
 export const ALL_BUILDINGS: Record<Concept, string[]> = {
   A: ['A1', 'A2', 'A3', 'A4', 'A5', 'A6'],
