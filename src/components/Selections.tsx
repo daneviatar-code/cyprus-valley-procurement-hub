@@ -1,4 +1,14 @@
 import { useState, useMemo, useCallback } from 'react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -126,11 +136,15 @@ export default function Selections() {
     setVersion(v => v + 1);
   }
 
-  function handleClearSelection(concept: Concept, unitCode: string, itemName: string) {
-    const sels = loadSelections(concept, unitCode);
-    delete sels[itemName];
-    saveSelections(concept, unitCode, sels);
+  const [deleteTarget, setDeleteTarget] = useState<{ concept: Concept; unitCode: string; itemName: string } | null>(null);
+
+  function confirmClearSelection() {
+    if (!deleteTarget) return;
+    const sels = loadSelections(deleteTarget.concept, deleteTarget.unitCode);
+    delete sels[deleteTarget.itemName];
+    saveSelections(deleteTarget.concept, deleteTarget.unitCode, sels);
     setVersion(v => v + 1);
+    setDeleteTarget(null);
   }
 
   // Summary stats
@@ -306,7 +320,7 @@ export default function Selections() {
                                   variant="ghost"
                                   size="icon"
                                   className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                  onClick={() => handleClearSelection(card.concept, card.unitCode, item.itemName)}
+                                  onClick={() => setDeleteTarget({ concept: card.concept, unitCode: card.unitCode, itemName: item.itemName })}
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </Button>
@@ -380,6 +394,23 @@ export default function Selections() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear selection?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove the selected product for "{deleteTarget?.itemName}" and set it back to PENDING.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmClearSelection} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
