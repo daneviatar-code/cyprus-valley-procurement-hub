@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
+import PricingSheet from '@/components/PricingSheet';
 import Dashboard from '@/components/Dashboard';
 import ProcurementTable from '@/components/ProcurementTable';
 import RoomExplorer from '@/components/RoomExplorer';
