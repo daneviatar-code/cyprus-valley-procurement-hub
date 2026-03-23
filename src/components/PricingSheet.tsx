@@ -48,10 +48,23 @@ export default function PricingSheet() {
     : units[0]?.code || '';
 
   const pkg = useMemo(() => loadPackage(concept, activeUnit), [concept, activeUnit]);
+  const selections = useMemo(() => loadSelections(concept, activeUnit), [concept, activeUnit]);
+
+  // Merge selection data into package items
+  const enrichedItems = useMemo(() => {
+    return pkg.items.map(item => {
+      const sel = selections[item.itemName];
+      return {
+        ...item,
+        supplier: sel?.supplier || item.supplier,
+        unitPrice: sel?.unitPrice ?? item.unitPrice,
+      };
+    });
+  }, [pkg.items, selections]);
 
   const grandTotal = useMemo(
-    () => pkg.items.reduce((s, it) => s + it.quantity * it.unitPrice, 0),
-    [pkg.items]
+    () => enrichedItems.reduce((s, it) => s + it.quantity * it.unitPrice, 0),
+    [enrichedItems]
   );
 
   const conceptInfo = concepts.find(c => c.id === concept);
