@@ -353,13 +353,14 @@ export default function Selections() {
                   <TableHeader>
                     <TableRow className="bg-muted/30">
                       <TableHead className="w-8">Status</TableHead>
+                      <TableHead></TableHead>
                       <TableHead>Required Item</TableHead>
                       <TableHead className="w-[100px] text-right">Qty</TableHead>
                       <TableHead>Category</TableHead>
                       <TableHead>Selected Product</TableHead>
                       <TableHead>Supplier</TableHead>
                       <TableHead className="text-right">Price €</TableHead>
-                      <TableHead className="w-[80px] text-center">Action</TableHead>
+                      <TableHead className="w-[90px] text-center">Action</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
