@@ -8,6 +8,7 @@ import PackageEditor from '@/components/PackageEditor';
 import ProjectDataTable from '@/components/ProjectDataTable';
 import ItemAssignment from '@/components/ItemAssignment';
 import Selections from '@/components/Selections';
+import { UserItemData, loadUserData, saveUserData } from '@/data/projectData';
 import {
   MasterRow,
   loadMasterData,
