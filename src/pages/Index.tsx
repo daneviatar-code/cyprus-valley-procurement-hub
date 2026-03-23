@@ -16,7 +16,7 @@ import {
   computeTotalItemsCount,
 } from '@/data/masterData';
 
-type Tab = 'procurement' | 'rooms' | 'packages' | 'pricing' | 'projectData' | 'itemAssignment';
+type Tab = 'procurement' | 'rooms' | 'packages' | 'pricing' | 'projectData' | 'itemAssignment' | 'selections';
 
 export default function Index() {
   const [userData, setUserData] = useState<Record<number, UserItemData>>(loadUserData);
