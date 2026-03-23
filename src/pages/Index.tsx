@@ -47,6 +47,7 @@ export default function Index() {
     { key: 'pricing', label: 'Pricing Sheet' },
     { key: 'projectData', label: 'Project Data' },
     { key: 'itemAssignment', label: 'Item Assignment' },
+    { key: 'selections', label: 'Selections' },
   ];
 
   return (
