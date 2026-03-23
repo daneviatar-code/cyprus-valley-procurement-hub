@@ -4,6 +4,7 @@ import {
   UserItemData,
   getUserItemData,
 } from '@/data/projectData';
+import { loadAllSelections } from '@/data/selectionData';
 import {
   getBuildingData,
   UnitType,
