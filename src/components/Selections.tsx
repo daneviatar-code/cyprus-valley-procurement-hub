@@ -377,11 +377,6 @@ export default function Selections() {
                               <div className="w-5 h-5 rounded-full border-2 border-status-pending" />
                             )}
                           </TableCell>
-                          <TableCell className="w-10">
-                            {sel?.imageUrl ? (
-                              <img src={sel.imageUrl} alt="" className="w-8 h-8 rounded object-cover border border-border" />
-                            ) : null}
-                          </TableCell>
                           <TableCell className="font-medium text-sm">
                             <div className="flex items-center gap-1.5">
                               {item.itemName}
