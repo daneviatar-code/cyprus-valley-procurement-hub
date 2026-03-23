@@ -36,6 +36,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Check, Clock, Pencil, Search, Trash2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Concept, ALL_BUILDINGS } from '@/data/masterData';
 import { loadPackage, PackageItem } from '@/data/packageData';
 import { Selection, SelectionMap, loadSelections, saveSelections } from '@/data/selectionData';
@@ -68,6 +70,7 @@ export default function Selections() {
   // Selection dialog
   const [editTarget, setEditTarget] = useState<{ concept: Concept; unitCode: string; itemName: string } | null>(null);
   const [selForm, setSelForm] = useState<Selection>({ productName: '', supplier: '', unitPrice: 0, notes: '' });
+  const [applyToRoomTypes, setApplyToRoomTypes] = useState<string[]>([]); // "concept-unitCode" keys
 
   // Force re-render after saves
   const [version, setVersion] = useState(0);
@@ -125,13 +128,26 @@ export default function Selections() {
   const openSelection = useCallback((concept: Concept, unitCode: string, itemName: string, existing?: Selection) => {
     setEditTarget({ concept, unitCode, itemName });
     setSelForm(existing || { productName: '', supplier: '', unitPrice: 0, notes: '' });
+    setApplyToRoomTypes([`${concept}-${unitCode}`]);
   }, []);
+
+  // All room types that have this same item name (for multi-apply)
+  const roomTypesWithItem = useMemo(() => {
+    if (!editTarget) return [];
+    return allCards
+      .filter(card => card.items.some(i => i.itemName === editTarget.itemName))
+      .map(card => ({ key: `${card.concept}-${card.unitCode}`, label: `${card.concept} — ${card.unitCode}` }));
+  }, [editTarget, allCards]);
 
   function handleSaveSelection() {
     if (!editTarget) return;
-    const sels = loadSelections(editTarget.concept, editTarget.unitCode);
-    sels[editTarget.itemName] = { ...selForm };
-    saveSelections(editTarget.concept, editTarget.unitCode, sels);
+    const selData = { ...selForm };
+    applyToRoomTypes.forEach(key => {
+      const [concept, unitCode] = key.split('-') as [Concept, string];
+      const sels = loadSelections(concept, unitCode);
+      sels[editTarget.itemName] = { ...selData };
+      saveSelections(concept, unitCode, sels);
+    });
     setEditTarget(null);
     setVersion(v => v + 1);
   }
@@ -385,10 +401,44 @@ export default function Selections() {
                 placeholder="Optional notes..."
               />
             </div>
+
+            {/* Multi-apply to room types */}
+            {roomTypesWithItem.length > 1 && (
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-2 block">
+                  Apply to room types ({applyToRoomTypes.length}/{roomTypesWithItem.length} selected)
+                </label>
+                <ScrollArea className="h-[140px] rounded-md border p-3">
+                  <div className="space-y-2">
+                    {roomTypesWithItem.map(rt => (
+                      <label key={rt.key} className="flex items-center gap-2 cursor-pointer text-sm">
+                        <Checkbox
+                          checked={applyToRoomTypes.includes(rt.key)}
+                          onCheckedChange={(checked) => {
+                            setApplyToRoomTypes(prev =>
+                              checked
+                                ? [...prev, rt.key]
+                                : prev.filter(k => k !== rt.key)
+                            );
+                          }}
+                        />
+                        <span className={rt.key === `${editTarget?.concept}-${editTarget?.unitCode}` ? 'font-medium text-foreground' : 'text-muted-foreground'}>
+                          {rt.label}
+                          {rt.key === `${editTarget?.concept}-${editTarget?.unitCode}` && (
+                            <span className="text-[10px] ml-1 text-primary">(current)</span>
+                          )}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
+
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={() => setEditTarget(null)}>Cancel</Button>
-              <Button onClick={handleSaveSelection} disabled={!selForm.productName.trim()}>
-                Save Selection
+              <Button onClick={handleSaveSelection} disabled={!selForm.productName.trim() || applyToRoomTypes.length === 0}>
+                Save Selection{applyToRoomTypes.length > 1 ? ` (${applyToRoomTypes.length} types)` : ''}
               </Button>
             </div>
           </div>
