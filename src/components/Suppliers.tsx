@@ -29,7 +29,7 @@ const statusColors: Record<SupplierItem['status'], string> = {
 };
 
 const emptySupplier = (): Omit<Supplier, 'id' | 'createdAt'> => ({
-  name: '', contactPerson: '', email: '', phone: '', website: '', country: '', address: '', paymentTerms: '', category: 'Furniture', items: [],
+  name: '', contactPerson: '', email: '', phone: '', website: '', country: '', address: '', paymentTerms: '', currency: 'EUR', notes: '', category: 'Furniture', items: [],
 });
 
 const emptyItem = (): SupplierItem => ({
