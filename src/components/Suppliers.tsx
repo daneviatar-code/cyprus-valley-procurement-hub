@@ -140,22 +140,36 @@ export default function Suppliers() {
     if (selectedLines.length === 0) { toast({ title: 'Select at least one item' }); return; }
     const items = selectedLines.map(({ selected, ...rest }) => ({ ...rest, totalPrice: rest.qty * rest.unitPrice }));
     const totalValue = items.reduce((a, i) => a + i.totalPrice, 0);
-    const po: PurchaseOrder = {
-      id: generatePOId(),
-      poNumber: poForm.poNumber,
-      supplierId: poSupplierId,
-      supplierName: supplier?.name || '',
-      items,
-      status: poForm.status,
-      expectedDelivery: poForm.expectedDelivery?.toISOString() || '',
-      totalValue,
-      currency: supplier?.currency || 'EUR',
-      notes: poForm.notes,
-      createdAt: new Date().toISOString(),
-    };
-    persistPOs([...purchaseOrders, po]);
-    setPoModalOpen(false);
-    toast({ title: `Purchase Order ${po.poNumber} created` });
+    if (editPoId) {
+      const next = purchaseOrders.map(p => p.id === editPoId ? {
+        ...p,
+        status: poForm.status,
+        expectedDelivery: poForm.expectedDelivery?.toISOString() || '',
+        items,
+        totalValue,
+        notes: poForm.notes,
+      } : p);
+      persistPOs(next);
+      setPoModalOpen(false);
+      toast({ title: `${poForm.poNumber} updated` });
+    } else {
+      const po: PurchaseOrder = {
+        id: generatePOId(),
+        poNumber: poForm.poNumber,
+        supplierId: poSupplierId,
+        supplierName: supplier?.name || '',
+        items,
+        status: poForm.status,
+        expectedDelivery: poForm.expectedDelivery?.toISOString() || '',
+        totalValue,
+        currency: supplier?.currency || 'EUR',
+        notes: poForm.notes,
+        createdAt: new Date().toISOString(),
+      };
+      persistPOs([...purchaseOrders, po]);
+      setPoModalOpen(false);
+      toast({ title: `Purchase Order ${po.poNumber} created` });
+    }
   };
 
   const deletePO = (poId: string) => {
