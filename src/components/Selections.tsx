@@ -152,10 +152,15 @@ export default function Selections() {
   function handleSaveSelection() {
     if (!editTarget) return;
     const selData = { ...selForm };
-    applyToRoomTypes.forEach(key => {
-      const [concept, unitCode] = key.split('-') as [Concept, string];
+    // Apply selection to checked room types, remove from unchecked ones
+    roomTypesWithItem.forEach(rt => {
+      const [concept, unitCode] = rt.key.split('-') as [Concept, string];
       const sels = loadSelections(concept, unitCode);
-      sels[editTarget.itemName] = { ...selData };
+      if (applyToRoomTypes.includes(rt.key)) {
+        sels[editTarget.itemName] = { ...selData };
+      } else {
+        delete sels[editTarget.itemName];
+      }
       saveSelections(concept, unitCode, sels);
     });
     setEditTarget(null);
