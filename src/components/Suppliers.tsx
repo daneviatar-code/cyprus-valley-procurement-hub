@@ -325,6 +325,14 @@ export default function Suppliers() {
                 <Input value={form.country} onChange={e => setForm(f => ({ ...f, country: e.target.value }))} placeholder="e.g. Cyprus" />
               </div>
             </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Address</label>
+              <Input value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} placeholder="Street, City, Zip" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Payment Terms</label>
+              <Input value={form.paymentTerms} onChange={e => setForm(f => ({ ...f, paymentTerms: e.target.value }))} placeholder="e.g. Net 30" />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setModalOpen(false)}>Cancel</Button>
