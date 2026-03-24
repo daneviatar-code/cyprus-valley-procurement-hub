@@ -410,7 +410,7 @@ export default function Suppliers() {
                         <div className="mt-6 border-t pt-4">
                           <div className="flex items-center justify-between mb-3">
                             <h4 className="text-sm font-semibold text-foreground flex items-center gap-2"><FileText className="h-4 w-4" /> Purchase Orders</h4>
-                            <Button variant="outline" size="sm" onClick={() => openCreatePO(s.id)} disabled={s.items.length === 0}>
+                            <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); openCreatePO(s.id); }} disabled={s.items.length === 0}>
                               <Plus className="h-3.5 w-3.5 mr-1" /> Create PO
                             </Button>
                           </div>
