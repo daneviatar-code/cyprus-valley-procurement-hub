@@ -21,6 +21,8 @@ export interface Supplier {
   country: string;
   address: string;
   paymentTerms: string;
+  currency: string;
+  notes: string;
   category: string;
   items: SupplierItem[];
   createdAt: string;
