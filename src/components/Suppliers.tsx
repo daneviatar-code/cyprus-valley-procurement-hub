@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
+import { Textarea } from '@/components/ui/textarea';
 import { Plus, Pencil, Trash2, ExternalLink, Package, Search, ChevronDown, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,7 +30,7 @@ const statusColors: Record<SupplierItem['status'], string> = {
 };
 
 const emptySupplier = (): Omit<Supplier, 'id' | 'createdAt'> => ({
-  name: '', contactPerson: '', email: '', phone: '', website: '', country: '', address: '', paymentTerms: '', category: 'Furniture', items: [],
+  name: '', contactPerson: '', email: '', phone: '', website: '', country: '', address: '', paymentTerms: '', currency: 'EUR', notes: '', category: 'Furniture', items: [],
 });
 
 const emptyItem = (): SupplierItem => ({
@@ -85,7 +86,7 @@ export default function Suppliers() {
   const openNew = () => { setEditId(null); setForm(emptySupplier()); setModalOpen(true); };
   const openEdit = (s: Supplier) => {
     setEditId(s.id);
-    setForm({ name: s.name, contactPerson: s.contactPerson, email: s.email, phone: s.phone, website: s.website, country: s.country || '', address: s.address || '', paymentTerms: s.paymentTerms || '', category: s.category, items: s.items });
+    setForm({ name: s.name, contactPerson: s.contactPerson, email: s.email, phone: s.phone, website: s.website, country: s.country || '', address: s.address || '', paymentTerms: s.paymentTerms || '', currency: s.currency || 'EUR', notes: s.notes || '', category: s.category, items: s.items });
     setModalOpen(true);
   };
 
@@ -332,6 +333,14 @@ export default function Suppliers() {
             <div>
               <label className="text-xs font-medium text-muted-foreground">Payment Terms</label>
               <Input value={form.paymentTerms} onChange={e => setForm(f => ({ ...f, paymentTerms: e.target.value }))} placeholder="e.g. Net 30" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Currency</label>
+              <Input value={form.currency} onChange={e => setForm(f => ({ ...f, currency: e.target.value }))} placeholder="EUR" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Notes</label>
+              <Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Additional notes…" rows={3} />
             </div>
           </div>
           <DialogFooter>
