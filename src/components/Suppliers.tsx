@@ -428,7 +428,7 @@ export default function Suppliers() {
                                 {supplierPOs.map(po => {
                                   const poTotal = po.totalValue || po.items.reduce((a, i) => a + i.qty * i.unitPrice, 0);
                                   return (
-                                    <div key={po.id} className="border rounded-lg p-4 bg-card hover:shadow-sm transition-shadow">
+                                    <div key={po.id} className="border rounded-lg p-4 bg-card hover:shadow-sm transition-shadow cursor-pointer" onClick={() => openEditPO(po)}>
                                       <div className="flex items-center justify-between mb-2">
                                         <span className="font-mono font-semibold text-sm text-foreground">{po.poNumber}</span>
                                         <div className="flex items-center gap-1">
