@@ -130,16 +130,24 @@ export default function Selections() {
   const openSelection = useCallback((concept: Concept, unitCode: string, itemName: string, existing?: Selection) => {
     setEditTarget({ concept, unitCode, itemName });
     setSelForm(existing || { productName: '', supplier: '', unitPrice: 0, notes: '', imageUrl: '', productUrl: '' });
-    // Pre-check all room types that already have this item selected
-    const preChecked = allCards
-      .filter(card => card.items.some(i => i.itemName === itemName) && card.selections[itemName])
-      .map(card => `${card.concept}-${card.unitCode}`);
+    // Scan localStorage directly for ALL unit types that already have this item
+    const preChecked: string[] = [];
+    const concepts: Concept[] = ['A', 'B', 'C'];
+    concepts.forEach(c => {
+      const units = getUnitsForConcept(c);
+      units.forEach(u => {
+        const sels = loadSelections(c, u.code);
+        if (sels[itemName]) {
+          preChecked.push(`${c}-${u.code}`);
+        }
+      });
+    });
     // Always include the current one
     if (!preChecked.includes(`${concept}-${unitCode}`)) {
       preChecked.push(`${concept}-${unitCode}`);
     }
     setApplyToRoomTypes(preChecked);
-  }, [allCards]);
+  }, []);
 
   // All room types that have this same item name (for multi-apply)
   const roomTypesWithItem = useMemo(() => {
