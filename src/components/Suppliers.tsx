@@ -591,10 +591,10 @@ export default function Suppliers() {
         </DialogContent>
       </Dialog>
 
-      {/* Create PO Modal */}
+      {/* Create/Edit PO Modal */}
       <Dialog open={poModalOpen} onOpenChange={setPoModalOpen}>
         <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>Create Purchase Order</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editPoId ? `Edit ${poForm.poNumber}` : 'Create Purchase Order'}</DialogTitle></DialogHeader>
           <div className="grid gap-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
