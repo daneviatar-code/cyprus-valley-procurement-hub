@@ -640,7 +640,7 @@ export default function Suppliers() {
                             });
                           }} className="w-24 h-7 text-xs text-right ml-auto" />
                         </TableCell>
-                        <TableCell className="text-right font-mono text-sm">€{(line.quantity * line.unitPrice).toLocaleString()}</TableCell>
+                        <TableCell className="text-right font-mono text-sm">€{(line.qty * line.unitPrice).toLocaleString()}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
