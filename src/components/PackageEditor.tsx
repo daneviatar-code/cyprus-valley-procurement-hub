@@ -268,7 +268,7 @@ function UnitPackageEditor({
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {pkg.items.map(item => (
+                {enrichedItems.map(item => (
                   <tr key={item.id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-3 py-1.5">
                       <input
@@ -303,21 +303,25 @@ function UnitPackageEditor({
                         type="number"
                         min={0}
                         step={0.01}
-                        className="w-full bg-transparent border-0 outline-none text-right text-foreground text-xs focus:ring-1 focus:ring-accent rounded px-1 py-0.5"
-                        value={item.unitPrice || ''}
+                        className={`w-full bg-transparent border-0 outline-none text-right text-xs focus:ring-1 focus:ring-accent rounded px-1 py-0.5 ${
+                          item.unitPrice > 0 ? 'text-foreground' : 'text-muted-foreground italic'
+                        }`}
+                        value={item.unitPrice > 0 ? item.unitPrice : ''}
                         onChange={e => updateItem(item.id, 'unitPrice', Math.max(0, parseFloat(e.target.value) || 0))}
-                        placeholder="0.00"
+                        placeholder={item.effectiveUnitPrice > 0 ? item.effectiveUnitPrice.toFixed(2) : '0.00'}
                       />
                     </td>
                     <td className="px-3 py-1.5 text-right font-medium text-foreground">
-                      {(item.quantity * item.unitPrice).toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {(item.quantity * item.effectiveUnitPrice).toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td className="px-3 py-1.5">
                       <input
-                        className="w-full bg-transparent border-0 outline-none text-foreground text-xs focus:ring-1 focus:ring-accent rounded px-1 py-0.5"
+                        className={`w-full bg-transparent border-0 outline-none text-xs focus:ring-1 focus:ring-accent rounded px-1 py-0.5 ${
+                          item.supplier ? 'text-foreground' : 'text-muted-foreground italic'
+                        }`}
                         value={item.supplier}
                         onChange={e => updateItem(item.id, 'supplier', e.target.value)}
-                        placeholder="—"
+                        placeholder={item.effectiveSupplier || '—'}
                       />
                     </td>
                     <td className="px-3 py-1.5">
