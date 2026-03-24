@@ -648,7 +648,7 @@ export default function Suppliers() {
               </div>
               {poForm.lineItems.some(l => l.selected) && (
                 <div className="mt-2 text-right text-sm font-semibold text-foreground border-t pt-2">
-                  Grand Total: €{poForm.lineItems.filter(l => l.selected).reduce((a, l) => a + l.quantity * l.unitPrice, 0).toLocaleString()}
+                  Grand Total: €{poForm.lineItems.filter(l => l.selected).reduce((a, l) => a + l.qty * l.unitPrice, 0).toLocaleString()}
                 </div>
               )}
             </div>
