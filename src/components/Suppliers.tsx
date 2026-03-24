@@ -701,7 +701,7 @@ export default function Suppliers() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setPoModalOpen(false)}>Cancel</Button>
-            <Button onClick={savePO}>Create PO</Button>
+            <Button onClick={savePO}>{editPoId ? 'Save Changes' : 'Create PO'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
