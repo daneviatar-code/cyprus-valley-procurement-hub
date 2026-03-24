@@ -315,9 +315,15 @@ export default function Suppliers() {
                 <Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
               </div>
             </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">Website</label>
-              <Input value={form.website} onChange={e => setForm(f => ({ ...f, website: e.target.value }))} placeholder="https://" />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Website</label>
+                <Input value={form.website} onChange={e => setForm(f => ({ ...f, website: e.target.value }))} placeholder="https://" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Country</label>
+                <Input value={form.country} onChange={e => setForm(f => ({ ...f, country: e.target.value }))} placeholder="e.g. Cyprus" />
+              </div>
             </div>
           </div>
           <DialogFooter>
