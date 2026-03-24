@@ -82,8 +82,9 @@ export default function Suppliers() {
     if (!supplier) return;
     const lines = supplier.items.map(i => ({
       itemName: i.itemName,
-      quantity: 1,
+      qty: 1,
       unitPrice: i.unitPrice,
+      totalPrice: i.unitPrice,
       selected: false,
     }));
     setPoSupplierId(supplierId);
@@ -107,8 +108,9 @@ export default function Suppliers() {
       .filter(name => !existing.has(name))
       .map(name => ({
         itemName: name,
-        quantity: 1,
+        qty: 1,
         unitPrice: allSelections[name]?.unitPrice ?? 0,
+        totalPrice: allSelections[name]?.unitPrice ?? 0,
         selected: true,
       }));
     if (newLines.length === 0) { toast({ title: 'No new items found in Selections for this supplier' }); return; }
@@ -118,15 +120,21 @@ export default function Suppliers() {
 
   const savePO = () => {
     if (!poSupplierId) return;
+    const supplier = suppliers.find(s => s.id === poSupplierId);
     const selectedLines = poForm.lineItems.filter(l => l.selected);
     if (selectedLines.length === 0) { toast({ title: 'Select at least one item' }); return; }
+    const items = selectedLines.map(({ selected, ...rest }) => ({ ...rest, totalPrice: rest.qty * rest.unitPrice }));
+    const totalValue = items.reduce((a, i) => a + i.totalPrice, 0);
     const po: PurchaseOrder = {
       id: generatePOId(),
       poNumber: poForm.poNumber,
       supplierId: poSupplierId,
-      items: selectedLines.map(({ selected, ...rest }) => rest),
+      supplierName: supplier?.name || '',
+      items,
       status: poForm.status,
       expectedDelivery: poForm.expectedDelivery?.toISOString() || '',
+      totalValue,
+      currency: supplier?.currency || 'EUR',
       notes: poForm.notes,
       createdAt: new Date().toISOString(),
     };
@@ -395,7 +403,7 @@ export default function Suppliers() {
                                 </TableHeader>
                                 <TableBody>
                                   {supplierPOs.map(po => {
-                                    const poTotal = po.items.reduce((a, i) => a + i.quantity * i.unitPrice, 0);
+                                    const poTotal = po.items.reduce((a, i) => a + i.qty * i.unitPrice, 0);
                                     return (
                                       <TableRow key={po.id}>
                                         <TableCell className="font-mono font-medium">{po.poNumber}</TableCell>
@@ -615,10 +623,10 @@ export default function Suppliers() {
                         </TableCell>
                         <TableCell className="text-sm font-medium">{line.itemName}</TableCell>
                         <TableCell className="text-right">
-                          <Input type="number" min={1} value={line.quantity} onChange={e => {
+                          <Input type="number" min={1} value={line.qty} onChange={e => {
                             setPoForm(f => {
                               const items = [...f.lineItems];
-                              items[idx] = { ...items[idx], quantity: Math.max(1, +e.target.value) };
+                              items[idx] = { ...items[idx], qty: Math.max(1, +e.target.value) };
                               return { ...f, lineItems: items };
                             });
                           }} className="w-16 h-7 text-xs text-right ml-auto" />
@@ -632,7 +640,7 @@ export default function Suppliers() {
                             });
                           }} className="w-24 h-7 text-xs text-right ml-auto" />
                         </TableCell>
-                        <TableCell className="text-right font-mono text-sm">€{(line.quantity * line.unitPrice).toLocaleString()}</TableCell>
+                        <TableCell className="text-right font-mono text-sm">€{(line.qty * line.unitPrice).toLocaleString()}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -640,7 +648,7 @@ export default function Suppliers() {
               </div>
               {poForm.lineItems.some(l => l.selected) && (
                 <div className="mt-2 text-right text-sm font-semibold text-foreground border-t pt-2">
-                  Grand Total: €{poForm.lineItems.filter(l => l.selected).reduce((a, l) => a + l.quantity * l.unitPrice, 0).toLocaleString()}
+                  Grand Total: €{poForm.lineItems.filter(l => l.selected).reduce((a, l) => a + l.qty * l.unitPrice, 0).toLocaleString()}
                 </div>
               )}
             </div>

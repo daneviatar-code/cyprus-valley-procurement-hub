@@ -4,17 +4,21 @@
 
 export interface POLineItem {
   itemName: string;
-  quantity: number;
+  qty: number;
   unitPrice: number;
+  totalPrice: number;
 }
 
 export interface PurchaseOrder {
   id: string;
   poNumber: string;
   supplierId: string;
+  supplierName: string;
   items: POLineItem[];
   status: 'Draft' | 'Sent' | 'Confirmed' | 'Delivered';
   expectedDelivery: string; // ISO date
+  totalValue: number;
+  currency: string;
   notes: string;
   createdAt: string;
 }
