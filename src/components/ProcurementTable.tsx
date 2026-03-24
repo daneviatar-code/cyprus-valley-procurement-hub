@@ -314,22 +314,11 @@ export default function ProcurementTable({ userData, onUpdateItem, procurementIt
                       </>
                     )}
 
-                    <td className={tdClass} onClick={(e) => e.stopPropagation()}>
-                      <input
-                        className="h-7 w-28 rounded border bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-accent/50"
-                        value={ud.supplier}
-                        onChange={(e) => handleInlineChange(item.id, 'supplier', e.target.value)}
-                        placeholder={sel?.supplier || '—'}
-                      />
+                    <td className={`${tdClass} text-muted-foreground text-xs whitespace-nowrap`}>
+                      {effectiveSupplier || '—'}
                     </td>
-                    <td className={tdClass} onClick={(e) => e.stopPropagation()}>
-                      <input
-                        type="number"
-                        className="h-7 w-20 rounded border bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-accent/50"
-                        value={ud.unitPrice ?? ''}
-                        onChange={(e) => handleInlineChange(item.id, 'unitPrice', e.target.value ? Number(e.target.value) : null)}
-                        placeholder={sel?.unitPrice ? `${sel.unitPrice}` : '—'}
-                      />
+                    <td className={`${tdClass} font-mono text-xs whitespace-nowrap`}>
+                      {effectivePrice ? `€${effectivePrice.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}
                     </td>
                     <td className={`${tdClass} font-mono text-xs whitespace-nowrap`}>
                       {totalCost ? `€${totalCost.toLocaleString()}` : '—'}
