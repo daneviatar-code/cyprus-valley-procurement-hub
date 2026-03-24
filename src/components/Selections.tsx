@@ -130,8 +130,16 @@ export default function Selections() {
   const openSelection = useCallback((concept: Concept, unitCode: string, itemName: string, existing?: Selection) => {
     setEditTarget({ concept, unitCode, itemName });
     setSelForm(existing || { productName: '', supplier: '', unitPrice: 0, notes: '', imageUrl: '', productUrl: '' });
-    setApplyToRoomTypes([`${concept}-${unitCode}`]);
-  }, []);
+    // Pre-check all room types that already have this item selected
+    const preChecked = allCards
+      .filter(card => card.items.some(i => i.itemName === itemName) && card.selections[itemName])
+      .map(card => `${card.concept}-${card.unitCode}`);
+    // Always include the current one
+    if (!preChecked.includes(`${concept}-${unitCode}`)) {
+      preChecked.push(`${concept}-${unitCode}`);
+    }
+    setApplyToRoomTypes(preChecked);
+  }, [allCards]);
 
   // All room types that have this same item name (for multi-apply)
   const roomTypesWithItem = useMemo(() => {
@@ -144,10 +152,15 @@ export default function Selections() {
   function handleSaveSelection() {
     if (!editTarget) return;
     const selData = { ...selForm };
-    applyToRoomTypes.forEach(key => {
-      const [concept, unitCode] = key.split('-') as [Concept, string];
+    // Apply selection to checked room types, remove from unchecked ones
+    roomTypesWithItem.forEach(rt => {
+      const [concept, unitCode] = rt.key.split('-') as [Concept, string];
       const sels = loadSelections(concept, unitCode);
-      sels[editTarget.itemName] = { ...selData };
+      if (applyToRoomTypes.includes(rt.key)) {
+        sels[editTarget.itemName] = { ...selData };
+      } else {
+        delete sels[editTarget.itemName];
+      }
       saveSelections(concept, unitCode, sels);
     });
     setEditTarget(null);
@@ -616,31 +629,47 @@ export default function Selections() {
             {/* Multi-apply to room types */}
             {roomTypesWithItem.length > 1 && (
               <div>
-                <label className="text-xs font-medium text-muted-foreground mb-2 block">
-                  Apply to room types ({applyToRoomTypes.length}/{roomTypesWithItem.length} selected)
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Apply to room types ({applyToRoomTypes.length}/{roomTypesWithItem.length} selected)
+                  </label>
+                  <div className="flex gap-2">
+                    <Button variant="link" size="sm" className="h-auto p-0 text-[10px]" onClick={() => setApplyToRoomTypes(roomTypesWithItem.map(r => r.key))}>
+                      Select all
+                    </Button>
+                    <Button variant="link" size="sm" className="h-auto p-0 text-[10px]" onClick={() => setApplyToRoomTypes([])}>
+                      Deselect all
+                    </Button>
+                  </div>
+                </div>
                 <ScrollArea className="h-[140px] rounded-md border p-3">
                   <div className="space-y-2">
-                    {roomTypesWithItem.map(rt => (
-                      <label key={rt.key} className="flex items-center gap-2 cursor-pointer text-sm">
-                        <Checkbox
-                          checked={applyToRoomTypes.includes(rt.key)}
-                          onCheckedChange={(checked) => {
-                            setApplyToRoomTypes(prev =>
-                              checked
-                                ? [...prev, rt.key]
-                                : prev.filter(k => k !== rt.key)
-                            );
-                          }}
-                        />
-                        <span className={rt.key === `${editTarget?.concept}-${editTarget?.unitCode}` ? 'font-medium text-foreground' : 'text-muted-foreground'}>
-                          {rt.label}
-                          {rt.key === `${editTarget?.concept}-${editTarget?.unitCode}` && (
-                            <span className="text-[10px] ml-1 text-primary">(current)</span>
-                          )}
-                        </span>
-                      </label>
-                    ))}
+                    {roomTypesWithItem.map(rt => {
+                      const hasExisting = allCards.some(c => `${c.concept}-${c.unitCode}` === rt.key && c.selections[editTarget?.itemName || '']);
+                      return (
+                        <label key={rt.key} className="flex items-center gap-2 cursor-pointer text-sm">
+                          <Checkbox
+                            checked={applyToRoomTypes.includes(rt.key)}
+                            onCheckedChange={(checked) => {
+                              setApplyToRoomTypes(prev =>
+                                checked
+                                  ? [...prev, rt.key]
+                                  : prev.filter(k => k !== rt.key)
+                              );
+                            }}
+                          />
+                          <span className={rt.key === `${editTarget?.concept}-${editTarget?.unitCode}` ? 'font-medium text-foreground' : 'text-muted-foreground'}>
+                            {rt.label}
+                            {rt.key === `${editTarget?.concept}-${editTarget?.unitCode}` && (
+                              <span className="text-[10px] ml-1 text-primary">(current)</span>
+                            )}
+                            {hasExisting && !applyToRoomTypes.includes(rt.key) && (
+                              <span className="text-[10px] ml-1 text-destructive">(will remove)</span>
+                            )}
+                          </span>
+                        </label>
+                      );
+                    })}
                   </div>
                 </ScrollArea>
               </div>
@@ -648,8 +677,8 @@ export default function Selections() {
 
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={() => setEditTarget(null)}>Cancel</Button>
-              <Button onClick={handleSaveSelection} disabled={!selForm.productName.trim() || applyToRoomTypes.length === 0}>
-                Save Selection{applyToRoomTypes.length > 1 ? ` (${applyToRoomTypes.length} types)` : ''}
+              <Button onClick={handleSaveSelection} disabled={!selForm.productName.trim()}>
+                Save Selection{applyToRoomTypes.length > 1 ? ` (${applyToRoomTypes.length} types)` : applyToRoomTypes.length === 0 ? ' (remove all)' : ''}
               </Button>
             </div>
           </div>
