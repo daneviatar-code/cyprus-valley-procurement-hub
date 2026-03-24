@@ -97,6 +97,25 @@ export default function Suppliers() {
     setPoModalOpen(true);
   };
 
+  const loadFromSelections = () => {
+    if (!poSupplierId) return;
+    const supplier = suppliers.find(s => s.id === poSupplierId);
+    if (!supplier) return;
+    const selItems = selectionItems.get(supplier.name) || [];
+    const existing = new Set(poForm.lineItems.map(l => l.itemName));
+    const newLines = selItems
+      .filter(name => !existing.has(name))
+      .map(name => ({
+        itemName: name,
+        quantity: 1,
+        unitPrice: allSelections[name]?.unitPrice ?? 0,
+        selected: true,
+      }));
+    if (newLines.length === 0) { toast({ title: 'No new items found in Selections for this supplier' }); return; }
+    setPoForm(f => ({ ...f, lineItems: [...f.lineItems, ...newLines] }));
+    toast({ title: `${newLines.length} item(s) loaded from Selections` });
+  };
+
   const savePO = () => {
     if (!poSupplierId) return;
     const selectedLines = poForm.lineItems.filter(l => l.selected);
@@ -562,7 +581,12 @@ export default function Suppliers() {
             </div>
 
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-2 block">Select Items & Quantities</label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-medium text-muted-foreground">Select Items & Quantities</label>
+                <Button variant="outline" size="sm" className="h-7 text-xs" onClick={loadFromSelections}>
+                  <Package className="h-3 w-3 mr-1" /> Load from Selections
+                </Button>
+              </div>
               <div className="border rounded-md max-h-60 overflow-auto">
                 <Table>
                   <TableHeader>
