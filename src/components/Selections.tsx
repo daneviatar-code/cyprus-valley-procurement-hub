@@ -677,8 +677,8 @@ export default function Selections() {
 
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={() => setEditTarget(null)}>Cancel</Button>
-              <Button onClick={handleSaveSelection} disabled={!selForm.productName.trim() || applyToRoomTypes.length === 0}>
-                Save Selection{applyToRoomTypes.length > 1 ? ` (${applyToRoomTypes.length} types)` : ''}
+              <Button onClick={handleSaveSelection} disabled={!selForm.productName.trim()}>
+                Save Selection{applyToRoomTypes.length > 1 ? ` (${applyToRoomTypes.length} types)` : applyToRoomTypes.length === 0 ? ' (remove all)' : ''}
               </Button>
             </div>
           </div>
