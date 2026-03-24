@@ -629,31 +629,47 @@ export default function Selections() {
             {/* Multi-apply to room types */}
             {roomTypesWithItem.length > 1 && (
               <div>
-                <label className="text-xs font-medium text-muted-foreground mb-2 block">
-                  Apply to room types ({applyToRoomTypes.length}/{roomTypesWithItem.length} selected)
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Apply to room types ({applyToRoomTypes.length}/{roomTypesWithItem.length} selected)
+                  </label>
+                  <div className="flex gap-2">
+                    <Button variant="link" size="sm" className="h-auto p-0 text-[10px]" onClick={() => setApplyToRoomTypes(roomTypesWithItem.map(r => r.key))}>
+                      Select all
+                    </Button>
+                    <Button variant="link" size="sm" className="h-auto p-0 text-[10px]" onClick={() => setApplyToRoomTypes([])}>
+                      Deselect all
+                    </Button>
+                  </div>
+                </div>
                 <ScrollArea className="h-[140px] rounded-md border p-3">
                   <div className="space-y-2">
-                    {roomTypesWithItem.map(rt => (
-                      <label key={rt.key} className="flex items-center gap-2 cursor-pointer text-sm">
-                        <Checkbox
-                          checked={applyToRoomTypes.includes(rt.key)}
-                          onCheckedChange={(checked) => {
-                            setApplyToRoomTypes(prev =>
-                              checked
-                                ? [...prev, rt.key]
-                                : prev.filter(k => k !== rt.key)
-                            );
-                          }}
-                        />
-                        <span className={rt.key === `${editTarget?.concept}-${editTarget?.unitCode}` ? 'font-medium text-foreground' : 'text-muted-foreground'}>
-                          {rt.label}
-                          {rt.key === `${editTarget?.concept}-${editTarget?.unitCode}` && (
-                            <span className="text-[10px] ml-1 text-primary">(current)</span>
-                          )}
-                        </span>
-                      </label>
-                    ))}
+                    {roomTypesWithItem.map(rt => {
+                      const hasExisting = allCards.some(c => `${c.concept}-${c.unitCode}` === rt.key && c.selections[editTarget?.itemName || '']);
+                      return (
+                        <label key={rt.key} className="flex items-center gap-2 cursor-pointer text-sm">
+                          <Checkbox
+                            checked={applyToRoomTypes.includes(rt.key)}
+                            onCheckedChange={(checked) => {
+                              setApplyToRoomTypes(prev =>
+                                checked
+                                  ? [...prev, rt.key]
+                                  : prev.filter(k => k !== rt.key)
+                              );
+                            }}
+                          />
+                          <span className={rt.key === `${editTarget?.concept}-${editTarget?.unitCode}` ? 'font-medium text-foreground' : 'text-muted-foreground'}>
+                            {rt.label}
+                            {rt.key === `${editTarget?.concept}-${editTarget?.unitCode}` && (
+                              <span className="text-[10px] ml-1 text-primary">(current)</span>
+                            )}
+                            {hasExisting && !applyToRoomTypes.includes(rt.key) && (
+                              <span className="text-[10px] ml-1 text-destructive">(will remove)</span>
+                            )}
+                          </span>
+                        </label>
+                      );
+                    })}
                   </div>
                 </ScrollArea>
               </div>
