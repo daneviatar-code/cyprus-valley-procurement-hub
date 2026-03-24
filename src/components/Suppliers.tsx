@@ -88,6 +88,7 @@ export default function Suppliers() {
       totalPrice: i.unitPrice,
       selected: false,
     }));
+    setEditPoId(null);
     setPoSupplierId(supplierId);
     setPoForm({
       poNumber: generatePONumber(purchaseOrders),
@@ -95,6 +96,19 @@ export default function Suppliers() {
       expectedDelivery: undefined,
       notes: '',
       lineItems: lines,
+    });
+    setPoModalOpen(true);
+  };
+
+  const openEditPO = (po: PurchaseOrder) => {
+    setEditPoId(po.id);
+    setPoSupplierId(po.supplierId);
+    setPoForm({
+      poNumber: po.poNumber,
+      status: po.status,
+      expectedDelivery: po.expectedDelivery ? new Date(po.expectedDelivery) : undefined,
+      notes: po.notes,
+      lineItems: po.items.map(i => ({ ...i, selected: true })),
     });
     setPoModalOpen(true);
   };
