@@ -581,7 +581,12 @@ export default function Suppliers() {
             </div>
 
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-2 block">Select Items & Quantities</label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-medium text-muted-foreground">Select Items & Quantities</label>
+                <Button variant="outline" size="sm" className="h-7 text-xs" onClick={loadFromSelections}>
+                  <Package className="h-3 w-3 mr-1" /> Load from Selections
+                </Button>
+              </div>
               <div className="border rounded-md max-h-60 overflow-auto">
                 <Table>
                   <TableHeader>
