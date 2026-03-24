@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Concept } from '@/data/masterData';
+import { loadSelections } from '@/data/selectionData';
 import {
   buildingAUnits,
   buildingBUnits,
@@ -170,6 +171,7 @@ function UnitPackageEditor({
   units: UnitType[];
 }) {
   const [pkg, setPkg] = useState<PackageData>(() => loadPackage(concept, unitCode));
+  const selections = useMemo(() => loadSelections(concept, unitCode), [concept, unitCode]);
 
   const update = useCallback(
     (newPkg: PackageData) => {
@@ -201,20 +203,32 @@ function UnitPackageEditor({
   const floorPlanUrl = getUnitFloorPlanUrl(concept, unitCode);
   const unit = units.find(u => u.code === unitCode);
 
+  // Enrich items with selection data (selection fills when manual value is empty/0)
+  const enrichedItems = useMemo(() => {
+    return pkg.items.map(item => {
+      const sel = selections[item.itemName];
+      return {
+        ...item,
+        effectiveSupplier: item.supplier || sel?.supplier || '',
+        effectiveUnitPrice: item.unitPrice > 0 ? item.unitPrice : (sel?.unitPrice ?? 0),
+      };
+    });
+  }, [pkg.items, selections]);
+
   // Category subtotals
   const categoryTotals = useMemo(() => {
     const totals: Record<string, number> = {};
     CATEGORIES.forEach(cat => {
-      totals[cat] = pkg.items
+      totals[cat] = enrichedItems
         .filter(it => it.category === cat)
-        .reduce((sum, it) => sum + it.quantity * it.unitPrice, 0);
+        .reduce((sum, it) => sum + it.quantity * it.effectiveUnitPrice, 0);
     });
     return totals;
-  }, [pkg.items]);
+  }, [enrichedItems]);
 
   const totalPrice = useMemo(
-    () => pkg.items.reduce((sum, it) => sum + it.quantity * it.unitPrice, 0),
-    [pkg.items]
+    () => enrichedItems.reduce((sum, it) => sum + it.quantity * it.effectiveUnitPrice, 0),
+    [enrichedItems]
   );
 
   return (
@@ -254,7 +268,7 @@ function UnitPackageEditor({
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {pkg.items.map(item => (
+                {enrichedItems.map(item => (
                   <tr key={item.id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-3 py-1.5">
                       <input
@@ -289,21 +303,25 @@ function UnitPackageEditor({
                         type="number"
                         min={0}
                         step={0.01}
-                        className="w-full bg-transparent border-0 outline-none text-right text-foreground text-xs focus:ring-1 focus:ring-accent rounded px-1 py-0.5"
-                        value={item.unitPrice || ''}
+                        className={`w-full bg-transparent border-0 outline-none text-right text-xs focus:ring-1 focus:ring-accent rounded px-1 py-0.5 ${
+                          item.unitPrice > 0 ? 'text-foreground' : 'text-muted-foreground italic'
+                        }`}
+                        value={item.unitPrice > 0 ? item.unitPrice : ''}
                         onChange={e => updateItem(item.id, 'unitPrice', Math.max(0, parseFloat(e.target.value) || 0))}
-                        placeholder="0.00"
+                        placeholder={item.effectiveUnitPrice > 0 ? item.effectiveUnitPrice.toFixed(2) : '0.00'}
                       />
                     </td>
                     <td className="px-3 py-1.5 text-right font-medium text-foreground">
-                      {(item.quantity * item.unitPrice).toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {(item.quantity * item.effectiveUnitPrice).toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td className="px-3 py-1.5">
                       <input
-                        className="w-full bg-transparent border-0 outline-none text-foreground text-xs focus:ring-1 focus:ring-accent rounded px-1 py-0.5"
+                        className={`w-full bg-transparent border-0 outline-none text-xs focus:ring-1 focus:ring-accent rounded px-1 py-0.5 ${
+                          item.supplier ? 'text-foreground' : 'text-muted-foreground italic'
+                        }`}
                         value={item.supplier}
                         onChange={e => updateItem(item.id, 'supplier', e.target.value)}
-                        placeholder="—"
+                        placeholder={item.effectiveSupplier || '—'}
                       />
                     </td>
                     <td className="px-3 py-1.5">
@@ -370,7 +388,12 @@ function BuildingSummary({ concept, units }: { concept: Concept; units: UnitType
   const rows = useMemo(() => {
     return units.map(u => {
       const pkg = loadPackage(concept, u.code);
-      const pkgTotal = pkg.items.reduce((s, it) => s + it.quantity * it.unitPrice, 0);
+      const sels = loadSelections(concept, u.code);
+      const pkgTotal = pkg.items.reduce((s, it) => {
+        const sel = sels[it.itemName];
+        const price = it.unitPrice > 0 ? it.unitPrice : (sel?.unitPrice ?? 0);
+        return s + it.quantity * price;
+      }, 0);
       const instancesPerBuilding = getUnitInstanceCount(u);
       return {
         code: u.code,
