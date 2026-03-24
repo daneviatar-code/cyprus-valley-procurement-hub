@@ -522,6 +522,94 @@ export default function Suppliers() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Create PO Modal */}
+      <Dialog open={poModalOpen} onOpenChange={setPoModalOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>Create Purchase Order</DialogTitle></DialogHeader>
+          <div className="grid gap-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">PO Number</label>
+                <Input value={poForm.poNumber} readOnly className="bg-muted" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Status</label>
+                <Select value={poForm.status} onValueChange={(v: PurchaseOrder['status']) => setPoForm(f => ({ ...f, status: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {(['Draft', 'Sent', 'Confirmed', 'Delivered'] as const).map(st => (
+                      <SelectItem key={st} value={st}>{st}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Expected Delivery</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !poForm.expectedDelivery && "text-muted-foreground")}>
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {poForm.expectedDelivery ? format(poForm.expectedDelivery, 'PPP') : 'Pick a date'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={poForm.expectedDelivery} onSelect={d => setPoForm(f => ({ ...f, expectedDelivery: d }))} initialFocus className={cn("p-3 pointer-events-auto")} />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">Select Items & Quantities</label>
+              <div className="border rounded-md max-h-52 overflow-auto">
+                {poForm.lineItems.length === 0 && <p className="text-sm text-muted-foreground p-3 text-center">No items available — add items to this supplier first.</p>}
+                {poForm.lineItems.map((line, idx) => (
+                  <div key={idx} className={cn("flex items-center gap-3 px-3 py-2 border-b last:border-b-0", line.selected && "bg-primary/5")}>
+                    <Checkbox checked={line.selected} onCheckedChange={checked => {
+                      setPoForm(f => {
+                        const items = [...f.lineItems];
+                        items[idx] = { ...items[idx], selected: !!checked };
+                        return { ...f, lineItems: items };
+                      });
+                    }} />
+                    <span className="flex-1 text-sm">{line.itemName}</span>
+                    <span className="text-xs text-muted-foreground font-mono">€{line.unitPrice.toLocaleString()}</span>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={line.quantity}
+                      onChange={e => {
+                        setPoForm(f => {
+                          const items = [...f.lineItems];
+                          items[idx] = { ...items[idx], quantity: Math.max(1, +e.target.value) };
+                          return { ...f, lineItems: items };
+                        });
+                      }}
+                      className="w-20 h-7 text-xs"
+                    />
+                  </div>
+                ))}
+              </div>
+              {poForm.lineItems.some(l => l.selected) && (
+                <div className="mt-2 text-right text-sm font-medium text-foreground">
+                  Total: €{poForm.lineItems.filter(l => l.selected).reduce((a, l) => a + l.quantity * l.unitPrice, 0).toLocaleString()}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Notes</label>
+              <Textarea value={poForm.notes} onChange={e => setPoForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Additional notes…" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPoModalOpen(false)}>Cancel</Button>
+            <Button onClick={savePO}>Create PO</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
