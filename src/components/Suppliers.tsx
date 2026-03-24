@@ -60,6 +60,71 @@ export default function Suppliers() {
   const [itemForm, setItemForm] = useState<SupplierItem>(emptyItem());
   const [itemSupplierId, setItemSupplierId] = useState<string | null>(null);
 
+  // Purchase Orders state
+  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>(loadPurchaseOrders);
+  const [poModalOpen, setPoModalOpen] = useState(false);
+  const [poSupplierId, setPoSupplierId] = useState<string | null>(null);
+  const [poForm, setPoForm] = useState<{
+    poNumber: string;
+    status: PurchaseOrder['status'];
+    expectedDelivery: Date | undefined;
+    notes: string;
+    lineItems: (POLineItem & { selected: boolean })[];
+  }>({ poNumber: '', status: 'Draft', expectedDelivery: undefined, notes: '', lineItems: [] });
+
+  const persistPOs = useCallback((data: PurchaseOrder[]) => {
+    setPurchaseOrders(data);
+    savePurchaseOrders(data);
+  }, []);
+
+  const openCreatePO = (supplierId: string) => {
+    const supplier = suppliers.find(s => s.id === supplierId);
+    if (!supplier) return;
+    const lines = supplier.items.map(i => ({
+      itemName: i.itemName,
+      quantity: 1,
+      unitPrice: i.unitPrice,
+      selected: false,
+    }));
+    setPoSupplierId(supplierId);
+    setPoForm({
+      poNumber: generatePONumber(purchaseOrders),
+      status: 'Draft',
+      expectedDelivery: undefined,
+      notes: '',
+      lineItems: lines,
+    });
+    setPoModalOpen(true);
+  };
+
+  const savePO = () => {
+    if (!poSupplierId) return;
+    const selectedLines = poForm.lineItems.filter(l => l.selected);
+    if (selectedLines.length === 0) { toast({ title: 'Select at least one item' }); return; }
+    const po: PurchaseOrder = {
+      id: generatePOId(),
+      poNumber: poForm.poNumber,
+      supplierId: poSupplierId,
+      items: selectedLines.map(({ selected, ...rest }) => rest),
+      status: poForm.status,
+      expectedDelivery: poForm.expectedDelivery?.toISOString() || '',
+      notes: poForm.notes,
+      createdAt: new Date().toISOString(),
+    };
+    persistPOs([...purchaseOrders, po]);
+    setPoModalOpen(false);
+    toast({ title: `Purchase Order ${po.poNumber} created` });
+  };
+
+  const deletePO = (poId: string) => {
+    persistPOs(purchaseOrders.filter(p => p.id !== poId));
+    toast({ title: 'Purchase order deleted' });
+  };
+
+  const updatePOStatus = (poId: string, status: PurchaseOrder['status']) => {
+    persistPOs(purchaseOrders.map(p => p.id === poId ? { ...p, status } : p));
+  };
+
   // auto-link from selections
   const allSelections = useMemo(() => loadAllSelections(), []);
   const selectionItems = useMemo(() => {
