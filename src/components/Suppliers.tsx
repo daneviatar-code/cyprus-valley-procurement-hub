@@ -1,9 +1,10 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Pencil, Trash2, ExternalLink, Package, Search, ChevronDown, ChevronRight } from 'lucide-react';
+import { Plus, Pencil, Trash2, ExternalLink, Package, Search, ChevronDown, ChevronRight, FileText, CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
@@ -14,8 +15,17 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import {
+  Popover, PopoverContent, PopoverTrigger,
+} from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import {
   Supplier, SupplierItem, loadSuppliers, saveSuppliers, generateSupplierId,
 } from '@/data/supplierData';
+import {
+  PurchaseOrder, POLineItem, loadPurchaseOrders, savePurchaseOrders, generatePONumber, generatePOId,
+} from '@/data/purchaseOrderData';
 import { loadAllSelections } from '@/data/selectionData';
 import { toast } from '@/hooks/use-toast';
 
@@ -49,6 +59,71 @@ export default function Suppliers() {
   const [editItemIdx, setEditItemIdx] = useState<number | null>(null);
   const [itemForm, setItemForm] = useState<SupplierItem>(emptyItem());
   const [itemSupplierId, setItemSupplierId] = useState<string | null>(null);
+
+  // Purchase Orders state
+  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>(loadPurchaseOrders);
+  const [poModalOpen, setPoModalOpen] = useState(false);
+  const [poSupplierId, setPoSupplierId] = useState<string | null>(null);
+  const [poForm, setPoForm] = useState<{
+    poNumber: string;
+    status: PurchaseOrder['status'];
+    expectedDelivery: Date | undefined;
+    notes: string;
+    lineItems: (POLineItem & { selected: boolean })[];
+  }>({ poNumber: '', status: 'Draft', expectedDelivery: undefined, notes: '', lineItems: [] });
+
+  const persistPOs = useCallback((data: PurchaseOrder[]) => {
+    setPurchaseOrders(data);
+    savePurchaseOrders(data);
+  }, []);
+
+  const openCreatePO = (supplierId: string) => {
+    const supplier = suppliers.find(s => s.id === supplierId);
+    if (!supplier) return;
+    const lines = supplier.items.map(i => ({
+      itemName: i.itemName,
+      quantity: 1,
+      unitPrice: i.unitPrice,
+      selected: false,
+    }));
+    setPoSupplierId(supplierId);
+    setPoForm({
+      poNumber: generatePONumber(purchaseOrders),
+      status: 'Draft',
+      expectedDelivery: undefined,
+      notes: '',
+      lineItems: lines,
+    });
+    setPoModalOpen(true);
+  };
+
+  const savePO = () => {
+    if (!poSupplierId) return;
+    const selectedLines = poForm.lineItems.filter(l => l.selected);
+    if (selectedLines.length === 0) { toast({ title: 'Select at least one item' }); return; }
+    const po: PurchaseOrder = {
+      id: generatePOId(),
+      poNumber: poForm.poNumber,
+      supplierId: poSupplierId,
+      items: selectedLines.map(({ selected, ...rest }) => rest),
+      status: poForm.status,
+      expectedDelivery: poForm.expectedDelivery?.toISOString() || '',
+      notes: poForm.notes,
+      createdAt: new Date().toISOString(),
+    };
+    persistPOs([...purchaseOrders, po]);
+    setPoModalOpen(false);
+    toast({ title: `Purchase Order ${po.poNumber} created` });
+  };
+
+  const deletePO = (poId: string) => {
+    persistPOs(purchaseOrders.filter(p => p.id !== poId));
+    toast({ title: 'Purchase order deleted' });
+  };
+
+  const updatePOStatus = (poId: string, status: PurchaseOrder['status']) => {
+    persistPOs(purchaseOrders.map(p => p.id === poId ? { ...p, status } : p));
+  };
 
   // auto-link from selections
   const allSelections = useMemo(() => loadAllSelections(), []);
@@ -274,6 +349,66 @@ export default function Suppliers() {
                             </TableBody>
                           </Table>
                         )}
+
+                        {/* Purchase Orders Section */}
+                        <div className="mt-6 border-t pt-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="text-sm font-semibold text-foreground flex items-center gap-2"><FileText className="h-4 w-4" /> Purchase Orders</h4>
+                            <Button variant="outline" size="sm" onClick={() => openCreatePO(s.id)} disabled={s.items.length === 0}>
+                              <Plus className="h-3.5 w-3.5 mr-1" /> Create PO
+                            </Button>
+                          </div>
+                          {(() => {
+                            const supplierPOs = purchaseOrders.filter(p => p.supplierId === s.id);
+                            if (supplierPOs.length === 0) return <p className="text-sm text-muted-foreground py-3 text-center">No purchase orders yet.</p>;
+                            return (
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead>PO #</TableHead>
+                                    <TableHead>Date</TableHead>
+                                    <TableHead className="text-center">Items</TableHead>
+                                    <TableHead className="text-right">Total €</TableHead>
+                                    <TableHead className="text-center">Delivery</TableHead>
+                                    <TableHead className="text-center">Status</TableHead>
+                                    <TableHead className="w-20" />
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {supplierPOs.map(po => {
+                                    const poTotal = po.items.reduce((a, i) => a + i.quantity * i.unitPrice, 0);
+                                    return (
+                                      <TableRow key={po.id}>
+                                        <TableCell className="font-mono font-medium">{po.poNumber}</TableCell>
+                                        <TableCell className="text-sm">{po.createdAt ? format(new Date(po.createdAt), 'dd MMM yyyy') : '—'}</TableCell>
+                                        <TableCell className="text-center">{po.items.length}</TableCell>
+                                        <TableCell className="text-right font-mono">€{poTotal.toLocaleString()}</TableCell>
+                                        <TableCell className="text-center text-sm">{po.expectedDelivery ? format(new Date(po.expectedDelivery), 'dd MMM yyyy') : '—'}</TableCell>
+                                        <TableCell className="text-center">
+                                          <Select value={po.status} onValueChange={(v: PurchaseOrder['status']) => updatePOStatus(po.id, v)}>
+                                            <SelectTrigger className="h-7 text-xs w-28">
+                                              <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              {(['Draft', 'Sent', 'Confirmed', 'Delivered'] as const).map(st => (
+                                                <SelectItem key={st} value={st}>{st}</SelectItem>
+                                              ))}
+                                            </SelectContent>
+                                          </Select>
+                                        </TableCell>
+                                        <TableCell>
+                                          <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => deletePO(po.id)}>
+                                            <Trash2 className="h-3 w-3" />
+                                          </Button>
+                                        </TableCell>
+                                      </TableRow>
+                                    );
+                                  })}
+                                </TableBody>
+                              </Table>
+                            );
+                          })()}
+                        </div>
                       </TableCell>
                     </TableRow>
                   )}
@@ -384,6 +519,94 @@ export default function Suppliers() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setItemModal(false)}>Cancel</Button>
             <Button onClick={saveItem}>{editItemIdx !== null ? 'Update' : 'Add Item'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create PO Modal */}
+      <Dialog open={poModalOpen} onOpenChange={setPoModalOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>Create Purchase Order</DialogTitle></DialogHeader>
+          <div className="grid gap-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">PO Number</label>
+                <Input value={poForm.poNumber} readOnly className="bg-muted" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Status</label>
+                <Select value={poForm.status} onValueChange={(v: PurchaseOrder['status']) => setPoForm(f => ({ ...f, status: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {(['Draft', 'Sent', 'Confirmed', 'Delivered'] as const).map(st => (
+                      <SelectItem key={st} value={st}>{st}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Expected Delivery</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !poForm.expectedDelivery && "text-muted-foreground")}>
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {poForm.expectedDelivery ? format(poForm.expectedDelivery, 'PPP') : 'Pick a date'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={poForm.expectedDelivery} onSelect={d => setPoForm(f => ({ ...f, expectedDelivery: d }))} initialFocus className={cn("p-3 pointer-events-auto")} />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">Select Items & Quantities</label>
+              <div className="border rounded-md max-h-52 overflow-auto">
+                {poForm.lineItems.length === 0 && <p className="text-sm text-muted-foreground p-3 text-center">No items available — add items to this supplier first.</p>}
+                {poForm.lineItems.map((line, idx) => (
+                  <div key={idx} className={cn("flex items-center gap-3 px-3 py-2 border-b last:border-b-0", line.selected && "bg-primary/5")}>
+                    <Checkbox checked={line.selected} onCheckedChange={checked => {
+                      setPoForm(f => {
+                        const items = [...f.lineItems];
+                        items[idx] = { ...items[idx], selected: !!checked };
+                        return { ...f, lineItems: items };
+                      });
+                    }} />
+                    <span className="flex-1 text-sm">{line.itemName}</span>
+                    <span className="text-xs text-muted-foreground font-mono">€{line.unitPrice.toLocaleString()}</span>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={line.quantity}
+                      onChange={e => {
+                        setPoForm(f => {
+                          const items = [...f.lineItems];
+                          items[idx] = { ...items[idx], quantity: Math.max(1, +e.target.value) };
+                          return { ...f, lineItems: items };
+                        });
+                      }}
+                      className="w-20 h-7 text-xs"
+                    />
+                  </div>
+                ))}
+              </div>
+              {poForm.lineItems.some(l => l.selected) && (
+                <div className="mt-2 text-right text-sm font-medium text-foreground">
+                  Total: €{poForm.lineItems.filter(l => l.selected).reduce((a, l) => a + l.quantity * l.unitPrice, 0).toLocaleString()}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Notes</label>
+              <Textarea value={poForm.notes} onChange={e => setPoForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Additional notes…" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPoModalOpen(false)}>Cancel</Button>
+            <Button onClick={savePO}>Create PO</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
