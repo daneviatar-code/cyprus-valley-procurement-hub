@@ -8,6 +8,7 @@ import PackageEditor from '@/components/PackageEditor';
 import ProjectDataTable from '@/components/ProjectDataTable';
 import ItemAssignment from '@/components/ItemAssignment';
 import Selections from '@/components/Selections';
+import Suppliers from '@/components/Suppliers';
 import { type UserItemData, loadUserData, saveUserData } from '@/data/projectData';
 import {
   MasterRow,
@@ -17,7 +18,7 @@ import {
   computeTotalItemsCount,
 } from '@/data/masterData';
 
-type Tab = 'procurement' | 'rooms' | 'packages' | 'pricing' | 'projectData' | 'itemAssignment' | 'selections';
+type Tab = 'procurement' | 'rooms' | 'packages' | 'pricing' | 'projectData' | 'itemAssignment' | 'suppliers' | 'selections';
 
 export default function Index() {
   const [userData, setUserData] = useState<Record<number, UserItemData>>(loadUserData);
@@ -48,6 +49,7 @@ export default function Index() {
     { key: 'pricing', label: 'Pricing Sheet' },
     { key: 'projectData', label: 'Project Data' },
     { key: 'itemAssignment', label: 'Item Assignment' },
+    { key: 'suppliers', label: 'Suppliers' },
     { key: 'selections', label: 'Selections' },
   ];
 
@@ -124,6 +126,8 @@ export default function Index() {
         {activeTab === 'itemAssignment' && (
           <ItemAssignment masterData={masterData} onUpdate={handleUpdateMasterData} />
         )}
+
+        {activeTab === 'suppliers' && <Suppliers />}
 
         {activeTab === 'selections' && <Selections />}
       </main>
