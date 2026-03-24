@@ -388,7 +388,12 @@ function BuildingSummary({ concept, units }: { concept: Concept; units: UnitType
   const rows = useMemo(() => {
     return units.map(u => {
       const pkg = loadPackage(concept, u.code);
-      const pkgTotal = pkg.items.reduce((s, it) => s + it.quantity * it.unitPrice, 0);
+      const sels = loadSelections(concept, u.code);
+      const pkgTotal = pkg.items.reduce((s, it) => {
+        const sel = sels[it.itemName];
+        const price = it.unitPrice > 0 ? it.unitPrice : (sel?.unitPrice ?? 0);
+        return s + it.quantity * price;
+      }, 0);
       const instancesPerBuilding = getUnitInstanceCount(u);
       return {
         code: u.code,
