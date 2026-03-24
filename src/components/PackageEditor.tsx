@@ -171,6 +171,7 @@ function UnitPackageEditor({
   units: UnitType[];
 }) {
   const [pkg, setPkg] = useState<PackageData>(() => loadPackage(concept, unitCode));
+  const selections = useMemo(() => loadSelections(concept, unitCode), [concept, unitCode]);
 
   const update = useCallback(
     (newPkg: PackageData) => {
@@ -202,20 +203,32 @@ function UnitPackageEditor({
   const floorPlanUrl = getUnitFloorPlanUrl(concept, unitCode);
   const unit = units.find(u => u.code === unitCode);
 
+  // Enrich items with selection data (selection fills when manual value is empty/0)
+  const enrichedItems = useMemo(() => {
+    return pkg.items.map(item => {
+      const sel = selections[item.itemName];
+      return {
+        ...item,
+        effectiveSupplier: item.supplier || sel?.supplier || '',
+        effectiveUnitPrice: item.unitPrice > 0 ? item.unitPrice : (sel?.unitPrice ?? 0),
+      };
+    });
+  }, [pkg.items, selections]);
+
   // Category subtotals
   const categoryTotals = useMemo(() => {
     const totals: Record<string, number> = {};
     CATEGORIES.forEach(cat => {
-      totals[cat] = pkg.items
+      totals[cat] = enrichedItems
         .filter(it => it.category === cat)
-        .reduce((sum, it) => sum + it.quantity * it.unitPrice, 0);
+        .reduce((sum, it) => sum + it.quantity * it.effectiveUnitPrice, 0);
     });
     return totals;
-  }, [pkg.items]);
+  }, [enrichedItems]);
 
   const totalPrice = useMemo(
-    () => pkg.items.reduce((sum, it) => sum + it.quantity * it.unitPrice, 0),
-    [pkg.items]
+    () => enrichedItems.reduce((sum, it) => sum + it.quantity * it.effectiveUnitPrice, 0),
+    [enrichedItems]
   );
 
   return (
