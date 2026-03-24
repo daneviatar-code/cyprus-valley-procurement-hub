@@ -433,7 +433,7 @@ export default function Suppliers() {
                                         <span className="font-mono font-semibold text-sm text-foreground">{po.poNumber}</span>
                                         <div className="flex items-center gap-1">
                                           <Badge className={`text-[10px] ${poStatusColors[po.status] || poStatusColors.Draft}`}>{po.status}</Badge>
-                                          <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => deletePO(po.id)}>
+                                          <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={(e) => { e.stopPropagation(); deletePO(po.id); }}>
                                             <Trash2 className="h-3 w-3" />
                                           </Button>
                                         </div>
