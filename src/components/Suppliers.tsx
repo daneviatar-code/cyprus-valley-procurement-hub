@@ -85,7 +85,7 @@ export default function Suppliers() {
   const openNew = () => { setEditId(null); setForm(emptySupplier()); setModalOpen(true); };
   const openEdit = (s: Supplier) => {
     setEditId(s.id);
-    setForm({ name: s.name, contactPerson: s.contactPerson, email: s.email, phone: s.phone, website: s.website, category: s.category, items: s.items });
+    setForm({ name: s.name, contactPerson: s.contactPerson, email: s.email, phone: s.phone, website: s.website, country: s.country || '', category: s.category, items: s.items });
     setModalOpen(true);
   };
 
