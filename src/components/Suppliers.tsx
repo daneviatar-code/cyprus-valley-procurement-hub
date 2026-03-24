@@ -120,15 +120,21 @@ export default function Suppliers() {
 
   const savePO = () => {
     if (!poSupplierId) return;
+    const supplier = suppliers.find(s => s.id === poSupplierId);
     const selectedLines = poForm.lineItems.filter(l => l.selected);
     if (selectedLines.length === 0) { toast({ title: 'Select at least one item' }); return; }
+    const items = selectedLines.map(({ selected, ...rest }) => ({ ...rest, totalPrice: rest.qty * rest.unitPrice }));
+    const totalValue = items.reduce((a, i) => a + i.totalPrice, 0);
     const po: PurchaseOrder = {
       id: generatePOId(),
       poNumber: poForm.poNumber,
       supplierId: poSupplierId,
-      items: selectedLines.map(({ selected, ...rest }) => rest),
+      supplierName: supplier?.name || '',
+      items,
       status: poForm.status,
       expectedDelivery: poForm.expectedDelivery?.toISOString() || '',
+      totalValue,
+      currency: supplier?.currency || 'EUR',
       notes: poForm.notes,
       createdAt: new Date().toISOString(),
     };
