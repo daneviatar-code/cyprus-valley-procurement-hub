@@ -563,38 +563,60 @@ export default function Suppliers() {
 
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-2 block">Select Items & Quantities</label>
-              <div className="border rounded-md max-h-52 overflow-auto">
-                {poForm.lineItems.length === 0 && <p className="text-sm text-muted-foreground p-3 text-center">No items available — add items to this supplier first.</p>}
-                {poForm.lineItems.map((line, idx) => (
-                  <div key={idx} className={cn("flex items-center gap-3 px-3 py-2 border-b last:border-b-0", line.selected && "bg-primary/5")}>
-                    <Checkbox checked={line.selected} onCheckedChange={checked => {
-                      setPoForm(f => {
-                        const items = [...f.lineItems];
-                        items[idx] = { ...items[idx], selected: !!checked };
-                        return { ...f, lineItems: items };
-                      });
-                    }} />
-                    <span className="flex-1 text-sm">{line.itemName}</span>
-                    <span className="text-xs text-muted-foreground font-mono">€{line.unitPrice.toLocaleString()}</span>
-                    <Input
-                      type="number"
-                      min={1}
-                      value={line.quantity}
-                      onChange={e => {
-                        setPoForm(f => {
-                          const items = [...f.lineItems];
-                          items[idx] = { ...items[idx], quantity: Math.max(1, +e.target.value) };
-                          return { ...f, lineItems: items };
-                        });
-                      }}
-                      className="w-20 h-7 text-xs"
-                    />
-                  </div>
-                ))}
+              <div className="border rounded-md max-h-60 overflow-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-8" />
+                      <TableHead>Item Name</TableHead>
+                      <TableHead className="w-20 text-right">Qty</TableHead>
+                      <TableHead className="w-28 text-right">Unit Price €</TableHead>
+                      <TableHead className="w-28 text-right">Total €</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {poForm.lineItems.length === 0 && (
+                      <TableRow><TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-4">No items available — add items to this supplier first.</TableCell></TableRow>
+                    )}
+                    {poForm.lineItems.map((line, idx) => (
+                      <TableRow key={idx} className={cn(line.selected && "bg-primary/5")}>
+                        <TableCell>
+                          <Checkbox checked={line.selected} onCheckedChange={checked => {
+                            setPoForm(f => {
+                              const items = [...f.lineItems];
+                              items[idx] = { ...items[idx], selected: !!checked };
+                              return { ...f, lineItems: items };
+                            });
+                          }} />
+                        </TableCell>
+                        <TableCell className="text-sm font-medium">{line.itemName}</TableCell>
+                        <TableCell className="text-right">
+                          <Input type="number" min={1} value={line.quantity} onChange={e => {
+                            setPoForm(f => {
+                              const items = [...f.lineItems];
+                              items[idx] = { ...items[idx], quantity: Math.max(1, +e.target.value) };
+                              return { ...f, lineItems: items };
+                            });
+                          }} className="w-16 h-7 text-xs text-right ml-auto" />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Input type="number" min={0} value={line.unitPrice || ''} onChange={e => {
+                            setPoForm(f => {
+                              const items = [...f.lineItems];
+                              items[idx] = { ...items[idx], unitPrice: +e.target.value };
+                              return { ...f, lineItems: items };
+                            });
+                          }} className="w-24 h-7 text-xs text-right ml-auto" />
+                        </TableCell>
+                        <TableCell className="text-right font-mono text-sm">€{(line.quantity * line.unitPrice).toLocaleString()}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
               {poForm.lineItems.some(l => l.selected) && (
-                <div className="mt-2 text-right text-sm font-medium text-foreground">
-                  Total: €{poForm.lineItems.filter(l => l.selected).reduce((a, l) => a + l.quantity * l.unitPrice, 0).toLocaleString()}
+                <div className="mt-2 text-right text-sm font-semibold text-foreground border-t pt-2">
+                  Grand Total: €{poForm.lineItems.filter(l => l.selected).reduce((a, l) => a + l.quantity * l.unitPrice, 0).toLocaleString()}
                 </div>
               )}
             </div>
