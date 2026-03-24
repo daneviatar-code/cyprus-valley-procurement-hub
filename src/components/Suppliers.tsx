@@ -458,7 +458,7 @@ export default function Suppliers() {
                                           </div>
                                         )}
                                       </div>
-                                      <div className="mt-2 pt-2 border-t">
+                                      <div className="mt-2 pt-2 border-t" onClick={e => e.stopPropagation()}>
                                         <Select value={po.status} onValueChange={(v: PurchaseOrder['status']) => updatePOStatus(po.id, v)}>
                                           <SelectTrigger className="h-7 text-xs w-full">
                                             <SelectValue />
