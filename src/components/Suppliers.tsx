@@ -117,15 +117,34 @@ export default function Suppliers() {
     if (!poSupplierId) return;
     const supplier = suppliers.find(s => s.id === poSupplierId);
     if (!supplier) return;
-    const selItems = selectionItems.get(supplier.name) || [];
+    const PREFIX = 'cyprus-valley-selections';
+    // Scan all selection keys and aggregate items matching this supplier
+    const itemAgg = new Map<string, { qty: number; unitPrice: number }>();
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key || !key.startsWith(PREFIX)) continue;
+      try {
+        const map = JSON.parse(localStorage.getItem(key) || '{}');
+        for (const [itemName, sel] of Object.entries(map) as [string, any][]) {
+          if (sel.supplier === supplier.name) {
+            const prev = itemAgg.get(itemName);
+            if (prev) {
+              prev.qty += 1;
+            } else {
+              itemAgg.set(itemName, { qty: 1, unitPrice: sel.unitPrice ?? 0 });
+            }
+          }
+        }
+      } catch {}
+    }
     const existing = new Set(poForm.lineItems.map(l => l.itemName));
-    const newLines = selItems
-      .filter(name => !existing.has(name))
-      .map(name => ({
+    const newLines = Array.from(itemAgg.entries())
+      .filter(([name]) => !existing.has(name))
+      .map(([name, { qty, unitPrice }]) => ({
         itemName: name,
-        qty: 1,
-        unitPrice: allSelections[name]?.unitPrice ?? 0,
-        totalPrice: allSelections[name]?.unitPrice ?? 0,
+        qty,
+        unitPrice,
+        totalPrice: qty * unitPrice,
         selected: true,
       }));
     if (newLines.length === 0) { toast({ title: 'No new items found in Selections for this supplier' }); return; }
