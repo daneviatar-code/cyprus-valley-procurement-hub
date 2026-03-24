@@ -349,6 +349,66 @@ export default function Suppliers() {
                             </TableBody>
                           </Table>
                         )}
+
+                        {/* Purchase Orders Section */}
+                        <div className="mt-6 border-t pt-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="text-sm font-semibold text-foreground flex items-center gap-2"><FileText className="h-4 w-4" /> Purchase Orders</h4>
+                            <Button variant="outline" size="sm" onClick={() => openCreatePO(s.id)} disabled={s.items.length === 0}>
+                              <Plus className="h-3.5 w-3.5 mr-1" /> Create PO
+                            </Button>
+                          </div>
+                          {(() => {
+                            const supplierPOs = purchaseOrders.filter(p => p.supplierId === s.id);
+                            if (supplierPOs.length === 0) return <p className="text-sm text-muted-foreground py-3 text-center">No purchase orders yet.</p>;
+                            return (
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead>PO #</TableHead>
+                                    <TableHead>Date</TableHead>
+                                    <TableHead className="text-center">Items</TableHead>
+                                    <TableHead className="text-right">Total €</TableHead>
+                                    <TableHead className="text-center">Delivery</TableHead>
+                                    <TableHead className="text-center">Status</TableHead>
+                                    <TableHead className="w-20" />
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {supplierPOs.map(po => {
+                                    const poTotal = po.items.reduce((a, i) => a + i.quantity * i.unitPrice, 0);
+                                    return (
+                                      <TableRow key={po.id}>
+                                        <TableCell className="font-mono font-medium">{po.poNumber}</TableCell>
+                                        <TableCell className="text-sm">{po.createdAt ? format(new Date(po.createdAt), 'dd MMM yyyy') : '—'}</TableCell>
+                                        <TableCell className="text-center">{po.items.length}</TableCell>
+                                        <TableCell className="text-right font-mono">€{poTotal.toLocaleString()}</TableCell>
+                                        <TableCell className="text-center text-sm">{po.expectedDelivery ? format(new Date(po.expectedDelivery), 'dd MMM yyyy') : '—'}</TableCell>
+                                        <TableCell className="text-center">
+                                          <Select value={po.status} onValueChange={(v: PurchaseOrder['status']) => updatePOStatus(po.id, v)}>
+                                            <SelectTrigger className="h-7 text-xs w-28">
+                                              <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              {(['Draft', 'Sent', 'Confirmed', 'Delivered'] as const).map(st => (
+                                                <SelectItem key={st} value={st}>{st}</SelectItem>
+                                              ))}
+                                            </SelectContent>
+                                          </Select>
+                                        </TableCell>
+                                        <TableCell>
+                                          <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => deletePO(po.id)}>
+                                            <Trash2 className="h-3 w-3" />
+                                          </Button>
+                                        </TableCell>
+                                      </TableRow>
+                                    );
+                                  })}
+                                </TableBody>
+                              </Table>
+                            );
+                          })()}
+                        </div>
                       </TableCell>
                     </TableRow>
                   )}
