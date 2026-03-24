@@ -63,6 +63,7 @@ export default function Suppliers() {
   // Purchase Orders state
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>(loadPurchaseOrders);
   const [poModalOpen, setPoModalOpen] = useState(false);
+  const [editPoId, setEditPoId] = useState<string | null>(null);
   const [poSupplierId, setPoSupplierId] = useState<string | null>(null);
   const [poForm, setPoForm] = useState<{
     poNumber: string;
