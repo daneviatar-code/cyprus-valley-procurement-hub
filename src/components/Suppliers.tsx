@@ -29,7 +29,7 @@ const statusColors: Record<SupplierItem['status'], string> = {
 };
 
 const emptySupplier = (): Omit<Supplier, 'id' | 'createdAt'> => ({
-  name: '', contactPerson: '', email: '', phone: '', website: '', country: '', category: 'Furniture', items: [],
+  name: '', contactPerson: '', email: '', phone: '', website: '', country: '', address: '', paymentTerms: '', category: 'Furniture', items: [],
 });
 
 const emptyItem = (): SupplierItem => ({
@@ -85,7 +85,7 @@ export default function Suppliers() {
   const openNew = () => { setEditId(null); setForm(emptySupplier()); setModalOpen(true); };
   const openEdit = (s: Supplier) => {
     setEditId(s.id);
-    setForm({ name: s.name, contactPerson: s.contactPerson, email: s.email, phone: s.phone, website: s.website, country: s.country || '', category: s.category, items: s.items });
+    setForm({ name: s.name, contactPerson: s.contactPerson, email: s.email, phone: s.phone, website: s.website, country: s.country || '', address: s.address || '', paymentTerms: s.paymentTerms || '', category: s.category, items: s.items });
     setModalOpen(true);
   };
 
@@ -324,6 +324,14 @@ export default function Suppliers() {
                 <label className="text-xs font-medium text-muted-foreground">Country</label>
                 <Input value={form.country} onChange={e => setForm(f => ({ ...f, country: e.target.value }))} placeholder="e.g. Cyprus" />
               </div>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Address</label>
+              <Input value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} placeholder="Street, City, Zip" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Payment Terms</label>
+              <Input value={form.paymentTerms} onChange={e => setForm(f => ({ ...f, paymentTerms: e.target.value }))} placeholder="e.g. Net 30" />
             </div>
           </div>
           <DialogFooter>
