@@ -127,6 +127,8 @@ export default function Index() {
           <ItemAssignment masterData={masterData} onUpdate={handleUpdateMasterData} />
         )}
 
+        {activeTab === 'suppliers' && <Suppliers />}
+
         {activeTab === 'selections' && <Selections />}
       </main>
 
