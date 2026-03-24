@@ -623,10 +623,10 @@ export default function Suppliers() {
                         </TableCell>
                         <TableCell className="text-sm font-medium">{line.itemName}</TableCell>
                         <TableCell className="text-right">
-                          <Input type="number" min={1} value={line.quantity} onChange={e => {
+                          <Input type="number" min={1} value={line.qty} onChange={e => {
                             setPoForm(f => {
                               const items = [...f.lineItems];
-                              items[idx] = { ...items[idx], quantity: Math.max(1, +e.target.value) };
+                              items[idx] = { ...items[idx], qty: Math.max(1, +e.target.value) };
                               return { ...f, lineItems: items };
                             });
                           }} className="w-16 h-7 text-xs text-right ml-auto" />
