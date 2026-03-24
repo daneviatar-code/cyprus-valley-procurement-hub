@@ -29,7 +29,7 @@ const statusColors: Record<SupplierItem['status'], string> = {
 };
 
 const emptySupplier = (): Omit<Supplier, 'id' | 'createdAt'> => ({
-  name: '', contactPerson: '', email: '', phone: '', website: '', category: 'Furniture', items: [],
+  name: '', contactPerson: '', email: '', phone: '', website: '', country: '', category: 'Furniture', items: [],
 });
 
 const emptyItem = (): SupplierItem => ({
@@ -85,7 +85,7 @@ export default function Suppliers() {
   const openNew = () => { setEditId(null); setForm(emptySupplier()); setModalOpen(true); };
   const openEdit = (s: Supplier) => {
     setEditId(s.id);
-    setForm({ name: s.name, contactPerson: s.contactPerson, email: s.email, phone: s.phone, website: s.website, category: s.category, items: s.items });
+    setForm({ name: s.name, contactPerson: s.contactPerson, email: s.email, phone: s.phone, website: s.website, country: s.country || '', category: s.category, items: s.items });
     setModalOpen(true);
   };
 
@@ -315,9 +315,15 @@ export default function Suppliers() {
                 <Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
               </div>
             </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">Website</label>
-              <Input value={form.website} onChange={e => setForm(f => ({ ...f, website: e.target.value }))} placeholder="https://" />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Website</label>
+                <Input value={form.website} onChange={e => setForm(f => ({ ...f, website: e.target.value }))} placeholder="https://" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Country</label>
+                <Input value={form.country} onChange={e => setForm(f => ({ ...f, country: e.target.value }))} placeholder="e.g. Cyprus" />
+              </div>
             </div>
           </div>
           <DialogFooter>
