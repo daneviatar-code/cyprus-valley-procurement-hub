@@ -1,9 +1,10 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Pencil, Trash2, ExternalLink, Package, Search, ChevronDown, ChevronRight } from 'lucide-react';
+import { Plus, Pencil, Trash2, ExternalLink, Package, Search, ChevronDown, ChevronRight, FileText, CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
@@ -14,8 +15,17 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import {
+  Popover, PopoverContent, PopoverTrigger,
+} from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import {
   Supplier, SupplierItem, loadSuppliers, saveSuppliers, generateSupplierId,
 } from '@/data/supplierData';
+import {
+  PurchaseOrder, POLineItem, loadPurchaseOrders, savePurchaseOrders, generatePONumber, generatePOId,
+} from '@/data/purchaseOrderData';
 import { loadAllSelections } from '@/data/selectionData';
 import { toast } from '@/hooks/use-toast';
 
