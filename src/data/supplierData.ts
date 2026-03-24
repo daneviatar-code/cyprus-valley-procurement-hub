@@ -19,6 +19,8 @@ export interface Supplier {
   phone: string;
   website: string;
   country: string;
+  address: string;
+  paymentTerms: string;
   category: string;
   items: SupplierItem[];
   createdAt: string;
