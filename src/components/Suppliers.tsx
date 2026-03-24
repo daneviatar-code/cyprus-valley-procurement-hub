@@ -403,7 +403,7 @@ export default function Suppliers() {
                                 </TableHeader>
                                 <TableBody>
                                   {supplierPOs.map(po => {
-                                    const poTotal = po.items.reduce((a, i) => a + i.quantity * i.unitPrice, 0);
+                                    const poTotal = po.items.reduce((a, i) => a + i.qty * i.unitPrice, 0);
                                     return (
                                       <TableRow key={po.id}>
                                         <TableCell className="font-mono font-medium">{po.poNumber}</TableCell>
