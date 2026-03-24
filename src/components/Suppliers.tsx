@@ -108,8 +108,9 @@ export default function Suppliers() {
       .filter(name => !existing.has(name))
       .map(name => ({
         itemName: name,
-        quantity: 1,
+        qty: 1,
         unitPrice: allSelections[name]?.unitPrice ?? 0,
+        totalPrice: allSelections[name]?.unitPrice ?? 0,
         selected: true,
       }));
     if (newLines.length === 0) { toast({ title: 'No new items found in Selections for this supplier' }); return; }
