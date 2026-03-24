@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
+import { Textarea } from '@/components/ui/textarea';
 import { Plus, Pencil, Trash2, ExternalLink, Package, Search, ChevronDown, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
