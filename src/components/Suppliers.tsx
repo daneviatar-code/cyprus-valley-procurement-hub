@@ -82,8 +82,9 @@ export default function Suppliers() {
     if (!supplier) return;
     const lines = supplier.items.map(i => ({
       itemName: i.itemName,
-      quantity: 1,
+      qty: 1,
       unitPrice: i.unitPrice,
+      totalPrice: i.unitPrice,
       selected: false,
     }));
     setPoSupplierId(supplierId);
