@@ -388,51 +388,63 @@ export default function Suppliers() {
                           {(() => {
                             const supplierPOs = purchaseOrders.filter(p => p.supplierId === s.id);
                             if (supplierPOs.length === 0) return <p className="text-sm text-muted-foreground py-3 text-center">No purchase orders yet.</p>;
+                            const poStatusColors: Record<string, string> = {
+                              Draft: 'bg-muted text-muted-foreground',
+                              Sent: 'bg-status-pending/15 text-status-pending',
+                              Confirmed: 'bg-status-ordered/15 text-status-ordered',
+                              Delivered: 'bg-status-delivered/15 text-status-delivered',
+                            };
                             return (
-                              <Table>
-                                <TableHeader>
-                                  <TableRow>
-                                    <TableHead>PO #</TableHead>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead className="text-center">Items</TableHead>
-                                    <TableHead className="text-right">Total €</TableHead>
-                                    <TableHead className="text-center">Delivery</TableHead>
-                                    <TableHead className="text-center">Status</TableHead>
-                                    <TableHead className="w-20" />
-                                  </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                  {supplierPOs.map(po => {
-                                    const poTotal = po.items.reduce((a, i) => a + i.qty * i.unitPrice, 0);
-                                    return (
-                                      <TableRow key={po.id}>
-                                        <TableCell className="font-mono font-medium">{po.poNumber}</TableCell>
-                                        <TableCell className="text-sm">{po.createdAt ? format(new Date(po.createdAt), 'dd MMM yyyy') : '—'}</TableCell>
-                                        <TableCell className="text-center">{po.items.length}</TableCell>
-                                        <TableCell className="text-right font-mono">€{poTotal.toLocaleString()}</TableCell>
-                                        <TableCell className="text-center text-sm">{po.expectedDelivery ? format(new Date(po.expectedDelivery), 'dd MMM yyyy') : '—'}</TableCell>
-                                        <TableCell className="text-center">
-                                          <Select value={po.status} onValueChange={(v: PurchaseOrder['status']) => updatePOStatus(po.id, v)}>
-                                            <SelectTrigger className="h-7 text-xs w-28">
-                                              <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                              {(['Draft', 'Sent', 'Confirmed', 'Delivered'] as const).map(st => (
-                                                <SelectItem key={st} value={st}>{st}</SelectItem>
-                                              ))}
-                                            </SelectContent>
-                                          </Select>
-                                        </TableCell>
-                                        <TableCell>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                {supplierPOs.map(po => {
+                                  const poTotal = po.totalValue || po.items.reduce((a, i) => a + i.qty * i.unitPrice, 0);
+                                  return (
+                                    <div key={po.id} className="border rounded-lg p-4 bg-card hover:shadow-sm transition-shadow">
+                                      <div className="flex items-center justify-between mb-2">
+                                        <span className="font-mono font-semibold text-sm text-foreground">{po.poNumber}</span>
+                                        <div className="flex items-center gap-1">
+                                          <Badge className={`text-[10px] ${poStatusColors[po.status] || poStatusColors.Draft}`}>{po.status}</Badge>
                                           <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => deletePO(po.id)}>
                                             <Trash2 className="h-3 w-3" />
                                           </Button>
-                                        </TableCell>
-                                      </TableRow>
-                                    );
-                                  })}
-                                </TableBody>
-                              </Table>
+                                        </div>
+                                      </div>
+                                      <div className="space-y-1 text-xs text-muted-foreground">
+                                        <div className="flex justify-between">
+                                          <span>Date</span>
+                                          <span className="text-foreground">{po.createdAt ? format(new Date(po.createdAt), 'dd MMM yyyy') : '—'}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span>Items</span>
+                                          <span className="text-foreground">{po.items.length}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span>Total</span>
+                                          <span className="text-foreground font-mono font-medium">€{poTotal.toLocaleString()}</span>
+                                        </div>
+                                        {po.expectedDelivery && (
+                                          <div className="flex justify-between">
+                                            <span>Delivery</span>
+                                            <span className="text-foreground">{format(new Date(po.expectedDelivery), 'dd MMM yyyy')}</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                      <div className="mt-2 pt-2 border-t">
+                                        <Select value={po.status} onValueChange={(v: PurchaseOrder['status']) => updatePOStatus(po.id, v)}>
+                                          <SelectTrigger className="h-7 text-xs w-full">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {(['Draft', 'Sent', 'Confirmed', 'Delivered'] as const).map(st => (
+                                              <SelectItem key={st} value={st}>{st}</SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
                             );
                           })()}
                         </div>
