@@ -63,6 +63,7 @@ export default function Suppliers() {
   // Purchase Orders state
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>(loadPurchaseOrders);
   const [poModalOpen, setPoModalOpen] = useState(false);
+  const [editPoId, setEditPoId] = useState<string | null>(null);
   const [poSupplierId, setPoSupplierId] = useState<string | null>(null);
   const [poForm, setPoForm] = useState<{
     poNumber: string;
@@ -87,6 +88,7 @@ export default function Suppliers() {
       totalPrice: i.unitPrice,
       selected: false,
     }));
+    setEditPoId(null);
     setPoSupplierId(supplierId);
     setPoForm({
       poNumber: generatePONumber(purchaseOrders),
@@ -94,6 +96,19 @@ export default function Suppliers() {
       expectedDelivery: undefined,
       notes: '',
       lineItems: lines,
+    });
+    setPoModalOpen(true);
+  };
+
+  const openEditPO = (po: PurchaseOrder) => {
+    setEditPoId(po.id);
+    setPoSupplierId(po.supplierId);
+    setPoForm({
+      poNumber: po.poNumber,
+      status: po.status,
+      expectedDelivery: po.expectedDelivery ? new Date(po.expectedDelivery) : undefined,
+      notes: po.notes,
+      lineItems: po.items.map(i => ({ ...i, selected: true })),
     });
     setPoModalOpen(true);
   };
@@ -125,22 +140,36 @@ export default function Suppliers() {
     if (selectedLines.length === 0) { toast({ title: 'Select at least one item' }); return; }
     const items = selectedLines.map(({ selected, ...rest }) => ({ ...rest, totalPrice: rest.qty * rest.unitPrice }));
     const totalValue = items.reduce((a, i) => a + i.totalPrice, 0);
-    const po: PurchaseOrder = {
-      id: generatePOId(),
-      poNumber: poForm.poNumber,
-      supplierId: poSupplierId,
-      supplierName: supplier?.name || '',
-      items,
-      status: poForm.status,
-      expectedDelivery: poForm.expectedDelivery?.toISOString() || '',
-      totalValue,
-      currency: supplier?.currency || 'EUR',
-      notes: poForm.notes,
-      createdAt: new Date().toISOString(),
-    };
-    persistPOs([...purchaseOrders, po]);
-    setPoModalOpen(false);
-    toast({ title: `Purchase Order ${po.poNumber} created` });
+    if (editPoId) {
+      const next = purchaseOrders.map(p => p.id === editPoId ? {
+        ...p,
+        status: poForm.status,
+        expectedDelivery: poForm.expectedDelivery?.toISOString() || '',
+        items,
+        totalValue,
+        notes: poForm.notes,
+      } : p);
+      persistPOs(next);
+      setPoModalOpen(false);
+      toast({ title: `${poForm.poNumber} updated` });
+    } else {
+      const po: PurchaseOrder = {
+        id: generatePOId(),
+        poNumber: poForm.poNumber,
+        supplierId: poSupplierId,
+        supplierName: supplier?.name || '',
+        items,
+        status: poForm.status,
+        expectedDelivery: poForm.expectedDelivery?.toISOString() || '',
+        totalValue,
+        currency: supplier?.currency || 'EUR',
+        notes: poForm.notes,
+        createdAt: new Date().toISOString(),
+      };
+      persistPOs([...purchaseOrders, po]);
+      setPoModalOpen(false);
+      toast({ title: `Purchase Order ${po.poNumber} created` });
+    }
   };
 
   const deletePO = (poId: string) => {
@@ -399,12 +428,12 @@ export default function Suppliers() {
                                 {supplierPOs.map(po => {
                                   const poTotal = po.totalValue || po.items.reduce((a, i) => a + i.qty * i.unitPrice, 0);
                                   return (
-                                    <div key={po.id} className="border rounded-lg p-4 bg-card hover:shadow-sm transition-shadow">
+                                    <div key={po.id} className="border rounded-lg p-4 bg-card hover:shadow-sm transition-shadow cursor-pointer" onClick={() => openEditPO(po)}>
                                       <div className="flex items-center justify-between mb-2">
                                         <span className="font-mono font-semibold text-sm text-foreground">{po.poNumber}</span>
                                         <div className="flex items-center gap-1">
                                           <Badge className={`text-[10px] ${poStatusColors[po.status] || poStatusColors.Draft}`}>{po.status}</Badge>
-                                          <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => deletePO(po.id)}>
+                                          <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={(e) => { e.stopPropagation(); deletePO(po.id); }}>
                                             <Trash2 className="h-3 w-3" />
                                           </Button>
                                         </div>
@@ -429,7 +458,7 @@ export default function Suppliers() {
                                           </div>
                                         )}
                                       </div>
-                                      <div className="mt-2 pt-2 border-t">
+                                      <div className="mt-2 pt-2 border-t" onClick={e => e.stopPropagation()}>
                                         <Select value={po.status} onValueChange={(v: PurchaseOrder['status']) => updatePOStatus(po.id, v)}>
                                           <SelectTrigger className="h-7 text-xs w-full">
                                             <SelectValue />
@@ -562,10 +591,10 @@ export default function Suppliers() {
         </DialogContent>
       </Dialog>
 
-      {/* Create PO Modal */}
+      {/* Create/Edit PO Modal */}
       <Dialog open={poModalOpen} onOpenChange={setPoModalOpen}>
         <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>Create Purchase Order</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editPoId ? `Edit ${poForm.poNumber}` : 'Create Purchase Order'}</DialogTitle></DialogHeader>
           <div className="grid gap-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -672,7 +701,7 @@ export default function Suppliers() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setPoModalOpen(false)}>Cancel</Button>
-            <Button onClick={savePO}>Create PO</Button>
+            <Button onClick={savePO}>{editPoId ? 'Save Changes' : 'Create PO'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
