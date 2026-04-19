@@ -256,15 +256,16 @@ export function generateRowId(): string {
 }
 
 // ── Room Size derivation + override ──
-export type RoomSize = 'studio' | '1br' | '2br' | '3br' | 'public';
+export type RoomSize = 'studio' | '1br' | '2br' | '3br' | '4br' | 'public';
 export const ROOM_SIZE_LABELS: Record<RoomSize, string> = {
   studio: 'Studio',
   '1br': '1-Bedroom',
   '2br': '2-Bedroom',
   '3br': '3-Bedroom',
+  '4br': '4-Bedroom',
   public: 'Public Areas',
 };
-export const RESIDENTIAL_ROOM_SIZES: RoomSize[] = ['studio', '1br', '2br', '3br'];
+export const RESIDENTIAL_ROOM_SIZES: RoomSize[] = ['studio', '1br', '2br', '3br', '4br'];
 const ROOM_SIZE_OVERRIDE_KEY = 'cyprus-valley-room-size-overrides-v1';
 
 /** Returns true if a unit code identifies a Common Area / Zone (lobby, spa, etc.) */
@@ -281,7 +282,7 @@ export function deriveRoomSizeFromDescription(description: string, unitCode?: st
   if (d.includes('1bd') || d.includes('1br') || d.includes('1-bed')) return '1br';
   if (d.includes('2bd') || d.includes('2br') || d.includes('2-bed')) return '2br';
   if (d.includes('3bd') || d.includes('3br') || d.includes('3-bed')) return '3br';
-  if (d.includes('4bd') || d.includes('penthouse')) return '3br'; // bucket 4BD penthouse with 3BR+
+  if (d.includes('4bd') || d.includes('4br') || d.includes('4-bed') || d.includes('penthouse')) return '4br';
   if (d.includes('public') || d.includes('lobby') || d.includes('spa') || d.includes('pool') ||
       d.includes('gym') || d.includes('restaurant') || d.includes('meeting') || d.includes('boh') ||
       d.includes('rooftop')) return 'public';
@@ -351,7 +352,7 @@ export function computeProcurementByRoomSize(masterData: MasterRow[]): ComputedP
 
     let entry = map.get(row.itemName);
     if (!entry) {
-      entry = { category: row.roomType, qty: { studio: 0, '1br': 0, '2br': 0, '3br': 0, public: 0 } };
+      entry = { category: row.roomType, qty: { studio: 0, '1br': 0, '2br': 0, '3br': 0, '4br': 0, public: 0 } };
       map.set(row.itemName, entry);
     }
     entry.qty[size] += total;
@@ -370,14 +371,14 @@ export function computeProcurementByRoomSize(masterData: MasterRow[]): ComputedP
     name,
     category: data.category,
     qtyByRoomSize: data.qty,
-    grandTotal: data.qty.studio + data.qty['1br'] + data.qty['2br'] + data.qty['3br'],
+    grandTotal: data.qty.studio + data.qty['1br'] + data.qty['2br'] + data.qty['3br'] + data.qty['4br'],
   }));
 }
 
 /** Count unit instances grouped by room size, across all concepts/buildings. */
 export function countUnitsByRoomSize(): Record<RoomSize, number> {
   const overrides = loadRoomSizeOverrides();
-  const result: Record<RoomSize, number> = { studio: 0, '1br': 0, '2br': 0, '3br': 0, public: 0 };
+  const result: Record<RoomSize, number> = { studio: 0, '1br': 0, '2br': 0, '3br': 0, '4br': 0, public: 0 };
   (['A', 'B', 'C'] as Concept[]).forEach(concept => {
     const buildingsCount = ALL_BUILDINGS[concept].length;
     getUnitsForConcept(concept).forEach(u => {

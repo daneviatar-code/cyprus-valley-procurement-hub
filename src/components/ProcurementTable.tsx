@@ -440,7 +440,7 @@ function ByRoomSizeView({
   }, [rows, search, selectedCategories]);
 
   const sizeTotals = useMemo(() => {
-    const t: Record<RoomSize, number> = { studio: 0, '1br': 0, '2br': 0, '3br': 0, public: 0 };
+    const t: Record<RoomSize, number> = { studio: 0, '1br': 0, '2br': 0, '3br': 0, '4br': 0, public: 0 };
     filtered.forEach(r => RESIDENTIAL_ROOM_SIZES.forEach(s => { t[s] += r.qtyByRoomSize[s] || 0; }));
     return t;
   }, [filtered]);
@@ -448,7 +448,7 @@ function ByRoomSizeView({
   return (
     <div className="space-y-4">
       {/* Summary cards per room size */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {RESIDENTIAL_ROOM_SIZES.map(size => (
           <button
             key={size}
