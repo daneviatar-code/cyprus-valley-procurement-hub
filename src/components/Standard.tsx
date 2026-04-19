@@ -191,14 +191,14 @@ export default function Standard() {
     const rows: string[] = [];
     const cat = categories.find(c => c.id === selectedCategoryId);
     rows.push(`Apartment Standard - ${ROOM_SIZE_LABELS[selectedType]} - ${cat?.nameEn || ''}`);
-    rows.push('Item,Spec,Qty/Pkg,Spare/Pkg,Total/Pkg,Units,Hotel Qty,Supplier,€/Unit,Pkg Cost,Hotel Cost,Status,Ordered,Delivered,Outstanding,Notes');
+    rows.push('Item,Spec,Qty/Pkg,Spare/Pkg,Total/Pkg,Units,Hotel Qty,€/Unit,Supplier,Pkg Cost,Hotel Cost,Status,Ordered,Delivered,Outstanding,Notes');
     standardsForCell.forEach(std => {
       const c = computeStandard(std);
       const supplier = suppliers.find(s => s.id === std.supplierId)?.name || '';
       const pkgCost = ((std.qtyPerUnit || 0) + (std.sparePerUnit || 0)) * (std.unitPriceEur || 0);
       rows.push([
         std.itemName, std.spec, std.qtyPerUnit, std.sparePerUnit, c.totalPerUnit,
-        c.unitsInHotel, c.hotelQtyNeeded, supplier, std.unitPriceEur || 0,
+        c.unitsInHotel, c.hotelQtyNeeded, std.unitPriceEur || 0, supplier,
         pkgCost, c.lineCost, std.status, std.orderedQty, std.deliveredQty,
         c.outstandingQty, (std.notes || '').replace(/,/g, ';'),
       ].map(v => `"${v}"`).join(','));
@@ -467,8 +467,8 @@ function ItemEditor({
             <th className={`${th} text-right`}>Total/Pkg</th>
             <th className={`${th} text-right`}>Units</th>
             <th className={`${th} text-right`}>Hotel Qty</th>
-            <th className={th}>Supplier</th>
             <th className={`${th} text-right`}>€/Unit</th>
+            <th className={th}>Supplier</th>
             <th className={`${th} text-right`}>Pkg Cost</th>
             <th className={`${th} text-right`}>Hotel Cost</th>
             <th className={th}>Status</th>
@@ -496,6 +496,8 @@ function ItemEditor({
                 <td className={`${td} text-right font-mono`}>{c.totalPerUnit}</td>
                 <td className={`${td} text-right font-mono text-muted-foreground`}>{c.unitsInHotel}</td>
                 <td className={`${td} text-right font-mono font-semibold`}>{c.hotelQtyNeeded.toLocaleString()}</td>
+                <td className={td}><Input type="number" className={inputCls + ' text-right w-20'} value={std.unitPriceEur ?? ''}
+                  onChange={e => onUpdate(std.id, { unitPriceEur: e.target.value === '' ? undefined : Math.max(0, +e.target.value) })} /></td>
                 <td className={td}>
                   <select className={inputCls + ' min-w-[110px]'} value={std.supplierId || ''}
                     onChange={e => onUpdate(std.id, { supplierId: e.target.value || undefined })}>
@@ -503,8 +505,6 @@ function ItemEditor({
                     {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
                 </td>
-                <td className={td}><Input type="number" className={inputCls + ' text-right w-20'} value={std.unitPriceEur ?? ''}
-                  onChange={e => onUpdate(std.id, { unitPriceEur: e.target.value === '' ? undefined : Math.max(0, +e.target.value) })} /></td>
                 <td className={`${td} text-right font-mono`}>{eur(pkgCost)}</td>
                 <td className={`${td} text-right font-mono font-semibold`}>{eur(c.lineCost)}</td>
                 <td className={td}>
