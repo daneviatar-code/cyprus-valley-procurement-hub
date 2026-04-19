@@ -135,13 +135,7 @@ export default function Index() {
 
         {activeTab === 'selections' && <Selections />}
 
-        {activeTab === 'publicAreas' && (
-          <PublicAreas
-            masterData={masterData}
-            userData={userData}
-            onUpdateItem={handleUpdateItem}
-          />
-        )}
+        {activeTab === 'publicAreas' && <PublicAreas />}
 
         {activeTab === 'roomStandards' && <RoomStandards />}
       </main>
