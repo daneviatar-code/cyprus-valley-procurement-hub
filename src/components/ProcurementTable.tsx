@@ -387,12 +387,14 @@ export default function ProcurementTable({ userData, onUpdateItem, procurementIt
         />
       )}
 
-      <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
-        <span>Showing {filteredItems.length} of {effectiveProcurement.length} items</span>
-        <span>
-          Grand Total: <strong className="text-accent">{filteredItems.reduce((s, i) => s + i.grandTotal, 0).toLocaleString()}</strong> items
-        </span>
-      </div>
+      {viewMode !== 'byRoomSize' && (
+        <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
+          <span>Showing {filteredItems.length} of {effectiveProcurement.length} items</span>
+          <span>
+            Grand Total: <strong className="text-accent">{filteredItems.reduce((s, i) => s + i.grandTotal, 0).toLocaleString()}</strong> items
+          </span>
+        </div>
+      )}
 
       {selected && (
         <ItemDetailPanel
