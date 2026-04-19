@@ -467,8 +467,8 @@ function ItemEditor({
             <th className={`${th} text-right`}>Total/Pkg</th>
             <th className={`${th} text-right`}>Units</th>
             <th className={`${th} text-right`}>Hotel Qty</th>
-            <th className={th}>Supplier</th>
             <th className={`${th} text-right`}>€/Unit</th>
+            <th className={th}>Supplier</th>
             <th className={`${th} text-right`}>Pkg Cost</th>
             <th className={`${th} text-right`}>Hotel Cost</th>
             <th className={th}>Status</th>
