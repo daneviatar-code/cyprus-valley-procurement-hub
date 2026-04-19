@@ -448,7 +448,7 @@ function ByRoomSizeView({
   return (
     <div className="space-y-4">
       {/* Summary cards per room size */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {RESIDENTIAL_ROOM_SIZES.map(size => (
           <button
             key={size}
