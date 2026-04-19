@@ -439,7 +439,7 @@ type TypeSummary = {
   totalHotelQty: number; totalPackageCost: number; totalHotelCost: number;
   orderedValue: number; deliveredValue: number; outstandingValue: number;
 };
-function useTypeSummary(): TypeSummary { return null as never; } // type-only
+
 
 // ───────────────────────────── Item Editor Table ─────────────────────────────
 function ItemEditor({

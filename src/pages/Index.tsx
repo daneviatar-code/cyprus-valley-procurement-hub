@@ -11,6 +11,7 @@ import Selections from '@/components/Selections';
 import Suppliers from '@/components/Suppliers';
 import PublicAreas from '@/components/PublicAreas';
 import RoomStandards from '@/components/RoomStandards';
+import Standard from '@/components/Standard';
 import { type UserItemData, loadUserData, saveUserData } from '@/data/projectData';
 import {
   MasterRow,
@@ -20,7 +21,7 @@ import {
   computeTotalItemsCount,
 } from '@/data/masterData';
 
-type Tab = 'procurement' | 'rooms' | 'packages' | 'pricing' | 'projectData' | 'itemAssignment' | 'suppliers' | 'selections' | 'publicAreas' | 'roomStandards';
+type Tab = 'procurement' | 'standard' | 'rooms' | 'packages' | 'pricing' | 'projectData' | 'itemAssignment' | 'suppliers' | 'selections' | 'publicAreas' | 'roomStandards';
 
 export default function Index() {
   const [userData, setUserData] = useState<Record<number, UserItemData>>(loadUserData);
@@ -46,6 +47,7 @@ export default function Index() {
 
   const tabs: { key: Tab; label: string }[] = [
     { key: 'procurement', label: 'Procurement' },
+    { key: 'standard', label: 'Standard' },
     { key: 'rooms', label: 'Room Explorer' },
     { key: 'packages', label: 'Package Editor' },
     { key: 'pricing', label: 'Pricing Sheet' },
@@ -95,7 +97,7 @@ export default function Index() {
 
       {/* Main */}
       <main className="max-w-[1440px] mx-auto px-6 py-6 space-y-8">
-        {activeTab !== 'projectData' && activeTab !== 'packages' && activeTab !== 'pricing' && activeTab !== 'publicAreas' && activeTab !== 'roomStandards' && (
+        {activeTab !== 'projectData' && activeTab !== 'packages' && activeTab !== 'pricing' && activeTab !== 'publicAreas' && activeTab !== 'roomStandards' && activeTab !== 'standard' && (
           <Dashboard
             onConceptClick={(id) => setDrillDownConcept(id)}
             masterData={masterData}
@@ -116,6 +118,8 @@ export default function Index() {
             />
           </div>
         )}
+
+        {activeTab === 'standard' && <Standard />}
 
         {activeTab === 'rooms' && <RoomExplorer masterData={masterData} />}
 
