@@ -496,6 +496,8 @@ interface NodeWorkspaceProps {
   categories: ProcurementCategory[];
   suppliers: Supplier[];
   nodes: PublicAreaNode[];
+  plans: PublicAreaPlan[];
+  onPlansChange: (next: PublicAreaPlan[]) => void;
   onAddItem: () => void;
   onUpdateItem: (id: string, patch: Partial<PublicAreaItem>) => void;
   onDeleteItem: (id: string) => void;
@@ -553,6 +555,15 @@ function NodeWorkspace(p: NodeWorkspaceProps) {
           This is a {p.node.type}. Items typically live on its child zones — select one from the tree.
         </div>
       )}
+
+      <div className="p-3 border-b">
+        <NodePlans
+          nodeId={p.node.id}
+          nodeName={p.node.name}
+          plans={p.plans}
+          onChange={p.onPlansChange}
+        />
+      </div>
 
       <ItemsTable
         items={p.directItems}
