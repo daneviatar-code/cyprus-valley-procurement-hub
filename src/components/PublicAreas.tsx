@@ -312,7 +312,7 @@ export default function PublicAreas(_: { masterData?: unknown; userData?: unknow
               {getChildren(nodes, null).map(top =>
                 <TreeNodeRow
                   key={top.id} node={top} depth={0}
-                  nodes={nodes} items={items}
+                  nodes={nodes} items={items} plans={plans}
                   expanded={expanded} setExpanded={setExpanded}
                   selectedNodeId={selectedNodeId} setSelectedNodeId={setSelectedNodeId}
                   visibleNodeIds={visibleNodeIds}
