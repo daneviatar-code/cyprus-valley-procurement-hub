@@ -226,12 +226,17 @@ export default function PublicAreas(_: { masterData?: unknown; userData?: unknow
   const nodePath = (id: string) =>
     getNodeBreadcrumb(nodes, id).map(n => n.name).join(' › ');
 
+  const planFilesFor = (nodeId: string) =>
+    plans.filter(p => p.nodeId === nodeId && !p.archived)
+      .sort((a, b) => a.order - b.order)
+      .map(p => p.fileName).join(' | ');
+
   const exportNodeCsv = (n: PublicAreaNode) => {
     const ids = getScopeNodeIds(nodes, n.id);
     const scope = items.filter(i => ids.has(i.nodeId));
     const rows: (string | number)[][] = [
       ['Path', 'Item Name', 'Spec', 'Category', 'Qty', 'Spare', 'Total', 'Supplier',
-       'Unit Price €', 'Line Cost €', 'Status', 'Ordered', 'Delivered', 'Outstanding', 'Notes'],
+       'Unit Price €', 'Line Cost €', 'Status', 'Ordered', 'Delivered', 'Outstanding', 'Notes', 'Plan Files'],
     ];
     scope.forEach(i => {
       const c = computeItem(i);
@@ -239,6 +244,7 @@ export default function PublicAreas(_: { masterData?: unknown; userData?: unknow
         nodePath(i.nodeId), i.itemName, i.spec, categoryName(i.categoryId), i.qty, i.spare,
         c.totalQty, supplierName(i.supplierId), i.unitPriceEur ?? '', c.lineCost,
         i.status, i.orderedQty, i.deliveredQty, c.outstandingQty, i.notes,
+        planFilesFor(i.nodeId),
       ]);
     });
     downloadCsv(`public-area_${n.name.replace(/\s+/g, '-')}.csv`, rows);
