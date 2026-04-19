@@ -406,7 +406,7 @@ export default function Standard() {
 }
 
 // ───────────────────────────── Summary Bar ─────────────────────────────
-function SummaryBar({ s, typeLabel }: { s: ReturnType<typeof useTypeSummary>; typeLabel: string }) {
+function SummaryBar({ s, typeLabel }: { s: TypeSummary; typeLabel: string }) {
   const cells = [
     ['Units in Hotel', s.units.toLocaleString()],
     ['# Categories', s.numCategories.toLocaleString()],
