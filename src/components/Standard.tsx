@@ -9,7 +9,8 @@
  * Scope: residential apartment types only (studio / 1br / 2br / 3br / 4br).
  * Hebrew is the primary label; English shown as secondary.
  */
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, Fragment } from 'react';
+const FragmentRow = Fragment;
 import {
   ProcurementCategory, CategoryScope, loadCategories, saveCategories, genCategoryId,
   RoomStandard, StandardStatus, STANDARD_STATUSES, loadStandards, saveStandards,
