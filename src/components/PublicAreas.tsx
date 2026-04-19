@@ -334,6 +334,8 @@ export default function PublicAreas(_: { masterData?: unknown; userData?: unknow
                 node={selectedNode} breadcrumb={breadcrumb}
                 directItems={directItems}
                 categories={categories} suppliers={suppliers} nodes={nodes}
+                plans={plans}
+                onPlansChange={setPlans}
                 onAddItem={addItem} onUpdateItem={updateItem} onDeleteItem={deleteItem}
                 onDuplicateItem={duplicateItem}
                 onAddChild={() => addChildNode(selectedNode)}
