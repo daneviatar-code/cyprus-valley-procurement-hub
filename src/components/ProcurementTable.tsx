@@ -407,3 +407,166 @@ export default function ProcurementTable({ userData, onUpdateItem, procurementIt
     </div>
   );
 }
+
+// ─────────────────────────────────────────────────────────────────
+// By Room Size sub-view
+// ─────────────────────────────────────────────────────────────────
+import type { ComputedProcurementByRoomSize, RoomSize } from '@/data/masterData';
+import type { Selection } from '@/data/selectionData';
+
+interface ByRoomSizeViewProps {
+  rows: ComputedProcurementByRoomSize[];
+  unitCounts: Record<RoomSize, number>;
+  search: string;
+  selectedCategories: string[];
+  allSelections: Record<string, Selection>;
+  userData: Record<number, UserItemData>;
+  handleInlineChange: (id: number, field: keyof UserItemData, value: string | number | null) => void;
+  thClass: string;
+  tdClass: string;
+}
+
+function ByRoomSizeView({
+  rows, unitCounts, search, selectedCategories, allSelections, userData, handleInlineChange, thClass, tdClass,
+}: ByRoomSizeViewProps) {
+  const [expanded, setExpanded] = useState<RoomSize | null>(null);
+
+  const filtered = useMemo(() => {
+    return rows.filter(r => {
+      if (search && !r.name.toLowerCase().includes(search.toLowerCase())) return false;
+      if (selectedCategories.length > 0 && !selectedCategories.includes(r.category)) return false;
+      return true;
+    });
+  }, [rows, search, selectedCategories]);
+
+  const sizeTotals = useMemo(() => {
+    const t: Record<RoomSize, number> = { studio: 0, '1br': 0, '2br': 0, '3br': 0, public: 0 };
+    filtered.forEach(r => RESIDENTIAL_ROOM_SIZES.forEach(s => { t[s] += r.qtyByRoomSize[s] || 0; }));
+    return t;
+  }, [filtered]);
+
+  return (
+    <div className="space-y-4">
+      {/* Summary cards per room size */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {RESIDENTIAL_ROOM_SIZES.map(size => (
+          <button
+            key={size}
+            onClick={() => setExpanded(expanded === size ? null : size)}
+            className={`text-left rounded-lg border p-3 transition-all hover:shadow-sm ${
+              expanded === size ? 'bg-accent/10 border-accent' : 'bg-card'
+            }`}
+          >
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+              {ROOM_SIZE_LABELS[size]}
+            </div>
+            <div className="mt-1 flex items-baseline gap-2">
+              <span className="text-xl font-bold text-foreground">{unitCounts[size].toLocaleString()}</span>
+              <span className="text-[10px] text-muted-foreground">units</span>
+            </div>
+            <div className="text-xs text-muted-foreground mt-0.5">
+              {sizeTotals[size].toLocaleString()} items
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {/* Aggregated table */}
+      <div className="bg-card rounded-lg border shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left table-striped">
+            <thead>
+              <tr className="border-b bg-muted/50">
+                <th className={thClass}>#</th>
+                <th className={thClass}>Item Name</th>
+                <th className={thClass}>Category</th>
+                {RESIDENTIAL_ROOM_SIZES.map(s => (
+                  <th
+                    key={s}
+                    className={`${thClass} text-center cursor-pointer ${expanded === s ? 'bg-accent/10 text-accent' : ''}`}
+                    onClick={() => setExpanded(expanded === s ? null : s)}
+                  >
+                    {ROOM_SIZE_LABELS[s]}
+                  </th>
+                ))}
+                <th className={`${thClass} text-center`}>Total</th>
+                <th className={thClass}>Supplier</th>
+                <th className={thClass}>Price (€)</th>
+                <th className={thClass}>Cost (€)</th>
+                <th className={thClass}>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((row, idx) => {
+                const ud = getUserItemData(userData, row.id);
+                const sel = allSelections[row.name];
+                const effectiveSupplier = ud.supplier || sel?.supplier || '';
+                const effectivePrice = ud.unitPrice ?? sel?.unitPrice ?? null;
+                const totalCost = effectivePrice ? row.grandTotal * effectivePrice : null;
+                return (
+                  <tr key={row.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                    <td className={`${tdClass} text-muted-foreground text-xs`}>{idx + 1}</td>
+                    <td className={`${tdClass} font-medium text-foreground whitespace-nowrap`}>{row.name}</td>
+                    <td className={`${tdClass} text-muted-foreground whitespace-nowrap`}>
+                      <span className="mr-1">{categoryEmojis[row.category]}</span>
+                      {row.category}
+                    </td>
+                    {RESIDENTIAL_ROOM_SIZES.map(s => (
+                      <td
+                        key={s}
+                        className={`${tdClass} text-center font-mono text-sm ${expanded === s ? 'bg-accent/5 font-semibold text-accent' : ''}`}
+                      >
+                        {row.qtyByRoomSize[s] || '—'}
+                      </td>
+                    ))}
+                    <td className={`${tdClass} text-center font-mono text-sm font-bold text-accent`}>
+                      {row.grandTotal.toLocaleString()}
+                    </td>
+                    <td className={`${tdClass} text-muted-foreground text-xs whitespace-nowrap`}>
+                      {effectiveSupplier || '—'}
+                    </td>
+                    <td className={`${tdClass} font-mono text-xs whitespace-nowrap`}>
+                      {effectivePrice ? `€${effectivePrice.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}
+                    </td>
+                    <td className={`${tdClass} font-mono text-xs whitespace-nowrap`}>
+                      {totalCost ? `€${totalCost.toLocaleString()}` : '—'}
+                    </td>
+                    <td className={tdClass} onClick={(e) => e.stopPropagation()}>
+                      <select
+                        className="h-7 rounded border bg-background px-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-accent/50"
+                        value={ud.status}
+                        onChange={(e) => handleInlineChange(row.id, 'status', e.target.value)}
+                      >
+                        <option value="">—</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Ordered">Ordered</option>
+                        <option value="Delivered">Delivered</option>
+                        <option value="Issue">Issue</option>
+                      </select>
+                    </td>
+                  </tr>
+                );
+              })}
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={11} className="px-3 py-12 text-center text-muted-foreground">
+                    No items match your filters.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
+        <span>Showing {filtered.length} of {rows.length} items aggregated by room size</span>
+        <span>
+          Total residential items: <strong className="text-accent">
+            {(sizeTotals.studio + sizeTotals['1br'] + sizeTotals['2br'] + sizeTotals['3br']).toLocaleString()}
+          </strong>
+        </span>
+      </div>
+    </div>
+  );
+}
