@@ -423,6 +423,11 @@ function TreeNodeRow(p: TreeNodeRowProps) {
           {node.name}
           {node.nameHe && <span className="ml-1 text-[10px] opacity-70" dir="rtl">{node.nameHe}</span>}
           {itemCount > 0 && <span className="ml-1 text-[10px] text-muted-foreground">({itemCount})</span>}
+          {planCount > 0 && (
+            <span className="ml-1 inline-flex items-center" title={`${planCount} plan(s) attached`}>
+              <Paperclip className="h-3 w-3 text-accent" />
+            </span>
+          )}
         </button>
         <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5">
           <IconBtn title="Move up" onClick={() => p.onMove(node, -1)}>↑</IconBtn>
