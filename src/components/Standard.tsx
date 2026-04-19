@@ -692,8 +692,8 @@ function HotelTotalsView({
           </thead>
           <tbody>
             {rows.map(r => (
-              <>
-                <tr key={r.cat.id} className="border-t hover:bg-muted/30 cursor-pointer" onClick={() => toggle(r.cat.id)}>
+              <FragmentRow key={r.cat.id}>
+                <tr className="border-t hover:bg-muted/30 cursor-pointer" onClick={() => toggle(r.cat.id)}>
                   <td className="px-3 py-2">
                     {open[r.cat.id] ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
                   </td>
