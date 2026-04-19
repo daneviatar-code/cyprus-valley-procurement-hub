@@ -496,6 +496,8 @@ function ItemEditor({
                 <td className={`${td} text-right font-mono`}>{c.totalPerUnit}</td>
                 <td className={`${td} text-right font-mono text-muted-foreground`}>{c.unitsInHotel}</td>
                 <td className={`${td} text-right font-mono font-semibold`}>{c.hotelQtyNeeded.toLocaleString()}</td>
+                <td className={td}><Input type="number" className={inputCls + ' text-right w-20'} value={std.unitPriceEur ?? ''}
+                  onChange={e => onUpdate(std.id, { unitPriceEur: e.target.value === '' ? undefined : Math.max(0, +e.target.value) })} /></td>
                 <td className={td}>
                   <select className={inputCls + ' min-w-[110px]'} value={std.supplierId || ''}
                     onChange={e => onUpdate(std.id, { supplierId: e.target.value || undefined })}>
@@ -503,8 +505,6 @@ function ItemEditor({
                     {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
                 </td>
-                <td className={td}><Input type="number" className={inputCls + ' text-right w-20'} value={std.unitPriceEur ?? ''}
-                  onChange={e => onUpdate(std.id, { unitPriceEur: e.target.value === '' ? undefined : Math.max(0, +e.target.value) })} /></td>
                 <td className={`${td} text-right font-mono`}>{eur(pkgCost)}</td>
                 <td className={`${td} text-right font-mono font-semibold`}>{eur(c.lineCost)}</td>
                 <td className={td}>
