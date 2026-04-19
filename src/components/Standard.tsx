@@ -491,13 +491,13 @@ function ItemEditor({
                   onChange={e => onUpdate(std.id, { spec: e.target.value })} placeholder="Spec/model" /></td>
                 <td className={td}><Input type="number" className={inputCls + ' text-right w-16'} value={std.qtyPerUnit}
                   onChange={e => onUpdate(std.id, { qtyPerUnit: Math.max(0, +e.target.value) })} /></td>
+                <td className={td}><Input type="number" step="0.01" className={inputCls + ' text-right w-20'} value={std.unitPriceEur ?? ''}
+                  onChange={e => onUpdate(std.id, { unitPriceEur: e.target.value === '' ? undefined : Math.max(0, +e.target.value) })} /></td>
                 <td className={td}><Input type="number" className={inputCls + ' text-right w-14'} value={std.sparePerUnit}
                   onChange={e => onUpdate(std.id, { sparePerUnit: Math.max(0, +e.target.value) })} /></td>
                 <td className={`${td} text-right font-mono`}>{c.totalPerUnit}</td>
                 <td className={`${td} text-right font-mono text-muted-foreground`}>{c.unitsInHotel}</td>
                 <td className={`${td} text-right font-mono font-semibold`}>{c.hotelQtyNeeded.toLocaleString()}</td>
-                <td className={td}><Input type="number" className={inputCls + ' text-right w-20'} value={std.unitPriceEur ?? ''}
-                  onChange={e => onUpdate(std.id, { unitPriceEur: e.target.value === '' ? undefined : Math.max(0, +e.target.value) })} /></td>
                 <td className={td}>
                   <select className={inputCls + ' min-w-[110px]'} value={std.supplierId || ''}
                     onChange={e => onUpdate(std.id, { supplierId: e.target.value || undefined })}>
