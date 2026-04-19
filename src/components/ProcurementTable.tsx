@@ -109,6 +109,16 @@ export default function ProcurementTable({ userData, onUpdateItem, procurementIt
     return computeFurnitureForConcept(masterData, roomTypeConcept, roomTypeBuilding);
   }, [masterData, roomTypeConcept, roomTypeBuilding]);
 
+  // By Room Size: aggregate items across Studio / 1BR / 2BR / 3BR
+  const roomSizeRows = useMemo(() => {
+    const scoped = selectedBuildings.length === 0
+      ? masterData
+      : masterData.filter(r => selectedBuildings.includes(r.building));
+    return computeProcurementByRoomSize(scoped);
+  }, [masterData, selectedBuildings]);
+
+  const roomSizeUnitCounts = useMemo(() => countUnitsByRoomSize(), [masterData]);
+
   const filteredItems = useMemo(() => {
     return effectiveProcurement.filter((item) => {
       if (search && !item.name.toLowerCase().includes(search.toLowerCase())) return false;
