@@ -33,6 +33,7 @@ export default function PublicAreas(_: { masterData?: unknown; userData?: unknow
   const [items, setItems] = useState<PublicAreaItem[]>(() => loadItems());
   const [categories] = useState<ProcurementCategory[]>(() => loadCategories());
   const [suppliers] = useState<Supplier[]>(() => loadSuppliers());
+  const [plans, setPlans] = useState<PublicAreaPlan[]>(() => loadPlans());
 
   const [view, setView] = useState<View>('editor');
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
@@ -46,6 +47,7 @@ export default function PublicAreas(_: { masterData?: unknown; userData?: unknow
 
   useEffect(() => { saveNodes(nodes); }, [nodes]);
   useEffect(() => { saveItems(items); }, [items]);
+  useEffect(() => { savePlans(plans); }, [plans]);
 
   // Auto-select first leaf
   useEffect(() => {
