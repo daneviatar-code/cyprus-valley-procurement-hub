@@ -10,7 +10,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   ChevronDown, ChevronRight, Plus, Pencil, Trash2, Copy, Download, Search, X,
-  FolderTree, Building2, MapPin, Folder,
+  FolderTree, Building2, MapPin, Folder, Paperclip,
 } from 'lucide-react';
 import {
   PublicAreaNode, NodeType, PublicAreaItem,
@@ -23,6 +23,8 @@ import {
   STANDARD_STATUSES, StandardStatus, eur,
 } from '@/data/roomStandardsData';
 import { Supplier, loadSuppliers } from '@/data/supplierData';
+import { PublicAreaPlan, loadPlans, savePlans } from '@/data/publicAreaPlansData';
+import NodePlans from './NodePlans';
 
 type View = 'editor' | 'bySupplier' | 'byCategory';
 
