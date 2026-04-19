@@ -722,7 +722,7 @@ function HotelTotalsView({
                     </td>
                   </tr>
                 )}
-              </>
+              </FragmentRow>
             ))}
           </tbody>
         </table>
