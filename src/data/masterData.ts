@@ -352,7 +352,7 @@ export function computeProcurementByRoomSize(masterData: MasterRow[]): ComputedP
 
     let entry = map.get(row.itemName);
     if (!entry) {
-      entry = { category: row.roomType, qty: { studio: 0, '1br': 0, '2br': 0, '3br': 0, public: 0 } };
+      entry = { category: row.roomType, qty: { studio: 0, '1br': 0, '2br': 0, '3br': 0, '4br': 0, public: 0 } };
       map.set(row.itemName, entry);
     }
     entry.qty[size] += total;

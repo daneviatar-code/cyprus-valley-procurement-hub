@@ -440,7 +440,7 @@ function ByRoomSizeView({
   }, [rows, search, selectedCategories]);
 
   const sizeTotals = useMemo(() => {
-    const t: Record<RoomSize, number> = { studio: 0, '1br': 0, '2br': 0, '3br': 0, public: 0 };
+    const t: Record<RoomSize, number> = { studio: 0, '1br': 0, '2br': 0, '3br': 0, '4br': 0, public: 0 };
     filtered.forEach(r => RESIDENTIAL_ROOM_SIZES.forEach(s => { t[s] += r.qtyByRoomSize[s] || 0; }));
     return t;
   }, [filtered]);
