@@ -383,6 +383,7 @@ interface TreeNodeRowProps {
   depth: number;
   nodes: PublicAreaNode[];
   items: PublicAreaItem[];
+  plans: PublicAreaPlan[];
   expanded: Record<string, boolean>;
   setExpanded: (e: Record<string, boolean>) => void;
   selectedNodeId: string | null;
@@ -396,12 +397,13 @@ interface TreeNodeRowProps {
   onMove: (n: PublicAreaNode, dir: -1 | 1) => void;
 }
 function TreeNodeRow(p: TreeNodeRowProps) {
-  const { node, depth, nodes, items, visibleNodeIds } = p;
+  const { node, depth, nodes, items, plans, visibleNodeIds } = p;
   if (visibleNodeIds && !visibleNodeIds.has(node.id)) return null;
   const children = getChildren(nodes, node.id);
   const isOpen = p.expanded[node.id] ?? true;
   const isSel = p.selectedNodeId === node.id;
   const itemCount = items.filter(i => i.nodeId === node.id).length;
+  const planCount = plans.filter(p => p.nodeId === node.id && !p.archived).length;
   const canHaveChildren = node.type !== 'area';
 
   return (
