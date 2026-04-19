@@ -191,14 +191,14 @@ export default function Standard() {
     const rows: string[] = [];
     const cat = categories.find(c => c.id === selectedCategoryId);
     rows.push(`Apartment Standard - ${ROOM_SIZE_LABELS[selectedType]} - ${cat?.nameEn || ''}`);
-    rows.push('Item,Spec,Qty/Pkg,Spare/Pkg,Total/Pkg,Units,Hotel Qty,Supplier,€/Unit,Pkg Cost,Hotel Cost,Status,Ordered,Delivered,Outstanding,Notes');
+    rows.push('Item,Spec,Qty/Pkg,Spare/Pkg,Total/Pkg,Units,Hotel Qty,€/Unit,Supplier,Pkg Cost,Hotel Cost,Status,Ordered,Delivered,Outstanding,Notes');
     standardsForCell.forEach(std => {
       const c = computeStandard(std);
       const supplier = suppliers.find(s => s.id === std.supplierId)?.name || '';
       const pkgCost = ((std.qtyPerUnit || 0) + (std.sparePerUnit || 0)) * (std.unitPriceEur || 0);
       rows.push([
         std.itemName, std.spec, std.qtyPerUnit, std.sparePerUnit, c.totalPerUnit,
-        c.unitsInHotel, c.hotelQtyNeeded, supplier, std.unitPriceEur || 0,
+        c.unitsInHotel, c.hotelQtyNeeded, std.unitPriceEur || 0, supplier,
         pkgCost, c.lineCost, std.status, std.orderedQty, std.deliveredQty,
         c.outstandingQty, (std.notes || '').replace(/,/g, ';'),
       ].map(v => `"${v}"`).join(','));
