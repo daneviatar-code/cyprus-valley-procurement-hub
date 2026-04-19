@@ -254,3 +254,169 @@ export function computeTotalItemsCount(masterData: MasterRow[]): number {
 export function generateRowId(): string {
   return `row-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
+
+// ── Room Size derivation + override ──
+export type RoomSize = 'studio' | '1br' | '2br' | '3br' | 'public';
+export const ROOM_SIZE_LABELS: Record<RoomSize, string> = {
+  studio: 'Studio',
+  '1br': '1-Bedroom',
+  '2br': '2-Bedroom',
+  '3br': '3-Bedroom',
+  public: 'Public Areas',
+};
+export const RESIDENTIAL_ROOM_SIZES: RoomSize[] = ['studio', '1br', '2br', '3br'];
+const ROOM_SIZE_OVERRIDE_KEY = 'cyprus-valley-room-size-overrides-v1';
+
+/** Returns true if a unit code identifies a Common Area / Zone (lobby, spa, etc.) */
+export function isZoneCode(unitCode: string): boolean {
+  const code = unitCode.toUpperCase();
+  return ['LOBBY', 'RESTAURANT', 'SPA', 'POOL', 'MEETING', 'BOH', 'GYM', 'ROOFTOP'].includes(code);
+}
+
+/** Auto-derive room size from a unit's `description` text. */
+export function deriveRoomSizeFromDescription(description: string, unitCode?: string): RoomSize {
+  if (unitCode && isZoneCode(unitCode)) return 'public';
+  const d = (description || '').toLowerCase();
+  if (d.includes('studio')) return 'studio';
+  if (d.includes('1bd') || d.includes('1br') || d.includes('1-bed')) return '1br';
+  if (d.includes('2bd') || d.includes('2br') || d.includes('2-bed')) return '2br';
+  if (d.includes('3bd') || d.includes('3br') || d.includes('3-bed')) return '3br';
+  if (d.includes('4bd') || d.includes('penthouse')) return '3br'; // bucket 4BD penthouse with 3BR+
+  if (d.includes('public') || d.includes('lobby') || d.includes('spa') || d.includes('pool') ||
+      d.includes('gym') || d.includes('restaurant') || d.includes('meeting') || d.includes('boh') ||
+      d.includes('rooftop')) return 'public';
+  return 'studio';
+}
+
+/** Per-(concept,unitCode) manual room-size overrides, persisted in localStorage. */
+export function loadRoomSizeOverrides(): Record<string, RoomSize> {
+  try {
+    const raw = localStorage.getItem(ROOM_SIZE_OVERRIDE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return {};
+}
+export function saveRoomSizeOverrides(map: Record<string, RoomSize>) {
+  localStorage.setItem(ROOM_SIZE_OVERRIDE_KEY, JSON.stringify(map));
+}
+export function roomSizeOverrideKey(concept: Concept, unitCode: string): string {
+  return `${concept}::${unitCode}`;
+}
+
+/** Resolve effective room size (override wins, otherwise auto-derive). */
+export function getRoomSize(concept: Concept, unitCode: string, description: string): RoomSize {
+  const overrides = loadRoomSizeOverrides();
+  const k = roomSizeOverrideKey(concept, unitCode);
+  if (overrides[k]) return overrides[k];
+  return deriveRoomSizeFromDescription(description, unitCode);
+}
+
+// ── Computed: Procurement aggregated by Room Size ──
+export interface ComputedProcurementByRoomSize {
+  id: number;
+  name: string;
+  category: RoomType;
+  qtyByRoomSize: Record<RoomSize, number>;
+  grandTotal: number;
+}
+
+export function computeProcurementByRoomSize(masterData: MasterRow[]): ComputedProcurementByRoomSize[] {
+  const overrides = loadRoomSizeOverrides();
+  const unitDescCache = new Map<string, string>();
+  const lookupDesc = (concept: Concept, code: string) => {
+    const k = `${concept}-${code}`;
+    if (unitDescCache.has(k)) return unitDescCache.get(k)!;
+    const u = getUnitsForConcept(concept).find(x => x.code === code);
+    const d = u?.description || '';
+    unitDescCache.set(k, d);
+    return d;
+  };
+
+  const map = new Map<string, { category: RoomType; qty: Record<RoomSize, number> }>();
+
+  masterData.forEach(row => {
+    if (isZoneCode(row.unitCode)) return; // exclude common areas from residential sizes
+    const overrideKey = roomSizeOverrideKey(row.concept, row.unitCode);
+    const size: RoomSize = overrides[overrideKey] || deriveRoomSizeFromDescription(lookupDesc(row.concept, row.unitCode), row.unitCode);
+    if (size === 'public') return;
+
+    const instances = (() => {
+      const u = getUnitsForConcept(row.concept).find(x => x.code === row.unitCode);
+      if (!u) return 0;
+      let t = 0;
+      u.floors.forEach(f => { t += u.unitsPerFloor[f] || 0; });
+      return t;
+    })();
+    const total = row.qtyPerUnit * instances;
+
+    let entry = map.get(row.itemName);
+    if (!entry) {
+      entry = { category: row.roomType, qty: { studio: 0, '1br': 0, '2br': 0, '3br': 0, public: 0 } };
+      map.set(row.itemName, entry);
+    }
+    entry.qty[size] += total;
+  });
+
+  const catOrder: RoomType[] = ['Dining', 'Living Room', 'Bedroom', 'Outdoor', 'Bathroom', 'Kitchen', 'Sauna & Wellness', 'Accessories & Decor', 'Mirrors', 'Electrical & Appliances', 'In-Room Safes', 'Cutlery & Dining Sets', 'Curtains & Window Treatments'];
+  const sorted = [...map.entries()].sort((a, b) => {
+    const c = catOrder.indexOf(a[1].category) - catOrder.indexOf(b[1].category);
+    if (c !== 0) return c;
+    return a[0].localeCompare(b[0]);
+  });
+
+  let id = 1;
+  return sorted.map(([name, data]) => ({
+    id: id++,
+    name,
+    category: data.category,
+    qtyByRoomSize: data.qty,
+    grandTotal: data.qty.studio + data.qty['1br'] + data.qty['2br'] + data.qty['3br'],
+  }));
+}
+
+/** Count unit instances grouped by room size, across all concepts/buildings. */
+export function countUnitsByRoomSize(): Record<RoomSize, number> {
+  const overrides = loadRoomSizeOverrides();
+  const result: Record<RoomSize, number> = { studio: 0, '1br': 0, '2br': 0, '3br': 0, public: 0 };
+  (['A', 'B', 'C'] as Concept[]).forEach(concept => {
+    const buildingsCount = ALL_BUILDINGS[concept].length;
+    getUnitsForConcept(concept).forEach(u => {
+      if (u.isZone) return;
+      const k = roomSizeOverrideKey(concept, u.code);
+      const size = overrides[k] || deriveRoomSizeFromDescription(u.description, u.code);
+      if (size === 'public') return;
+      const instances = u.floors.reduce((s, f) => s + (u.unitsPerFloor[f] || 0), 0);
+      result[size] += instances * buildingsCount;
+    });
+  });
+  return result;
+}
+
+// ── Computed: Procurement scoped to Public Areas (zones) ──
+export interface ComputedPublicAreaItem {
+  id: number;
+  name: string;
+  category: RoomType;
+  zone: string;        // e.g. 'LOBBY'
+  building: string;    // e.g. 'A1'
+  concept: Concept;
+  qty: number;         // total qty of this item in this zone instance
+}
+
+export function computePublicAreaItems(masterData: MasterRow[]): ComputedPublicAreaItem[] {
+  const items: ComputedPublicAreaItem[] = [];
+  let id = 1;
+  masterData.forEach(row => {
+    if (!isZoneCode(row.unitCode)) return;
+    items.push({
+      id: id++,
+      name: row.itemName,
+      category: row.roomType,
+      zone: row.unitCode,
+      building: row.building,
+      concept: row.concept,
+      qty: row.qtyPerUnit, // zones have unitsPerFloor of 1, so per-unit == total
+    });
+  });
+  return items;
+}

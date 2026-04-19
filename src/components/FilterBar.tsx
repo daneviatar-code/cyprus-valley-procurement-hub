@@ -1,7 +1,7 @@
 import { Search, X } from 'lucide-react';
 import MultiSelect from './MultiSelect';
 
-export type ViewMode = 'byItem' | 'byRoomType';
+export type ViewMode = 'byItem' | 'byRoomType' | 'byRoomSize';
 
 interface FilterBarProps {
   search: string;
@@ -65,6 +65,16 @@ export default function FilterBar(props: FilterBarProps) {
             }`}
           >
             🛏 By Room Type
+          </button>
+          <button
+            onClick={() => props.onViewModeChange('byRoomSize')}
+            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+              props.viewMode === 'byRoomSize'
+                ? 'bg-card text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            📐 By Room Size
           </button>
         </div>
 

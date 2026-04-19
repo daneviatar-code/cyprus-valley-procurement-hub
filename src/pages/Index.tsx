@@ -9,6 +9,7 @@ import ProjectDataTable from '@/components/ProjectDataTable';
 import ItemAssignment from '@/components/ItemAssignment';
 import Selections from '@/components/Selections';
 import Suppliers from '@/components/Suppliers';
+import PublicAreas from '@/components/PublicAreas';
 import { type UserItemData, loadUserData, saveUserData } from '@/data/projectData';
 import {
   MasterRow,
@@ -18,7 +19,7 @@ import {
   computeTotalItemsCount,
 } from '@/data/masterData';
 
-type Tab = 'procurement' | 'rooms' | 'packages' | 'pricing' | 'projectData' | 'itemAssignment' | 'suppliers' | 'selections';
+type Tab = 'procurement' | 'rooms' | 'packages' | 'pricing' | 'projectData' | 'itemAssignment' | 'suppliers' | 'selections' | 'publicAreas';
 
 export default function Index() {
   const [userData, setUserData] = useState<Record<number, UserItemData>>(loadUserData);
@@ -51,6 +52,7 @@ export default function Index() {
     { key: 'itemAssignment', label: 'Item Assignment' },
     { key: 'suppliers', label: 'Suppliers' },
     { key: 'selections', label: 'Selections' },
+    { key: 'publicAreas', label: 'Public Areas' },
   ];
 
   return (
@@ -91,7 +93,7 @@ export default function Index() {
 
       {/* Main */}
       <main className="max-w-[1440px] mx-auto px-6 py-6 space-y-8">
-        {activeTab !== 'projectData' && activeTab !== 'packages' && activeTab !== 'pricing' && (
+        {activeTab !== 'projectData' && activeTab !== 'packages' && activeTab !== 'pricing' && activeTab !== 'publicAreas' && (
           <Dashboard
             onConceptClick={(id) => setDrillDownConcept(id)}
             masterData={masterData}
@@ -130,6 +132,14 @@ export default function Index() {
         {activeTab === 'suppliers' && <Suppliers />}
 
         {activeTab === 'selections' && <Selections />}
+
+        {activeTab === 'publicAreas' && (
+          <PublicAreas
+            masterData={masterData}
+            userData={userData}
+            onUpdateItem={handleUpdateItem}
+          />
+        )}
       </main>
 
       {/* Building Drill-Down Modal */}
