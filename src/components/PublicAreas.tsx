@@ -522,8 +522,8 @@ function ZoneItemsTable(p: ZoneItemsTableProps) {
                       ))}
                     </select>
                   </td>
-                  <td className={td}><Num v={it.qty} onChange={v => p.onUpdate(it.id, { qty: v })} /></td>
-                  <td className={td}><Num v={it.spare} onChange={v => p.onUpdate(it.id, { spare: v })} /></td>
+                  <td className={td}><Num v={it.qty} onChange={v => p.onUpdate(it.id, { qty: Number(v) || 0 })} /></td>
+                  <td className={td}><Num v={it.spare} onChange={v => p.onUpdate(it.id, { spare: Number(v) || 0 })} /></td>
                   <td className={`${td} text-right font-mono font-semibold text-accent`}>{c.totalQty}</td>
                   <td className={td}>
                     <select value={it.supplierId || ''} onChange={e => p.onUpdate(it.id, { supplierId: e.target.value || undefined })}
