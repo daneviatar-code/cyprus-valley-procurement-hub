@@ -10,7 +10,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   ChevronDown, ChevronRight, Plus, Pencil, Trash2, Copy, Download, Search, X,
-  FolderTree, Building2, MapPin, Folder,
+  FolderTree, Building2, MapPin, Folder, Paperclip,
 } from 'lucide-react';
 import {
   PublicAreaNode, NodeType, PublicAreaItem,
@@ -23,6 +23,8 @@ import {
   STANDARD_STATUSES, StandardStatus, eur,
 } from '@/data/roomStandardsData';
 import { Supplier, loadSuppliers } from '@/data/supplierData';
+import { PublicAreaPlan, loadPlans, savePlans } from '@/data/publicAreaPlansData';
+import NodePlans from './NodePlans';
 
 type View = 'editor' | 'bySupplier' | 'byCategory';
 
@@ -31,6 +33,7 @@ export default function PublicAreas(_: { masterData?: unknown; userData?: unknow
   const [items, setItems] = useState<PublicAreaItem[]>(() => loadItems());
   const [categories] = useState<ProcurementCategory[]>(() => loadCategories());
   const [suppliers] = useState<Supplier[]>(() => loadSuppliers());
+  const [plans, setPlans] = useState<PublicAreaPlan[]>(() => loadPlans());
 
   const [view, setView] = useState<View>('editor');
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
@@ -44,6 +47,7 @@ export default function PublicAreas(_: { masterData?: unknown; userData?: unknow
 
   useEffect(() => { saveNodes(nodes); }, [nodes]);
   useEffect(() => { saveItems(items); }, [items]);
+  useEffect(() => { savePlans(plans); }, [plans]);
 
   // Auto-select first leaf
   useEffect(() => {
@@ -222,12 +226,17 @@ export default function PublicAreas(_: { masterData?: unknown; userData?: unknow
   const nodePath = (id: string) =>
     getNodeBreadcrumb(nodes, id).map(n => n.name).join(' › ');
 
+  const planFilesFor = (nodeId: string) =>
+    plans.filter(p => p.nodeId === nodeId && !p.archived)
+      .sort((a, b) => a.order - b.order)
+      .map(p => p.fileName).join(' | ');
+
   const exportNodeCsv = (n: PublicAreaNode) => {
     const ids = getScopeNodeIds(nodes, n.id);
     const scope = items.filter(i => ids.has(i.nodeId));
     const rows: (string | number)[][] = [
       ['Path', 'Item Name', 'Spec', 'Category', 'Qty', 'Spare', 'Total', 'Supplier',
-       'Unit Price €', 'Line Cost €', 'Status', 'Ordered', 'Delivered', 'Outstanding', 'Notes'],
+       'Unit Price €', 'Line Cost €', 'Status', 'Ordered', 'Delivered', 'Outstanding', 'Notes', 'Plan Files'],
     ];
     scope.forEach(i => {
       const c = computeItem(i);
@@ -235,6 +244,7 @@ export default function PublicAreas(_: { masterData?: unknown; userData?: unknow
         nodePath(i.nodeId), i.itemName, i.spec, categoryName(i.categoryId), i.qty, i.spare,
         c.totalQty, supplierName(i.supplierId), i.unitPriceEur ?? '', c.lineCost,
         i.status, i.orderedQty, i.deliveredQty, c.outstandingQty, i.notes,
+        planFilesFor(i.nodeId),
       ]);
     });
     downloadCsv(`public-area_${n.name.replace(/\s+/g, '-')}.csv`, rows);
@@ -302,7 +312,7 @@ export default function PublicAreas(_: { masterData?: unknown; userData?: unknow
               {getChildren(nodes, null).map(top =>
                 <TreeNodeRow
                   key={top.id} node={top} depth={0}
-                  nodes={nodes} items={items}
+                  nodes={nodes} items={items} plans={plans}
                   expanded={expanded} setExpanded={setExpanded}
                   selectedNodeId={selectedNodeId} setSelectedNodeId={setSelectedNodeId}
                   visibleNodeIds={visibleNodeIds}
@@ -324,6 +334,8 @@ export default function PublicAreas(_: { masterData?: unknown; userData?: unknow
                 node={selectedNode} breadcrumb={breadcrumb}
                 directItems={directItems}
                 categories={categories} suppliers={suppliers} nodes={nodes}
+                plans={plans}
+                onPlansChange={setPlans}
                 onAddItem={addItem} onUpdateItem={updateItem} onDeleteItem={deleteItem}
                 onDuplicateItem={duplicateItem}
                 onAddChild={() => addChildNode(selectedNode)}
@@ -371,6 +383,7 @@ interface TreeNodeRowProps {
   depth: number;
   nodes: PublicAreaNode[];
   items: PublicAreaItem[];
+  plans: PublicAreaPlan[];
   expanded: Record<string, boolean>;
   setExpanded: (e: Record<string, boolean>) => void;
   selectedNodeId: string | null;
@@ -384,12 +397,13 @@ interface TreeNodeRowProps {
   onMove: (n: PublicAreaNode, dir: -1 | 1) => void;
 }
 function TreeNodeRow(p: TreeNodeRowProps) {
-  const { node, depth, nodes, items, visibleNodeIds } = p;
+  const { node, depth, nodes, items, plans, visibleNodeIds } = p;
   if (visibleNodeIds && !visibleNodeIds.has(node.id)) return null;
   const children = getChildren(nodes, node.id);
   const isOpen = p.expanded[node.id] ?? true;
   const isSel = p.selectedNodeId === node.id;
   const itemCount = items.filter(i => i.nodeId === node.id).length;
+  const planCount = plans.filter(p => p.nodeId === node.id && !p.archived).length;
   const canHaveChildren = node.type !== 'area';
 
   return (
@@ -409,6 +423,11 @@ function TreeNodeRow(p: TreeNodeRowProps) {
           {node.name}
           {node.nameHe && <span className="ml-1 text-[10px] opacity-70" dir="rtl">{node.nameHe}</span>}
           {itemCount > 0 && <span className="ml-1 text-[10px] text-muted-foreground">({itemCount})</span>}
+          {planCount > 0 && (
+            <span className="ml-1 inline-flex items-center" title={`${planCount} plan(s) attached`}>
+              <Paperclip className="h-3 w-3 text-accent" />
+            </span>
+          )}
         </button>
         <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5">
           <IconBtn title="Move up" onClick={() => p.onMove(node, -1)}>↑</IconBtn>
@@ -477,6 +496,8 @@ interface NodeWorkspaceProps {
   categories: ProcurementCategory[];
   suppliers: Supplier[];
   nodes: PublicAreaNode[];
+  plans: PublicAreaPlan[];
+  onPlansChange: (next: PublicAreaPlan[]) => void;
   onAddItem: () => void;
   onUpdateItem: (id: string, patch: Partial<PublicAreaItem>) => void;
   onDeleteItem: (id: string) => void;
@@ -534,6 +555,15 @@ function NodeWorkspace(p: NodeWorkspaceProps) {
           This is a {p.node.type}. Items typically live on its child zones — select one from the tree.
         </div>
       )}
+
+      <div className="p-3 border-b">
+        <NodePlans
+          nodeId={p.node.id}
+          nodeName={p.node.name}
+          plans={p.plans}
+          onChange={p.onPlansChange}
+        />
+      </div>
 
       <ItemsTable
         items={p.directItems}
