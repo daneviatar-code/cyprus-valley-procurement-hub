@@ -31,8 +31,9 @@ import {
 } from '@/components/ui/dialog';
 import {
   Plus, Trash2, Download, HelpCircle, ChevronRight, ChevronDown, Pencil,
-  Star, Lock, ExternalLink,
+  Star, Lock, ExternalLink, Check, Save,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const FragmentRow = Fragment;
 
@@ -70,6 +71,21 @@ export default function Standard() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   const [subView, setSubView] = useState<SubView>('byApartment');
   const [byCategoryPick, setByCategoryPick] = useState<string>('');
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [justSaved, setJustSaved] = useState(false);
+
+  const handleManualSave = useCallback(() => {
+    saveCategories(categories);
+    saveStandardItems(items);
+    saveApartmentTypeQuantities(qtys);
+    const now = new Date();
+    setLastSavedAt(now);
+    setJustSaved(true);
+    toast.success('הנתונים נשמרו בהצלחה · Saved successfully', {
+      description: `${now.toLocaleTimeString('he-IL')} — ${items.length} פריטים`,
+    });
+    setTimeout(() => setJustSaved(false), 2000);
+  }, [categories, items, qtys]);
 
   const unitCounts = useMemo(() => countUnitsByRoomSize(), [items, qtys]);
 
@@ -318,19 +334,36 @@ export default function Standard() {
               </TooltipContent>
             </Tooltip>
           </div>
-          <div className="flex items-center gap-1 bg-muted rounded-lg p-0.5">
-            {([
-              ['byApartment', 'By Apartment Type'],
-              ['byCategory', 'By Category'],
-              ['hotelTotals', 'Hotel Totals'],
-            ] as [SubView, string][]).map(([k, label]) => (
-              <button key={k} onClick={() => setSubView(k)}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                  subView === k ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
-                }`}>
-                {label}
-              </button>
-            ))}
+          <div className="flex items-center gap-3">
+            {lastSavedAt && (
+              <span className="text-[11px] text-muted-foreground" dir="rtl">
+                נשמר לאחרונה · {lastSavedAt.toLocaleTimeString('he-IL')}
+              </span>
+            )}
+            <Button
+              size="sm"
+              onClick={handleManualSave}
+              className={`gap-1.5 transition-all ${
+                justSaved ? 'bg-green-600 hover:bg-green-600 text-white' : ''
+              }`}
+            >
+              {justSaved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+              {justSaved ? 'נשמר! · Saved' : 'עדכון · Save'}
+            </Button>
+            <div className="flex items-center gap-1 bg-muted rounded-lg p-0.5">
+              {([
+                ['byApartment', 'By Apartment Type'],
+                ['byCategory', 'By Category'],
+                ['hotelTotals', 'Hotel Totals'],
+              ] as [SubView, string][]).map(([k, label]) => (
+                <button key={k} onClick={() => setSubView(k)}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                    subView === k ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
+                  }`}>
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
