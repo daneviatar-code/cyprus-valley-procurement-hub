@@ -550,6 +550,7 @@ export default function Standard() {
                     onDeleteItem={deleteMasterItem}
                     onUpdateQty={updateQty}
                     onMoveItem={moveMasterItem}
+                    onReorder={(ids) => reorderMasterItems(selectedCategoryId, ids)}
                     unitCounts={unitCounts}
                   />
                 ) : (
