@@ -640,15 +640,37 @@ function MasterEditor({
           </tr>
         </thead>
         <tbody>
-          {items.map(it => {
+          {items.map((it, idx) => {
             const row = qtysByItem.get(it.id);
             const summary = APARTMENT_TYPES.map(at => {
               const q = row?.[at];
               const total = q ? (q.qtyPerPackage || 0) + (q.sparePerPackage || 0) : 0;
               return { at, total };
             });
+            const isFirst = idx === 0;
+            const isLast = idx === items.length - 1;
             return (
               <tr key={it.id} className="border-b last:border-0 hover:bg-muted/30">
+                <td className={`${td} text-center`}>
+                  <div className="flex flex-col items-center gap-0.5">
+                    <button
+                      onClick={() => onMoveItem(it.id, -1)}
+                      disabled={isFirst}
+                      className="text-muted-foreground hover:text-primary disabled:opacity-20 disabled:cursor-not-allowed"
+                      title="Move up"
+                    >
+                      <ArrowUp className="w-3 h-3" />
+                    </button>
+                    <button
+                      onClick={() => onMoveItem(it.id, 1)}
+                      disabled={isLast}
+                      className="text-muted-foreground hover:text-primary disabled:opacity-20 disabled:cursor-not-allowed"
+                      title="Move down"
+                    >
+                      <ArrowDown className="w-3 h-3" />
+                    </button>
+                  </div>
+                </td>
                 <td className={td}>
                   <Input className={inputCls + ' min-w-[160px] font-medium'} value={it.itemName}
                     onChange={e => onUpdateItem(it.id, { itemName: e.target.value })}
