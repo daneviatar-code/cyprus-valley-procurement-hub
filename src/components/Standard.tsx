@@ -273,85 +273,6 @@ export default function Standard() {
     };
   }, [view, items, qtysByItem, unitCounts]);
 
-  // ── Linens 1BR Quick-Seed (from supplied price sheet) ──
-  const seedLinens1BR = () => {
-    const cat = categories.find(c => c.nameEn.toLowerCase() === 'linens');
-    if (!cat) { toast.error('Category "Linens" not found'); return; }
-    // [name, price €, qty/pkg for 1BR (Occupancy 2)]
-    const seed: Array<[string, number, number]> = [
-      ['Single Sheets', 14.20, 6],
-      ['Double Sheet', 19.19, 3],
-      ['Quilt Single', 17.95, 2],
-      ['Quilt Double', 23.00, 1],
-      ['Quilt Cover Single', 20.95, 6],
-      ['Quilt Cover Double', 26.25, 3],
-      ['Pillows', 5.95, 2],
-      ['Pillowcases', 3.50, 6],
-      ['Pillow Protectors', 2.90, 2],
-      ['Mattress Protectors Singles', 6.90, 2],
-      ['Mattress Protector Double', 12.50, 1],
-      ['Bathtowel Large', 8.50, 6],
-      ['Facetowel', 2.95, 6],
-      ['Floormat', 2.30, 3],
-    ];
-    const now = new Date().toISOString();
-    const norm = (s: string) => s.trim().toLowerCase();
-    const existingByName = new Map(
-      items.filter(i => i.categoryId === cat.id).map(i => [norm(i.itemName), i]),
-    );
-    let created = 0, updated = 0;
-    let nextItems = [...items];
-    let nextQtys = [...qtys];
-    let maxOrder = items.reduce((m, i) => Math.max(m, i.order), 0);
-
-    seed.forEach(([name, price, qty1br]) => {
-      let item = existingByName.get(norm(name));
-      if (!item) {
-        item = {
-          id: genItemId(), categoryId: cat.id, itemName: name, spec: '',
-          unitPriceEur: price, order: ++maxOrder, createdAt: now, updatedAt: now,
-        };
-        nextItems.push(item);
-        // Also create empty qtys for all 5 apartment types
-        APARTMENT_TYPES.forEach(at => {
-          nextQtys.push({
-            id: genQtyId(), standardItemId: item!.id, apartmentType: at,
-            qtyPerPackage: 0, sparePerPackage: 0, status: 'Planned',
-            orderedQty: 0, deliveredQty: 0, notes: '', updatedAt: now,
-          });
-        });
-        created++;
-      } else {
-        nextItems = nextItems.map(i =>
-          i.id === item!.id ? { ...i, unitPriceEur: price, updatedAt: now } : i,
-        );
-        updated++;
-      }
-      // Set 1BR qty
-      const itemId = item.id;
-      const existingQ = nextQtys.find(q => q.standardItemId === itemId && q.apartmentType === '1br');
-      if (existingQ) {
-        nextQtys = nextQtys.map(q =>
-          q.id === existingQ.id ? { ...q, qtyPerPackage: qty1br, updatedAt: now } : q,
-        );
-      } else {
-        nextQtys.push({
-          id: genQtyId(), standardItemId: itemId, apartmentType: '1br',
-          qtyPerPackage: qty1br, sparePerPackage: 0, status: 'Planned',
-          orderedQty: 0, deliveredQty: 0, notes: '', updatedAt: now,
-        });
-      }
-    });
-
-    persistItems(nextItems);
-    persistQtys(nextQtys);
-    setSelectedCategoryId(cat.id);
-    setView('1br');
-    toast.success(`לובנה 1BR · נטען בהצלחה`, {
-      description: `${created} פריטים נוצרו · ${updated} עודכנו · סה"כ ${seed.length}`,
-    });
-  };
-
   // ── CSV ──
   const exportEditorCsv = () => {
     const cat = categories.find(c => c.id === selectedCategoryId);
@@ -557,16 +478,9 @@ export default function Standard() {
                       <Download className="w-3 h-3" /> CSV
                     </Button>
                     {view === 'standard' && (
-                      <>
-                        {categories.find(c => c.id === selectedCategoryId)?.nameEn.toLowerCase() === 'linens' && (
-                          <Button size="sm" variant="secondary" onClick={seedLinens1BR} className="h-7 text-xs gap-1">
-                            <Download className="w-3 h-3 rotate-180" /> ייבוא 1BR · Seed Linens
-                          </Button>
-                        )}
-                        <Button size="sm" onClick={addMasterItem} disabled={!selectedCategoryId} className="h-7 text-xs">
-                          <Plus className="w-3 h-3" /> Add Item
-                        </Button>
-                      </>
+                      <Button size="sm" onClick={addMasterItem} disabled={!selectedCategoryId} className="h-7 text-xs">
+                        <Plus className="w-3 h-3" /> Add Item
+                      </Button>
                     )}
                   </div>
                 </div>
