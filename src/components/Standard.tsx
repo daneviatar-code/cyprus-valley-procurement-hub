@@ -365,13 +365,13 @@ export default function Standard() {
         ].map(v => `"${v}"`).join(','));
       });
     } else {
-      rows.push('Item,Spec,Qty/Pkg,€/Unit,Spare,Total/Pkg,Units,Hotel Qty,Supplier,Pkg Cost,Hotel Cost,Status,Ordered,Delivered,Outstanding,Notes');
+      rows.push('Item,Spec,Dimensions,Qty/Pkg,€/Unit,Spare,Total/Pkg,Units,Hotel Qty,Supplier,Pkg Cost,Hotel Cost,Status,Ordered,Delivered,Outstanding,Notes');
       itemsForCategory.forEach(i => {
         const q = qtysByItem.get(i.id)?.[view]; if (!q) return;
         const c = computeQuantity(q, i, unitCounts);
         const supplier = suppliers.find(s => s.id === i.supplierId)?.name || '';
         rows.push([
-          i.itemName, i.spec, q.qtyPerPackage, (i.unitPriceEur || 0).toFixed(2),
+          i.itemName, i.spec, i.dimensions || '', q.qtyPerPackage, (i.unitPriceEur || 0).toFixed(2),
           q.sparePerPackage, c.totalPerPkg, c.units, c.hotelQty, supplier,
           c.packageCost.toFixed(2), c.hotelCost.toFixed(2), q.status, q.orderedQty, q.deliveredQty,
           c.outstandingQty, (q.notes || '').replace(/,/g, ';'),
@@ -745,6 +745,7 @@ function MasterEditor({
               <th className={`${th} w-10 text-center`} title="Drag to reorder"></th>
               <th className={th}>Item</th>
               <th className={th}>Spec</th>
+              <th className={th}>Dimensions</th>
               <th className={`${th} text-right`}>Unit Price €</th>
               <th className={th}>Supplier</th>
               <th className={th}>Per-Type Quantities</th>
@@ -853,6 +854,11 @@ function SortableItemRow({
           placeholder="Spec/model" />
       </td>
       <td className={td}>
+        <Input className={inputCls + ' min-w-[120px]'} value={it.dimensions || ''}
+          onChange={e => onUpdateItem(it.id, { dimensions: e.target.value })}
+          placeholder="W×D×H cm" />
+      </td>
+      <td className={td}>
         <Input type="number" step="0.01" className={inputCls + ' text-right w-24'}
           value={it.unitPriceEur ?? ''}
           onChange={e => onUpdateItem(it.id, { unitPriceEur: e.target.value === '' ? undefined : Math.max(0, +e.target.value) })} />
@@ -958,6 +964,7 @@ function TypeEditor({
           <tr>
             <th className={th}>Item</th>
             <th className={th}>Spec</th>
+            <th className={th}>Dimensions</th>
             <th className={`${th} text-right`}>Qty/Pkg</th>
             <th className={`${th} text-right`}>€/Unit</th>
             <th className={`${th} text-right`}>Spare</th>
@@ -984,6 +991,7 @@ function TypeEditor({
               <tr key={it.id} className="border-b last:border-0 hover:bg-muted/30">
                 <td className={td}><ReadOnlyChip>{it.itemName || '(unnamed)'}</ReadOnlyChip></td>
                 <td className={td}><ReadOnlyChip>{it.spec || '—'}</ReadOnlyChip></td>
+                <td className={td}><ReadOnlyChip>{it.dimensions || '—'}</ReadOnlyChip></td>
                 <td className={td}>
                   <Input type="number" className={inputCls + ' text-right w-16'} value={q.qtyPerPackage}
                     onChange={e => onUpdateQty(q.id, { qtyPerPackage: Math.max(0, +e.target.value) })} />
