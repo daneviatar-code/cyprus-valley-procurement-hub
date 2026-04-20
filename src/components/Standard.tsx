@@ -31,8 +31,9 @@ import {
 } from '@/components/ui/dialog';
 import {
   Plus, Trash2, Download, HelpCircle, ChevronRight, ChevronDown, Pencil,
-  Star, Lock, ExternalLink,
+  Star, Lock, ExternalLink, Check, Save,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const FragmentRow = Fragment;
 
