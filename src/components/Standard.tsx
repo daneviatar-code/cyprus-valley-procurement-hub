@@ -632,18 +632,6 @@ function SummaryBar({ s, typeLabel, isMaster }: { s: TypeSummary; typeLabel: str
 
 // ───────────────────────────── Master Editor ─────────────────────────────
 function MasterEditor({
-  items, qtysByItem, suppliers, onUpdateItem, onDeleteItem, onUpdateQty, onMoveItem, unitCounts,
-}: {
-  items: StandardItem[];
-  qtysByItem: Map<string, Record<ApartmentType, ApartmentTypeQuantity | undefined>>;
-  suppliers: Supplier[];
-  onUpdateItem: (id: string, patch: Partial<StandardItem>) => void;
-  onDeleteItem: (id: string) => void;
-  onUpdateQty: (id: string, patch: Partial<ApartmentTypeQuantity>) => void;
-  onMoveItem: (id: string, direction: -1 | 1) => void;
-  unitCounts: Record<RoomSize, number>;
-}) {
-function MasterEditor({
   items, qtysByItem, suppliers, onUpdateItem, onDeleteItem, onUpdateQty, onMoveItem, onReorder, unitCounts,
 }: {
   items: StandardItem[];
