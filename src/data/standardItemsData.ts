@@ -19,6 +19,7 @@ export interface StandardItem {
   categoryId: string;
   itemName: string;
   spec: string;
+  dimensions?: string;
   unitPriceEur?: number;
   supplierId?: string;
   order: number;
