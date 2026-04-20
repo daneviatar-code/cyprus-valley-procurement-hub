@@ -316,6 +316,32 @@ export default function Standard() {
     };
   }, [view, items, qtysByItem, unitCounts]);
 
+  // Per-building breakdown of Hotel Qty + Hotel Cost
+  const perBuildingSummary = useMemo(() => {
+    const result: Record<string, { qty: number; cost: number; units: number }> = {};
+    ALL_BUILDING_LIST.forEach(b => {
+      const counts = unitCountsPerBuilding[b] || { studio: 0, '1br': 0, '2br': 0, '3br': 0, '4br': 0, public: 0 };
+      let qty = 0, cost = 0;
+      const units = view === 'standard'
+        ? APARTMENT_TYPES.reduce((s, at) => s + (counts[at] || 0), 0)
+        : (counts[view as ApartmentType] || 0);
+      items.forEach(i => {
+        if (i.archived) return;
+        const row = qtysByItem.get(i.id); if (!row) return;
+        const types: ApartmentType[] = view === 'standard' ? [...APARTMENT_TYPES] : [view as ApartmentType];
+        types.forEach(at => {
+          const q = row[at]; if (!q) return;
+          const total = (q.qtyPerPackage || 0) + (q.sparePerPackage || 0);
+          const u = counts[at] || 0;
+          qty += total * u;
+          cost += total * u * (i.unitPriceEur || 0);
+        });
+      });
+      result[b] = { qty, cost, units };
+    });
+    return result;
+  }, [view, items, qtysByItem, unitCountsPerBuilding]);
+
   // ── CSV ──
   const exportEditorCsv = () => {
     const cat = categories.find(c => c.id === selectedCategoryId);
