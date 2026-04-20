@@ -342,13 +342,16 @@ export default function Standard() {
             )}
             <Button
               size="sm"
+              variant="outline"
               onClick={handleManualSave}
-              className={`gap-1.5 transition-all ${
-                justSaved ? 'bg-green-600 hover:bg-green-600 text-white' : ''
+              className={`gap-2 px-4 font-medium tracking-wide transition-all duration-300 ${
+                justSaved
+                  ? 'bg-green-50 border-green-500 text-green-700 hover:bg-green-50'
+                  : 'border-primary/30 hover:border-primary hover:bg-primary/5'
               }`}
             >
-              {justSaved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-              {justSaved ? 'נשמר! · Saved' : 'עדכון · Save'}
+              {justSaved ? <Check className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
+              <span className="text-xs uppercase">{justSaved ? 'Saved' : 'Update'}</span>
             </Button>
             <div className="flex items-center gap-1 bg-muted rounded-lg p-0.5">
               {([
