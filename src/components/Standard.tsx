@@ -610,7 +610,7 @@ function SummaryBar({ s, typeLabel, isMaster }: { s: TypeSummary; typeLabel: str
 
 // ───────────────────────────── Master Editor ─────────────────────────────
 function MasterEditor({
-  items, qtysByItem, suppliers, onUpdateItem, onDeleteItem, onUpdateQty, unitCounts,
+  items, qtysByItem, suppliers, onUpdateItem, onDeleteItem, onUpdateQty, onMoveItem, unitCounts,
 }: {
   items: StandardItem[];
   qtysByItem: Map<string, Record<ApartmentType, ApartmentTypeQuantity | undefined>>;
@@ -618,6 +618,7 @@ function MasterEditor({
   onUpdateItem: (id: string, patch: Partial<StandardItem>) => void;
   onDeleteItem: (id: string) => void;
   onUpdateQty: (id: string, patch: Partial<ApartmentTypeQuantity>) => void;
+  onMoveItem: (id: string, direction: -1 | 1) => void;
   unitCounts: Record<RoomSize, number>;
 }) {
   const inputCls = 'w-full h-7 px-2 text-xs border rounded bg-background focus:outline-none focus:ring-1 focus:ring-primary';
