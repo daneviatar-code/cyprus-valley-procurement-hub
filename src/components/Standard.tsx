@@ -98,6 +98,7 @@ export default function Standard() {
   }, [categories, items, qtys]);
 
   const unitCounts = useMemo(() => countUnitsByRoomSize(), [items, qtys]);
+  const unitCountsPerBuilding = useMemo(() => countUnitsByRoomSizePerBuilding(), [items, qtys]);
 
   const visibleCategories = useMemo(
     () => categories
