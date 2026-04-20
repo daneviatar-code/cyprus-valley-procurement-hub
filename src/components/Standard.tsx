@@ -334,19 +334,36 @@ export default function Standard() {
               </TooltipContent>
             </Tooltip>
           </div>
-          <div className="flex items-center gap-1 bg-muted rounded-lg p-0.5">
-            {([
-              ['byApartment', 'By Apartment Type'],
-              ['byCategory', 'By Category'],
-              ['hotelTotals', 'Hotel Totals'],
-            ] as [SubView, string][]).map(([k, label]) => (
-              <button key={k} onClick={() => setSubView(k)}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                  subView === k ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
-                }`}>
-                {label}
-              </button>
-            ))}
+          <div className="flex items-center gap-3">
+            {lastSavedAt && (
+              <span className="text-[11px] text-muted-foreground" dir="rtl">
+                נשמר לאחרונה · {lastSavedAt.toLocaleTimeString('he-IL')}
+              </span>
+            )}
+            <Button
+              size="sm"
+              onClick={handleManualSave}
+              className={`gap-1.5 transition-all ${
+                justSaved ? 'bg-green-600 hover:bg-green-600 text-white' : ''
+              }`}
+            >
+              {justSaved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+              {justSaved ? 'נשמר! · Saved' : 'עדכון · Save'}
+            </Button>
+            <div className="flex items-center gap-1 bg-muted rounded-lg p-0.5">
+              {([
+                ['byApartment', 'By Apartment Type'],
+                ['byCategory', 'By Category'],
+                ['hotelTotals', 'Hotel Totals'],
+              ] as [SubView, string][]).map(([k, label]) => (
+                <button key={k} onClick={() => setSubView(k)}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                    subView === k ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
+                  }`}>
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
