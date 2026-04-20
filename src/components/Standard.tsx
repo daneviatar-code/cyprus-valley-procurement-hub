@@ -627,7 +627,10 @@ type TypeSummary = {
   totalHotelQty: number; totalPackageCost: number; totalHotelCost: number;
   orderedValue: number; deliveredValue: number; outstandingValue: number;
 };
-function SummaryBar({ s, typeLabel, isMaster }: { s: TypeSummary; typeLabel: string; isMaster: boolean }) {
+function SummaryBar({ s, typeLabel, isMaster, perBuilding }: {
+  s: TypeSummary; typeLabel: string; isMaster: boolean;
+  perBuilding?: Record<string, { qty: number; cost: number; units: number }>;
+}) {
   const cells = [
     [isMaster ? 'Units (all types)' : 'Units in Hotel', s.units.toLocaleString()],
     ['# Categories', s.numCategories.toLocaleString()],
@@ -654,6 +657,26 @@ function SummaryBar({ s, typeLabel, isMaster }: { s: TypeSummary; typeLabel: str
           </div>
         ))}
       </div>
+
+      {perBuilding && (
+        <div className="mt-3 pt-3 border-t border-border">
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">
+            Breakdown per Building · פירוט לפי בניין
+          </div>
+          <div className="grid grid-cols-3 md:grid-cols-9 gap-2">
+            {Object.entries(perBuilding).map(([b, d]) => (
+              <div key={b} className="bg-muted/40 rounded px-2 py-1.5 border border-border/50">
+                <div className="text-[10px] font-semibold text-foreground tracking-wider">{b}</div>
+                <div className="text-[9px] text-muted-foreground">{d.units} units</div>
+                <div className="text-[11px] font-mono font-semibold text-foreground mt-0.5">
+                  {d.qty.toLocaleString()}
+                </div>
+                <div className="text-[10px] font-mono text-muted-foreground">{eur(d.cost)}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
