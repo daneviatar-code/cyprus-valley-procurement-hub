@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/dialog';
 import {
   Plus, Trash2, Download, HelpCircle, ChevronRight, ChevronDown, Pencil,
-  Star, Lock, ExternalLink, Check, Save,
+  Star, Lock, ExternalLink, Check, Save, ArrowUp, ArrowDown,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -176,6 +176,26 @@ export default function Standard() {
     persistQtys(qtys.map(q =>
       q.id === id ? { ...q, ...patch, updatedAt: new Date().toISOString() } : q,
     ));
+  };
+
+  // Reorder a master item up/down within its category
+  const moveMasterItem = (id: string, direction: -1 | 1) => {
+    const item = items.find(i => i.id === id);
+    if (!item) return;
+    const siblings = items
+      .filter(i => i.categoryId === item.categoryId && !i.archived)
+      .sort((a, b) => a.order - b.order);
+    const idx = siblings.findIndex(i => i.id === id);
+    const swapIdx = idx + direction;
+    if (idx < 0 || swapIdx < 0 || swapIdx >= siblings.length) return;
+    const a = siblings[idx];
+    const b = siblings[swapIdx];
+    const now = new Date().toISOString();
+    persistItems(items.map(i => {
+      if (i.id === a.id) return { ...i, order: b.order, updatedAt: now };
+      if (i.id === b.id) return { ...i, order: a.order, updatedAt: now };
+      return i;
+    }));
   };
 
   // helpers
@@ -517,6 +537,7 @@ export default function Standard() {
                     onUpdateItem={updateMasterItem}
                     onDeleteItem={deleteMasterItem}
                     onUpdateQty={updateQty}
+                    onMoveItem={moveMasterItem}
                     unitCounts={unitCounts}
                   />
                 ) : (
@@ -589,7 +610,7 @@ function SummaryBar({ s, typeLabel, isMaster }: { s: TypeSummary; typeLabel: str
 
 // ───────────────────────────── Master Editor ─────────────────────────────
 function MasterEditor({
-  items, qtysByItem, suppliers, onUpdateItem, onDeleteItem, onUpdateQty, unitCounts,
+  items, qtysByItem, suppliers, onUpdateItem, onDeleteItem, onUpdateQty, onMoveItem, unitCounts,
 }: {
   items: StandardItem[];
   qtysByItem: Map<string, Record<ApartmentType, ApartmentTypeQuantity | undefined>>;
@@ -597,6 +618,7 @@ function MasterEditor({
   onUpdateItem: (id: string, patch: Partial<StandardItem>) => void;
   onDeleteItem: (id: string) => void;
   onUpdateQty: (id: string, patch: Partial<ApartmentTypeQuantity>) => void;
+  onMoveItem: (id: string, direction: -1 | 1) => void;
   unitCounts: Record<RoomSize, number>;
 }) {
   const inputCls = 'w-full h-7 px-2 text-xs border rounded bg-background focus:outline-none focus:ring-1 focus:ring-primary';
@@ -608,6 +630,7 @@ function MasterEditor({
       <table className="w-full text-xs">
         <thead className="bg-primary/5 border-y">
           <tr>
+            <th className={`${th} w-10 text-center`} title="Reorder">↕</th>
             <th className={th}>Item</th>
             <th className={th}>Spec</th>
             <th className={`${th} text-right`}>Unit Price €</th>
@@ -617,15 +640,37 @@ function MasterEditor({
           </tr>
         </thead>
         <tbody>
-          {items.map(it => {
+          {items.map((it, idx) => {
             const row = qtysByItem.get(it.id);
             const summary = APARTMENT_TYPES.map(at => {
               const q = row?.[at];
               const total = q ? (q.qtyPerPackage || 0) + (q.sparePerPackage || 0) : 0;
               return { at, total };
             });
+            const isFirst = idx === 0;
+            const isLast = idx === items.length - 1;
             return (
               <tr key={it.id} className="border-b last:border-0 hover:bg-muted/30">
+                <td className={`${td} text-center`}>
+                  <div className="flex flex-col items-center gap-0.5">
+                    <button
+                      onClick={() => onMoveItem(it.id, -1)}
+                      disabled={isFirst}
+                      className="text-muted-foreground hover:text-primary disabled:opacity-20 disabled:cursor-not-allowed"
+                      title="Move up"
+                    >
+                      <ArrowUp className="w-3 h-3" />
+                    </button>
+                    <button
+                      onClick={() => onMoveItem(it.id, 1)}
+                      disabled={isLast}
+                      className="text-muted-foreground hover:text-primary disabled:opacity-20 disabled:cursor-not-allowed"
+                      title="Move down"
+                    >
+                      <ArrowDown className="w-3 h-3" />
+                    </button>
+                  </div>
+                </td>
                 <td className={td}>
                   <Input className={inputCls + ' min-w-[160px] font-medium'} value={it.itemName}
                     onChange={e => onUpdateItem(it.id, { itemName: e.target.value })}
