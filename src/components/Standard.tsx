@@ -537,6 +537,7 @@ export default function Standard() {
                     onUpdateItem={updateMasterItem}
                     onDeleteItem={deleteMasterItem}
                     onUpdateQty={updateQty}
+                    onMoveItem={moveMasterItem}
                     unitCounts={unitCounts}
                   />
                 ) : (
