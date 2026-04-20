@@ -31,9 +31,18 @@ import {
 } from '@/components/ui/dialog';
 import {
   Plus, Trash2, Download, HelpCircle, ChevronRight, ChevronDown, Pencil,
-  Star, Lock, ExternalLink, Check, Save, ArrowUp, ArrowDown,
+  Star, Lock, ExternalLink, Check, Save, ArrowUp, ArrowDown, GripVertical,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  DndContext, closestCenter, KeyboardSensor, PointerSensor,
+  useSensor, useSensors, DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 const FragmentRow = Fragment;
 
