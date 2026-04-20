@@ -643,135 +643,218 @@ function MasterEditor({
   onMoveItem: (id: string, direction: -1 | 1) => void;
   unitCounts: Record<RoomSize, number>;
 }) {
-  const inputCls = 'w-full h-7 px-2 text-xs border rounded bg-background focus:outline-none focus:ring-1 focus:ring-primary';
+function MasterEditor({
+  items, qtysByItem, suppliers, onUpdateItem, onDeleteItem, onUpdateQty, onMoveItem, onReorder, unitCounts,
+}: {
+  items: StandardItem[];
+  qtysByItem: Map<string, Record<ApartmentType, ApartmentTypeQuantity | undefined>>;
+  suppliers: Supplier[];
+  onUpdateItem: (id: string, patch: Partial<StandardItem>) => void;
+  onDeleteItem: (id: string) => void;
+  onUpdateQty: (id: string, patch: Partial<ApartmentTypeQuantity>) => void;
+  onMoveItem: (id: string, direction: -1 | 1) => void;
+  onReorder: (orderedIds: string[]) => void;
+  unitCounts: Record<RoomSize, number>;
+}) {
   const th = 'text-left text-[10px] font-medium uppercase tracking-wider text-muted-foreground px-2 py-1.5 whitespace-nowrap';
-  const td = 'px-2 py-1.5 align-middle';
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const ids = items.map(i => i.id);
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = ids.indexOf(String(active.id));
+    const newIndex = ids.indexOf(String(over.id));
+    if (oldIndex < 0 || newIndex < 0) return;
+    const newOrder = arrayMove(ids, oldIndex, newIndex);
+    onReorder(newOrder);
+  };
 
   return (
     <div className="overflow-x-auto -mx-3">
-      <table className="w-full text-xs">
-        <thead className="bg-primary/5 border-y">
-          <tr>
-            <th className={`${th} w-10 text-center`} title="Reorder">↕</th>
-            <th className={th}>Item</th>
-            <th className={th}>Spec</th>
-            <th className={`${th} text-right`}>Unit Price €</th>
-            <th className={th}>Supplier</th>
-            <th className={th}>Per-Type Quantities</th>
-            <th className={th}></th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((it, idx) => {
-            const row = qtysByItem.get(it.id);
-            const summary = APARTMENT_TYPES.map(at => {
-              const q = row?.[at];
-              const total = q ? (q.qtyPerPackage || 0) + (q.sparePerPackage || 0) : 0;
-              return { at, total };
-            });
-            const isFirst = idx === 0;
-            const isLast = idx === items.length - 1;
-            return (
-              <tr key={it.id} className="border-b last:border-0 hover:bg-muted/30">
-                <td className={`${td} text-center`}>
-                  <div className="flex flex-col items-center gap-0.5">
-                    <button
-                      onClick={() => onMoveItem(it.id, -1)}
-                      disabled={isFirst}
-                      className="text-muted-foreground hover:text-primary disabled:opacity-20 disabled:cursor-not-allowed"
-                      title="Move up"
-                    >
-                      <ArrowUp className="w-3 h-3" />
-                    </button>
-                    <button
-                      onClick={() => onMoveItem(it.id, 1)}
-                      disabled={isLast}
-                      className="text-muted-foreground hover:text-primary disabled:opacity-20 disabled:cursor-not-allowed"
-                      title="Move down"
-                    >
-                      <ArrowDown className="w-3 h-3" />
-                    </button>
-                  </div>
-                </td>
-                <td className={td}>
-                  <Input className={inputCls + ' min-w-[160px] font-medium'} value={it.itemName}
-                    onChange={e => onUpdateItem(it.id, { itemName: e.target.value })}
-                    placeholder="Item name…" />
-                </td>
-                <td className={td}>
-                  <Input className={inputCls + ' min-w-[140px]'} value={it.spec}
-                    onChange={e => onUpdateItem(it.id, { spec: e.target.value })}
-                    placeholder="Spec/model" />
-                </td>
-                <td className={td}>
-                  <Input type="number" step="0.01" className={inputCls + ' text-right w-24'}
-                    value={it.unitPriceEur ?? ''}
-                    onChange={e => onUpdateItem(it.id, { unitPriceEur: e.target.value === '' ? undefined : Math.max(0, +e.target.value) })} />
-                </td>
-                <td className={td}>
-                  <select className={inputCls + ' min-w-[120px]'} value={it.supplierId || ''}
-                    onChange={e => onUpdateItem(it.id, { supplierId: e.target.value || undefined })}>
-                    <option value="">—</option>
-                    {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                  </select>
-                </td>
-                <td className={td}>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <button className="font-mono text-[11px] px-2 py-1 rounded bg-muted hover:bg-accent/30 transition-colors whitespace-nowrap">
-                        {summary.map(s => `${labelShort(s.at)}:${s.total}`).join(' · ')}
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80 p-3" align="end">
-                      <div className="text-xs font-semibold mb-2">Quick-edit per apartment type</div>
-                      <table className="w-full text-xs">
-                        <thead>
-                          <tr className="text-muted-foreground">
-                            <th className="text-left py-1">Type</th>
-                            <th className="text-right py-1">Qty/Pkg</th>
-                            <th className="text-right py-1">Spare</th>
-                            <th className="text-right py-1">Total</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {APARTMENT_TYPES.map(at => {
-                            const q = row?.[at];
-                            if (!q) return null;
-                            const total = (q.qtyPerPackage || 0) + (q.sparePerPackage || 0);
-                            return (
-                              <tr key={at} className="border-t">
-                                <td className="py-1 pr-2">{labelShort(at)}</td>
-                                <td className="py-1">
-                                  <Input type="number" className={inputCls + ' text-right w-16'}
-                                    value={q.qtyPerPackage}
-                                    onChange={e => onUpdateQty(q.id, { qtyPerPackage: Math.max(0, +e.target.value) })} />
-                                </td>
-                                <td className="py-1">
-                                  <Input type="number" className={inputCls + ' text-right w-16'}
-                                    value={q.sparePerPackage}
-                                    onChange={e => onUpdateQty(q.id, { sparePerPackage: Math.max(0, +e.target.value) })} />
-                                </td>
-                                <td className="py-1 text-right font-mono font-semibold">{total}</td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </PopoverContent>
-                  </Popover>
-                </td>
-                <td className={td}>
-                  <button onClick={() => onDeleteItem(it.id)}
-                    className="p-1 text-muted-foreground hover:text-destructive" title="Delete from all types">
-                    <Trash2 className="w-3 h-3" />
-                  </button>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <table className="w-full text-xs">
+          <thead className="bg-primary/5 border-y">
+            <tr>
+              <th className={`${th} w-10 text-center`} title="Drag to reorder"></th>
+              <th className={th}>Item</th>
+              <th className={th}>Spec</th>
+              <th className={`${th} text-right`}>Unit Price €</th>
+              <th className={th}>Supplier</th>
+              <th className={th}>Per-Type Quantities</th>
+              <th className={th}></th>
+            </tr>
+          </thead>
+          <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+            <tbody>
+              {items.map((it, idx) => (
+                <SortableItemRow
+                  key={it.id}
+                  it={it}
+                  idx={idx}
+                  isLast={idx === items.length - 1}
+                  qtysByItem={qtysByItem}
+                  suppliers={suppliers}
+                  onUpdateItem={onUpdateItem}
+                  onDeleteItem={onDeleteItem}
+                  onUpdateQty={onUpdateQty}
+                  onMoveItem={onMoveItem}
+                />
+              ))}
+            </tbody>
+          </SortableContext>
+        </table>
+      </DndContext>
     </div>
+  );
+}
+
+// One sortable row inside MasterEditor
+function SortableItemRow({
+  it, idx, isLast, qtysByItem, suppliers, onUpdateItem, onDeleteItem, onUpdateQty, onMoveItem,
+}: {
+  it: StandardItem;
+  idx: number;
+  isLast: boolean;
+  qtysByItem: Map<string, Record<ApartmentType, ApartmentTypeQuantity | undefined>>;
+  suppliers: Supplier[];
+  onUpdateItem: (id: string, patch: Partial<StandardItem>) => void;
+  onDeleteItem: (id: string) => void;
+  onUpdateQty: (id: string, patch: Partial<ApartmentTypeQuantity>) => void;
+  onMoveItem: (id: string, direction: -1 | 1) => void;
+}) {
+  const inputCls = 'w-full h-7 px-2 text-xs border rounded bg-background focus:outline-none focus:ring-1 focus:ring-primary';
+  const td = 'px-2 py-1.5 align-middle';
+  const isFirst = idx === 0;
+
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: it.id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    background: isDragging ? 'hsl(var(--accent) / 0.15)' : undefined,
+  };
+
+  const row = qtysByItem.get(it.id);
+  const summary = APARTMENT_TYPES.map(at => {
+    const q = row?.[at];
+    const total = q ? (q.qtyPerPackage || 0) + (q.sparePerPackage || 0) : 0;
+    return { at, total };
+  });
+
+  return (
+    <tr ref={setNodeRef} style={style} className="border-b last:border-0 hover:bg-muted/30">
+      <td className={`${td} text-center`}>
+        <div className="flex items-center justify-center gap-1">
+          <button
+            ref={undefined}
+            {...attributes}
+            {...listeners}
+            className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-primary touch-none"
+            title="גרור לסידור · Drag to reorder"
+            aria-label="Drag handle"
+          >
+            <GripVertical className="w-3.5 h-3.5" />
+          </button>
+          <div className="flex flex-col items-center gap-0.5">
+            <button
+              onClick={() => onMoveItem(it.id, -1)}
+              disabled={isFirst}
+              className="text-muted-foreground hover:text-primary disabled:opacity-20 disabled:cursor-not-allowed"
+              title="Move up"
+            >
+              <ArrowUp className="w-2.5 h-2.5" />
+            </button>
+            <button
+              onClick={() => onMoveItem(it.id, 1)}
+              disabled={isLast}
+              className="text-muted-foreground hover:text-primary disabled:opacity-20 disabled:cursor-not-allowed"
+              title="Move down"
+            >
+              <ArrowDown className="w-2.5 h-2.5" />
+            </button>
+          </div>
+        </div>
+      </td>
+      <td className={td}>
+        <Input className={inputCls + ' min-w-[160px] font-medium'} value={it.itemName}
+          onChange={e => onUpdateItem(it.id, { itemName: e.target.value })}
+          placeholder="Item name…" />
+      </td>
+      <td className={td}>
+        <Input className={inputCls + ' min-w-[140px]'} value={it.spec}
+          onChange={e => onUpdateItem(it.id, { spec: e.target.value })}
+          placeholder="Spec/model" />
+      </td>
+      <td className={td}>
+        <Input type="number" step="0.01" className={inputCls + ' text-right w-24'}
+          value={it.unitPriceEur ?? ''}
+          onChange={e => onUpdateItem(it.id, { unitPriceEur: e.target.value === '' ? undefined : Math.max(0, +e.target.value) })} />
+      </td>
+      <td className={td}>
+        <select className={inputCls + ' min-w-[120px]'} value={it.supplierId || ''}
+          onChange={e => onUpdateItem(it.id, { supplierId: e.target.value || undefined })}>
+          <option value="">—</option>
+          {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+        </select>
+      </td>
+      <td className={td}>
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="font-mono text-[11px] px-2 py-1 rounded bg-muted hover:bg-accent/30 transition-colors whitespace-nowrap">
+              {summary.map(s => `${labelShort(s.at)}:${s.total}`).join(' · ')}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80 p-3" align="end">
+            <div className="text-xs font-semibold mb-2">Quick-edit per apartment type</div>
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-muted-foreground">
+                  <th className="text-left py-1">Type</th>
+                  <th className="text-right py-1">Qty/Pkg</th>
+                  <th className="text-right py-1">Spare</th>
+                  <th className="text-right py-1">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {APARTMENT_TYPES.map(at => {
+                  const q = row?.[at];
+                  if (!q) return null;
+                  const total = (q.qtyPerPackage || 0) + (q.sparePerPackage || 0);
+                  return (
+                    <tr key={at} className="border-t">
+                      <td className="py-1 pr-2">{labelShort(at)}</td>
+                      <td className="py-1">
+                        <Input type="number" className={inputCls + ' text-right w-16'}
+                          value={q.qtyPerPackage}
+                          onChange={e => onUpdateQty(q.id, { qtyPerPackage: Math.max(0, +e.target.value) })} />
+                      </td>
+                      <td className="py-1">
+                        <Input type="number" className={inputCls + ' text-right w-16'}
+                          value={q.sparePerPackage}
+                          onChange={e => onUpdateQty(q.id, { sparePerPackage: Math.max(0, +e.target.value) })} />
+                      </td>
+                      <td className="py-1 text-right font-mono font-semibold">{total}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </PopoverContent>
+        </Popover>
+      </td>
+      <td className={td}>
+        <button onClick={() => onDeleteItem(it.id)}
+          className="p-1 text-muted-foreground hover:text-destructive" title="Delete from all types">
+          <Trash2 className="w-3 h-3" />
+        </button>
+      </td>
+    </tr>
   );
 }
 
