@@ -10,6 +10,7 @@ import {
 } from '@/data/roomStandardsData';
 import {
   RoomSize, RESIDENTIAL_ROOM_SIZES, ROOM_SIZE_LABELS, countUnitsByRoomSize,
+  countUnitsByRoomSizePerBuilding, ALL_BUILDING_LIST,
 } from '@/data/masterData';
 import {
   StandardItem, ApartmentType, APARTMENT_TYPES,
@@ -97,6 +98,7 @@ export default function Standard() {
   }, [categories, items, qtys]);
 
   const unitCounts = useMemo(() => countUnitsByRoomSize(), [items, qtys]);
+  const unitCountsPerBuilding = useMemo(() => countUnitsByRoomSizePerBuilding(), [items, qtys]);
 
   const visibleCategories = useMemo(
     () => categories
@@ -314,6 +316,32 @@ export default function Standard() {
     };
   }, [view, items, qtysByItem, unitCounts]);
 
+  // Per-building breakdown of Hotel Qty + Hotel Cost
+  const perBuildingSummary = useMemo(() => {
+    const result: Record<string, { qty: number; cost: number; units: number }> = {};
+    ALL_BUILDING_LIST.forEach(b => {
+      const counts = unitCountsPerBuilding[b] || { studio: 0, '1br': 0, '2br': 0, '3br': 0, '4br': 0, public: 0 };
+      let qty = 0, cost = 0;
+      const units = view === 'standard'
+        ? APARTMENT_TYPES.reduce((s, at) => s + (counts[at] || 0), 0)
+        : (counts[view as ApartmentType] || 0);
+      items.forEach(i => {
+        if (i.archived) return;
+        const row = qtysByItem.get(i.id); if (!row) return;
+        const types: ApartmentType[] = view === 'standard' ? [...APARTMENT_TYPES] : [view as ApartmentType];
+        types.forEach(at => {
+          const q = row[at]; if (!q) return;
+          const total = (q.qtyPerPackage || 0) + (q.sparePerPackage || 0);
+          const u = counts[at] || 0;
+          qty += total * u;
+          cost += total * u * (i.unitPriceEur || 0);
+        });
+      });
+      result[b] = { qty, cost, units };
+    });
+    return result;
+  }, [view, items, qtysByItem, unitCountsPerBuilding]);
+
   // ── CSV ──
   const exportEditorCsv = () => {
     const cat = categories.find(c => c.id === selectedCategoryId);
@@ -413,7 +441,7 @@ export default function Standard() {
 
         {subView === 'byApartment' && (
           <>
-            <SummaryBar s={typeSummary} typeLabel={viewLabel} isMaster={view === 'standard'} />
+            <SummaryBar s={typeSummary} typeLabel={viewLabel} isMaster={view === 'standard'} perBuilding={perBuildingSummary} />
 
             <div className="grid grid-cols-12 gap-4">
               {/* Left: master + apartment types */}
@@ -599,7 +627,10 @@ type TypeSummary = {
   totalHotelQty: number; totalPackageCost: number; totalHotelCost: number;
   orderedValue: number; deliveredValue: number; outstandingValue: number;
 };
-function SummaryBar({ s, typeLabel, isMaster }: { s: TypeSummary; typeLabel: string; isMaster: boolean }) {
+function SummaryBar({ s, typeLabel, isMaster, perBuilding }: {
+  s: TypeSummary; typeLabel: string; isMaster: boolean;
+  perBuilding?: Record<string, { qty: number; cost: number; units: number }>;
+}) {
   const cells = [
     [isMaster ? 'Units (all types)' : 'Units in Hotel', s.units.toLocaleString()],
     ['# Categories', s.numCategories.toLocaleString()],
@@ -626,6 +657,26 @@ function SummaryBar({ s, typeLabel, isMaster }: { s: TypeSummary; typeLabel: str
           </div>
         ))}
       </div>
+
+      {perBuilding && (
+        <div className="mt-3 pt-3 border-t border-border">
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">
+            Breakdown per Building · פירוט לפי בניין
+          </div>
+          <div className="grid grid-cols-3 md:grid-cols-9 gap-2">
+            {Object.entries(perBuilding).map(([b, d]) => (
+              <div key={b} className="bg-muted/40 rounded px-2 py-1.5 border border-border/50">
+                <div className="text-[10px] font-semibold text-foreground tracking-wider">{b}</div>
+                <div className="text-[9px] text-muted-foreground">{d.units} units</div>
+                <div className="text-[11px] font-mono font-semibold text-foreground mt-0.5">
+                  {d.qty.toLocaleString()}
+                </div>
+                <div className="text-[10px] font-mono text-muted-foreground">{eur(d.cost)}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

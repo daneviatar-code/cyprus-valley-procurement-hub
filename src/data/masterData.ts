@@ -375,6 +375,27 @@ export function computeProcurementByRoomSize(masterData: MasterRow[]): ComputedP
   }));
 }
 
+/** Count unit instances grouped by room size, per building. Returns { [building]: { studio, 1br, ... } }. */
+export function countUnitsByRoomSizePerBuilding(): Record<string, Record<RoomSize, number>> {
+  const overrides = loadRoomSizeOverrides();
+  const result: Record<string, Record<RoomSize, number>> = {};
+  (['A', 'B', 'C'] as Concept[]).forEach(concept => {
+    ALL_BUILDINGS[concept].forEach(building => {
+      const r: Record<RoomSize, number> = { studio: 0, '1br': 0, '2br': 0, '3br': 0, '4br': 0, public: 0 };
+      getUnitsForConcept(concept).forEach(u => {
+        if (u.isZone) return;
+        const k = roomSizeOverrideKey(concept, u.code);
+        const size = overrides[k] || deriveRoomSizeFromDescription(u.description, u.code);
+        if (size === 'public') return;
+        const instances = u.floors.reduce((s, f) => s + (u.unitsPerFloor[f] || 0), 0);
+        r[size] += instances;
+      });
+      result[building] = r;
+    });
+  });
+  return result;
+}
+
 /** Count unit instances grouped by room size, across all concepts/buildings. */
 export function countUnitsByRoomSize(): Record<RoomSize, number> {
   const overrides = loadRoomSizeOverrides();
