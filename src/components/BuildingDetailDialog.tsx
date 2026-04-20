@@ -26,7 +26,7 @@ interface Props {
   qtysByItem: Map<string, Record<ApartmentType, ApartmentTypeQuantity | undefined>>;
   categories: ProcurementCategory[];
   suppliers: Supplier[];
-  buildingCounts: Record<RoomSize | 'public', number>;
+  buildingCounts: Record<RoomSize, number>;
 }
 
 export default function BuildingDetailDialog({
