@@ -198,6 +198,18 @@ export default function Standard() {
     }));
   };
 
+  // Reorder via drag: receives the new ordered list of ids within a category
+  const reorderMasterItems = (categoryId: string, orderedIds: string[]) => {
+    const now = new Date().toISOString();
+    const orderMap = new Map(orderedIds.map((id, i) => [id, i + 1]));
+    persistItems(items.map(i => {
+      if (i.categoryId !== categoryId) return i;
+      const newOrder = orderMap.get(i.id);
+      if (newOrder == null || newOrder === i.order) return i;
+      return { ...i, order: newOrder, updatedAt: now };
+    }));
+  };
+
   // helpers
   const itemsForCategory = useMemo(
     () => items.filter(i => !i.archived && i.categoryId === selectedCategoryId)
