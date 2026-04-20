@@ -178,6 +178,26 @@ export default function Standard() {
     ));
   };
 
+  // Reorder a master item up/down within its category
+  const moveMasterItem = (id: string, direction: -1 | 1) => {
+    const item = items.find(i => i.id === id);
+    if (!item) return;
+    const siblings = items
+      .filter(i => i.categoryId === item.categoryId && !i.archived)
+      .sort((a, b) => a.order - b.order);
+    const idx = siblings.findIndex(i => i.id === id);
+    const swapIdx = idx + direction;
+    if (idx < 0 || swapIdx < 0 || swapIdx >= siblings.length) return;
+    const a = siblings[idx];
+    const b = siblings[swapIdx];
+    const now = new Date().toISOString();
+    persistItems(items.map(i => {
+      if (i.id === a.id) return { ...i, order: b.order, updatedAt: now };
+      if (i.id === b.id) return { ...i, order: a.order, updatedAt: now };
+      return i;
+    }));
+  };
+
   // helpers
   const itemsForCategory = useMemo(
     () => items.filter(i => !i.archived && i.categoryId === selectedCategoryId)
