@@ -44,6 +44,7 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import BuildingDetailDialog from '@/components/BuildingDetailDialog';
 
 const FragmentRow = Fragment;
 
@@ -83,6 +84,7 @@ export default function Standard() {
   const [byCategoryPick, setByCategoryPick] = useState<string>('');
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [justSaved, setJustSaved] = useState(false);
+  const [openBuilding, setOpenBuilding] = useState<string | null>(null);
 
   const handleManualSave = useCallback(() => {
     saveCategories(categories);
@@ -441,7 +443,7 @@ export default function Standard() {
 
         {subView === 'byApartment' && (
           <>
-            <SummaryBar s={typeSummary} typeLabel={viewLabel} isMaster={view === 'standard'} perBuilding={perBuildingSummary} />
+            <SummaryBar s={typeSummary} typeLabel={viewLabel} isMaster={view === 'standard'} perBuilding={perBuildingSummary} onBuildingClick={setOpenBuilding} />
 
             <div className="grid grid-cols-12 gap-4">
               {/* Left: master + apartment types */}
@@ -616,6 +618,18 @@ export default function Standard() {
           <HotelTotalsView categories={visibleCategories} items={items}
             qtysByItem={qtysByItem} unitCounts={unitCounts} />
         )}
+
+        <BuildingDetailDialog
+          open={!!openBuilding}
+          onClose={() => setOpenBuilding(null)}
+          building={openBuilding}
+          view={view}
+          items={items}
+          qtysByItem={qtysByItem}
+          categories={categories}
+          suppliers={suppliers}
+          buildingCounts={openBuilding ? unitCountsPerBuilding[openBuilding] : { studio: 0, '1br': 0, '2br': 0, '3br': 0, '4br': 0, public: 0 }}
+        />
       </div>
     </TooltipProvider>
   );
@@ -627,9 +641,10 @@ type TypeSummary = {
   totalHotelQty: number; totalPackageCost: number; totalHotelCost: number;
   orderedValue: number; deliveredValue: number; outstandingValue: number;
 };
-function SummaryBar({ s, typeLabel, isMaster, perBuilding }: {
+function SummaryBar({ s, typeLabel, isMaster, perBuilding, onBuildingClick }: {
   s: TypeSummary; typeLabel: string; isMaster: boolean;
   perBuilding?: Record<string, { qty: number; cost: number; units: number }>;
+  onBuildingClick?: (b: string) => void;
 }) {
   const cells = [
     [isMaster ? 'Units (all types)' : 'Units in Hotel', s.units.toLocaleString()],
@@ -662,17 +677,24 @@ function SummaryBar({ s, typeLabel, isMaster, perBuilding }: {
         <div className="mt-3 pt-3 border-t border-border">
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">
             Breakdown per Building · פירוט לפי בניין
+            {onBuildingClick && <span className="ml-2 normal-case text-muted-foreground/70">(click a building for details)</span>}
           </div>
           <div className="grid grid-cols-3 md:grid-cols-9 gap-2">
             {Object.entries(perBuilding).map(([b, d]) => (
-              <div key={b} className="bg-muted/40 rounded px-2 py-1.5 border border-border/50">
+              <button
+                key={b}
+                type="button"
+                onClick={() => onBuildingClick?.(b)}
+                disabled={!onBuildingClick}
+                className="text-left bg-muted/40 rounded px-2 py-1.5 border border-border/50 transition-all hover:bg-accent/10 hover:border-accent hover:shadow-sm disabled:cursor-default disabled:hover:bg-muted/40 disabled:hover:border-border/50 disabled:hover:shadow-none focus:outline-none focus:ring-2 focus:ring-accent"
+              >
                 <div className="text-[10px] font-semibold text-foreground tracking-wider">{b}</div>
                 <div className="text-[9px] text-muted-foreground">{d.units} units</div>
                 <div className="text-[11px] font-mono font-semibold text-foreground mt-0.5">
                   {d.qty.toLocaleString()}
                 </div>
                 <div className="text-[10px] font-mono text-muted-foreground">{eur(d.cost)}</div>
-              </div>
+              </button>
             ))}
           </div>
         </div>
