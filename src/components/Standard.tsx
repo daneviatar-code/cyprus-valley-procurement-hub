@@ -443,7 +443,7 @@ export default function Standard() {
 
         {subView === 'byApartment' && (
           <>
-            <SummaryBar s={typeSummary} typeLabel={viewLabel} isMaster={view === 'standard'} perBuilding={perBuildingSummary} />
+            <SummaryBar s={typeSummary} typeLabel={viewLabel} isMaster={view === 'standard'} perBuilding={perBuildingSummary} onBuildingClick={setOpenBuilding} />
 
             <div className="grid grid-cols-12 gap-4">
               {/* Left: master + apartment types */}
