@@ -71,6 +71,21 @@ export default function Standard() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   const [subView, setSubView] = useState<SubView>('byApartment');
   const [byCategoryPick, setByCategoryPick] = useState<string>('');
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [justSaved, setJustSaved] = useState(false);
+
+  const handleManualSave = useCallback(() => {
+    saveCategories(categories);
+    saveStandardItems(items);
+    saveApartmentTypeQuantities(qtys);
+    const now = new Date();
+    setLastSavedAt(now);
+    setJustSaved(true);
+    toast.success('הנתונים נשמרו בהצלחה · Saved successfully', {
+      description: `${now.toLocaleTimeString('he-IL')} — ${items.length} פריטים`,
+    });
+    setTimeout(() => setJustSaved(false), 2000);
+  }, [categories, items, qtys]);
 
   const unitCounts = useMemo(() => countUnitsByRoomSize(), [items, qtys]);
 
