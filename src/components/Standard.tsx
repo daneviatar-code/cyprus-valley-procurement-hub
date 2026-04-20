@@ -630,6 +630,7 @@ function MasterEditor({
       <table className="w-full text-xs">
         <thead className="bg-primary/5 border-y">
           <tr>
+            <th className={`${th} w-10 text-center`} title="Reorder">↕</th>
             <th className={th}>Item</th>
             <th className={th}>Spec</th>
             <th className={`${th} text-right`}>Unit Price €</th>
