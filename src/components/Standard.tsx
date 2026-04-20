@@ -557,16 +557,9 @@ export default function Standard() {
                       <Download className="w-3 h-3" /> CSV
                     </Button>
                     {view === 'standard' && (
-                      <>
-                        {categories.find(c => c.id === selectedCategoryId)?.nameEn.toLowerCase() === 'linens' && (
-                          <Button size="sm" variant="secondary" onClick={seedLinens1BR} className="h-7 text-xs gap-1">
-                            <Download className="w-3 h-3 rotate-180" /> ייבוא 1BR · Seed Linens
-                          </Button>
-                        )}
-                        <Button size="sm" onClick={addMasterItem} disabled={!selectedCategoryId} className="h-7 text-xs">
-                          <Plus className="w-3 h-3" /> Add Item
-                        </Button>
-                      </>
+                      <Button size="sm" onClick={addMasterItem} disabled={!selectedCategoryId} className="h-7 text-xs">
+                        <Plus className="w-3 h-3" /> Add Item
+                      </Button>
                     )}
                   </div>
                 </div>
