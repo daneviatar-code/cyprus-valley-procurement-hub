@@ -84,6 +84,7 @@ export default function Standard() {
   const [byCategoryPick, setByCategoryPick] = useState<string>('');
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [justSaved, setJustSaved] = useState(false);
+  const [openBuilding, setOpenBuilding] = useState<string | null>(null);
 
   const handleManualSave = useCallback(() => {
     saveCategories(categories);
