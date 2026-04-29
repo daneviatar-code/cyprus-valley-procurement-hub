@@ -44,6 +44,7 @@ export default function BuildingDetailDialog({
 }: Props) {
   const types: ApartmentType[] = view === 'standard' ? [...APARTMENT_TYPES] : [view as ApartmentType];
   const [pdfCols, setPdfCols] = useState<Set<PdfCol>>(new Set(ALL_PDF_COLS));
+  const [activeCategory, setActiveCategory] = useState<string>('__all__');
   const togglePdfCol = (c: PdfCol) => setPdfCols(prev => {
     const next = new Set(prev);
     next.has(c) ? next.delete(c) : next.add(c);
