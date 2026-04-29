@@ -14,7 +14,255 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      apartment_type_quantities: {
+        Row: {
+          apartment_type: string
+          delivered_qty: number
+          id: string
+          notes: string
+          ordered_qty: number
+          qty_per_package: number
+          spare_per_package: number
+          standard_item_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          apartment_type: string
+          delivered_qty?: number
+          id: string
+          notes?: string
+          ordered_qty?: number
+          qty_per_package?: number
+          spare_per_package?: number
+          standard_item_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          apartment_type?: string
+          delivered_qty?: number
+          id?: string
+          notes?: string
+          ordered_qty?: number
+          qty_per_package?: number
+          spare_per_package?: number
+          standard_item_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      public_area_items: {
+        Row: {
+          category_id: string
+          created_at: string
+          delivered_qty: number
+          id: string
+          item_name: string
+          node_id: string
+          notes: string
+          ordered_qty: number
+          qty: number
+          spare: number
+          spec: string
+          status: string
+          supplier_id: string | null
+          unit_price_eur: number | null
+          updated_at: string
+          zone_id: string | null
+        }
+        Insert: {
+          category_id?: string
+          created_at?: string
+          delivered_qty?: number
+          id: string
+          item_name?: string
+          node_id: string
+          notes?: string
+          ordered_qty?: number
+          qty?: number
+          spare?: number
+          spec?: string
+          status?: string
+          supplier_id?: string | null
+          unit_price_eur?: number | null
+          updated_at?: string
+          zone_id?: string | null
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          delivered_qty?: number
+          id?: string
+          item_name?: string
+          node_id?: string
+          notes?: string
+          ordered_qty?: number
+          qty?: number
+          spare?: number
+          spec?: string
+          status?: string
+          supplier_id?: string | null
+          unit_price_eur?: number | null
+          updated_at?: string
+          zone_id?: string | null
+        }
+        Relationships: []
+      }
+      public_area_nodes: {
+        Row: {
+          archived: boolean
+          created_at: string
+          id: string
+          name: string
+          name_he: string | null
+          order: number
+          parent_id: string | null
+          type: string
+        }
+        Insert: {
+          archived?: boolean
+          created_at?: string
+          id: string
+          name?: string
+          name_he?: string | null
+          order?: number
+          parent_id?: string | null
+          type: string
+        }
+        Update: {
+          archived?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          name_he?: string | null
+          order?: number
+          parent_id?: string | null
+          type?: string
+        }
+        Relationships: []
+      }
+      public_area_plans: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          node_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          id: string
+          node_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          node_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      standard_items: {
+        Row: {
+          archived: boolean
+          category_id: string
+          created_at: string
+          dimensions: string | null
+          id: string
+          item_name: string
+          order: number
+          spec: string
+          supplier_id: string | null
+          unit_price_eur: number | null
+          updated_at: string
+        }
+        Insert: {
+          archived?: boolean
+          category_id?: string
+          created_at?: string
+          dimensions?: string | null
+          id: string
+          item_name?: string
+          order?: number
+          spec?: string
+          supplier_id?: string | null
+          unit_price_eur?: number | null
+          updated_at?: string
+        }
+        Update: {
+          archived?: boolean
+          category_id?: string
+          created_at?: string
+          dimensions?: string | null
+          id?: string
+          item_name?: string
+          order?: number
+          spec?: string
+          supplier_id?: string | null
+          unit_price_eur?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      suppliers: {
+        Row: {
+          address: string
+          category: string
+          contact_person: string
+          country: string
+          created_at: string
+          currency: string
+          email: string
+          id: string
+          items: Json
+          name: string
+          notes: string
+          payment_terms: string
+          phone: string
+          updated_at: string
+          website: string
+        }
+        Insert: {
+          address?: string
+          category?: string
+          contact_person?: string
+          country?: string
+          created_at?: string
+          currency?: string
+          email?: string
+          id: string
+          items?: Json
+          name?: string
+          notes?: string
+          payment_terms?: string
+          phone?: string
+          updated_at?: string
+          website?: string
+        }
+        Update: {
+          address?: string
+          category?: string
+          contact_person?: string
+          country?: string
+          created_at?: string
+          currency?: string
+          email?: string
+          id?: string
+          items?: Json
+          name?: string
+          notes?: string
+          payment_terms?: string
+          phone?: string
+          updated_at?: string
+          website?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
