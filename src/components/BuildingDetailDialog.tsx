@@ -347,12 +347,12 @@ export default function BuildingDetailDialog({
               {lastPdf && (
                 <>
                   <Button size="sm" variant="outline" className="gap-2" asChild>
-                    <a href={lastPdf.url} target="_blank" rel="noreferrer">
+                    <a href={lastPdf.url} target="_blank" rel="noreferrer" onClick={(event) => { event.preventDefault(); openReadyFile(lastPdf); }}>
                       <ExternalLink className="w-4 h-4" /> פתח PDF
                     </a>
                   </Button>
                   <Button size="sm" className="gap-2" asChild>
-                    <a href={lastPdf.url} download={lastPdf.fileName}>
+                    <a href={lastPdf.url} download={lastPdf.fileName} onClick={(event) => { event.preventDefault(); downloadReadyFile(lastPdf, 'PDF'); }}>
                       <Download className="w-4 h-4" /> הורד PDF
                     </a>
                   </Button>
@@ -360,7 +360,7 @@ export default function BuildingDetailDialog({
               )}
               {lastCsv && (
                 <Button size="sm" variant="outline" className="gap-2" asChild>
-                  <a href={lastCsv.url} download={lastCsv.fileName}>
+                  <a href={lastCsv.url} download={lastCsv.fileName} onClick={(event) => { event.preventDefault(); downloadReadyFile(lastCsv, 'CSV'); }}>
                     <Download className="w-4 h-4" /> הורד CSV
                   </a>
                 </Button>
