@@ -21,6 +21,10 @@ export interface ProcurementCategory {
 }
 
 const CATEGORIES_KEY = 'cyprus-valley_procurementCategories';
+const LEGACY_CATEGORY_IDS_KEY = 'cyprus-valley_legacyCategoryIds';
+const KNOWN_LEGACY_CATEGORY_IDS: Record<string, string> = {
+  cat_1777465316487_hhio1: 'cat_linens',
+};
 
 export const SEED_CATEGORIES: ProcurementCategory[] = [
   { id: 'cat_linens',                nameEn: 'Linens',                nameHe: 'לובנה',                       scope: 'apartments', order: 1 },
@@ -63,10 +67,12 @@ export function saveCategories(data: ProcurementCategory[]) {
 
 function normalizeCategories(data: ProcurementCategory[]): ProcurementCategory[] {
   const seedsByName = new Map(SEED_CATEGORIES.map(c => [c.nameEn.toLowerCase(), c]));
+  const legacyIds: Record<string, string> = readLegacyCategoryIds();
   let changed = false;
   const normalized = data.map(cat => {
     const seed = seedsByName.get(cat.nameEn.toLowerCase());
     if (!seed || cat.id === seed.id) return cat;
+    legacyIds[cat.id] = seed.id;
     changed = true;
     return { ...cat, id: seed.id };
   });
@@ -76,8 +82,25 @@ function normalizeCategories(data: ProcurementCategory[]): ProcurementCategory[]
       changed = true;
     }
   });
-  if (changed) saveCategories(normalized);
+  if (changed) {
+    localStorage.setItem(LEGACY_CATEGORY_IDS_KEY, JSON.stringify(legacyIds));
+    saveCategories(normalized);
+  }
   return normalized;
+}
+
+export function normalizeCategoryId(categoryId: string): string {
+  if (KNOWN_LEGACY_CATEGORY_IDS[categoryId]) return KNOWN_LEGACY_CATEGORY_IDS[categoryId];
+  return readLegacyCategoryIds()[categoryId] || categoryId;
+}
+
+function readLegacyCategoryIds(): Record<string, string> {
+  try {
+    const raw = localStorage.getItem(LEGACY_CATEGORY_IDS_KEY);
+    return raw ? { ...KNOWN_LEGACY_CATEGORY_IDS, ...JSON.parse(raw) } : { ...KNOWN_LEGACY_CATEGORY_IDS };
+  } catch {
+    return { ...KNOWN_LEGACY_CATEGORY_IDS };
+  }
 }
 
 // ── Room Standards ────────────────────────────────────────────────────────
