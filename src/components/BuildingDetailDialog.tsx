@@ -158,12 +158,22 @@ export default function BuildingDetailDialog({
       cells.push(r.totalQty, r.totalCost.toFixed(2));
       lines.push(cells.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
     });
-    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    // Prepend BOM for Excel UTF-8 (Hebrew) compatibility
+    const blob = new Blob(["\ufeff" + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
+    const fileName = `building-${building}-breakdown.csv`;
     const a = document.createElement('a');
-    a.href = url; a.download = `building-${building}-breakdown.csv`;
+    a.href = url;
+    a.download = fileName;
+    a.rel = 'noopener';
+    a.style.display = 'none';
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(url);
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 100);
+    toast.success(`CSV הורד: ${fileName}`);
   };
 
   const exportPdf = () => {
@@ -233,21 +243,31 @@ export default function BuildingDetailDialog({
     });
 
     const fileName = `building-${building}-breakdown.pdf`;
-    const pdfBlob = doc.output('blob');
-    const blobUrl = URL.createObjectURL(pdfBlob);
-    setLastPdf({ url: blobUrl, fileName });
-
-    // Open in new tab so the user sees the PDF immediately
     try {
-      window.open(blobUrl, '_blank');
-    } catch (e) {
-      console.warn('Could not open PDF in new tab', e);
-    }
+      const pdfBlob = doc.output('blob');
+      const blobUrl = URL.createObjectURL(pdfBlob);
+      setLastPdf({ url: blobUrl, fileName });
 
-    toast.success(`PDF מוכן: ${fileName}`, {
-      description: 'נוסף כפתור פתיחה והורדה בתוך החלון',
-      duration: 6000,
-    });
+      // Force download via anchor (works inside dialogs / when popups blocked)
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = fileName;
+      a.rel = 'noopener';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => document.body.removeChild(a), 100);
+
+      toast.success(`PDF הורד: ${fileName}`, {
+        description: 'אם לא רואים — בדוק את תיקיית ההורדות או השתמש בכפתורי "פתח/הורד" בחלון',
+        duration: 6000,
+      });
+    } catch (err) {
+      console.error('PDF export failed', err);
+      // Fallback to jsPDF native save
+      try { doc.save(fileName); } catch {}
+      toast.error('שגיאה בייצוא PDF — נוסה להוריד ישירות');
+    }
   };
 
   return (
