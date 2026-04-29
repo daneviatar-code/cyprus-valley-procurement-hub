@@ -162,100 +162,71 @@ export default function BuildingDetailDialog({
 
   const exportPdf = () => {
     if (!building) return;
-    const esc = (s: string) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
     const show = (c: PdfCol) => pdfCols.has(c);
     const showPerType = show('perType');
-
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
     const headers: string[] = [];
-    if (show('item')) headers.push('<th>Item</th>');
-    if (show('dimensions')) headers.push('<th>Dimensions</th>');
-    if (show('supplier')) headers.push('<th>Supplier</th>');
-    if (showPerType) types.forEach(at => headers.push(`<th style="text-align:right;font-size:10px;text-transform:uppercase;color:#666">${esc(ROOM_SIZE_LABELS[at])}<br/><span style="font-weight:normal;font-size:9px">per × units</span></th>`));
-    if (show('qty')) headers.push('<th style="text-align:right;background:#f5f8ff">Qty לבניין</th>');
-    if (show('total')) headers.push('<th style="text-align:right">Total €</th>');
+    if (show('item')) headers.push(show('spec') ? 'Item / Spec' : 'Item');
+    if (show('dimensions')) headers.push('Dimensions');
+    if (show('supplier')) headers.push('Supplier');
+    if (showPerType) types.forEach(at => headers.push(`${ROOM_SIZE_LABELS[at]}\nper × units`));
+    if (show('qty')) headers.push('Qty Building');
+    if (show('total')) headers.push('Total EUR');
 
-    const beforeQtyCount = (show('item') ? 1 : 0) + (show('dimensions') ? 1 : 0) + (show('supplier') ? 1 : 0) + (showPerType ? types.length : 0);
-
-    const bodyRows = grouped.map(([catName, catRows]) => {
+    const body: (string | number)[][] = [];
+    grouped.forEach(([catName, catRows]) => {
       const catQty = catRows.reduce((s, r) => s + r.totalQty, 0);
       const catCost = catRows.reduce((s, r) => s + r.totalCost, 0);
-      const itemRows = catRows.map(r => {
-        const cells: string[] = [];
-        if (show('item')) cells.push(`<td style="padding:6px 8px">
-            <div style="font-weight:600">${esc(r.item.itemName || '—')}</div>
-            ${show('spec') && r.item.spec ? `<div style="font-size:10px;color:#666;white-space:pre-wrap;margin-top:2px">${esc(r.item.spec)}</div>` : ''}
-          </td>`);
-        if (show('dimensions')) cells.push(`<td style="padding:6px 8px;font-size:11px;color:#444">${esc(r.item.dimensions || '—')}</td>`);
-        if (show('supplier')) cells.push(`<td style="padding:6px 8px;font-size:11px;color:#666">${esc(r.supplierName || '—')}</td>`);
+      const catLine = [catName];
+      while (catLine.length < headers.length) catLine.push('');
+      if (show('qty')) catLine[headers.indexOf('Qty Building')] = catQty.toLocaleString();
+      if (show('total')) catLine[headers.indexOf('Total EUR')] = eur(catCost);
+      body.push(catLine);
+
+      catRows.forEach(r => {
+        const row: (string | number)[] = [];
+        if (show('item')) row.push(show('spec') && r.item.spec ? `${r.item.itemName || '—'}\n${r.item.spec}` : r.item.itemName || '—');
+        if (show('dimensions')) row.push(r.item.dimensions || '—');
+        if (show('supplier')) row.push(r.supplierName || '—');
         if (showPerType) types.forEach(at => {
           const d = r.perType[at];
-          cells.push(`<td style="padding:6px 8px;text-align:right;font-family:monospace;font-size:11px;white-space:nowrap">${d ? `<span style="color:#666">${d.perUnit}×${d.units}</span> <b>= ${d.qty}</b>` : '—'}</td>`);
+          row.push(d ? `${d.perUnit}x${d.units} = ${d.qty}` : '—');
         });
-        if (show('qty')) cells.push(`<td style="padding:6px 8px;text-align:right;font-family:monospace;font-weight:700;background:#f5f8ff">${r.totalQty.toLocaleString()}</td>`);
-        if (show('total')) cells.push(`<td style="padding:6px 8px;text-align:right;font-family:monospace">${esc(eur(r.totalCost))}</td>`);
-        return `<tr style="border-bottom:1px solid #eee;vertical-align:top">${cells.join('')}</tr>`;
-      }).join('');
-      const catCells: string[] = [];
-      if (beforeQtyCount > 0) catCells.push(`<td colspan="${beforeQtyCount}" style="padding:6px 8px;font-size:11px;font-weight:700;text-transform:uppercase">${esc(catName)}</td>`);
-      if (show('qty')) catCells.push(`<td style="padding:6px 8px;text-align:right;font-family:monospace;font-weight:700;background:#f5f8ff">${catQty.toLocaleString()}</td>`);
-      if (show('total')) catCells.push(`<td style="padding:6px 8px;text-align:right;font-family:monospace;font-weight:700">${esc(eur(catCost))}</td>`);
-      return `<tr style="background:#f0f0f0">${catCells.join('')}</tr>${itemRows}`;
-    }).join('');
+        if (show('qty')) row.push(r.totalQty.toLocaleString());
+        if (show('total')) row.push(eur(r.totalCost));
+        body.push(row);
+      });
+    });
 
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Building ${esc(building)} — Breakdown</title>
-      <style>
-        @page { size: A4 landscape; margin: 12mm; }
-        body { font-family: Inter, Arial, sans-serif; color: #111; margin: 0; padding: 16px; }
-        h1 { font-size: 18px; margin: 0 0 4px; }
-        .sub { font-size: 11px; color: #666; margin-bottom: 12px; }
-        .totals { display:flex; gap:24px; padding:10px 12px; background:#f7f7f7; border:1px solid #e5e5e5; border-radius:6px; margin-bottom:12px; font-size:12px; }
-        .totals b { display:block; font-size:14px; font-family:monospace; }
-        table { width:100%; border-collapse: collapse; font-size:12px; }
-        th { text-align:left; padding:6px 8px; border-bottom:2px solid #333; font-size:10px; text-transform:uppercase; color:#666; }
-        tr { page-break-inside: avoid; }
-      </style></head><body>
-      <h1>Building ${esc(building)} — Quantity Breakdown</h1>
-      <div class="sub" dir="rtl">פירוט כמויות לבניין · ${totalUnits} units · ${types.map(t => `${esc(ROOM_SIZE_LABELS[t])}: ${buildingCounts[t] || 0}`).join(' · ')}</div>
-      <div class="totals">
-        <div>ITEMS<b>${filteredRows.length.toLocaleString()}</b></div>
-        <div>TOTAL QTY<b>${totals.qty.toLocaleString()}</b></div>
-        <div>TOTAL COST<b>${esc(eur(totals.cost))}</b></div>
-      </div>
-      <table>
-        <thead><tr>${headers.join('')}</tr></thead>
-        <tbody>${bodyRows}</tbody>
-      </table>
-      </body></html>`;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(15);
+    doc.text(`Building ${building} — Quantity Breakdown`, 40, 34);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.text(`Items: ${filteredRows.length.toLocaleString()}   Total Qty: ${totals.qty.toLocaleString()}   Total Cost: ${eur(totals.cost)}   Units: ${totalUnits}`, 40, 52);
 
-    // Strategy: open new tab and trigger print. If popup blocked, fall back to HTML download.
-    const fullHtml = html.replace(
-      '</body>',
-      `<script>window.onload=function(){setTimeout(function(){window.focus();window.print();},300);};</script></body>`
-    );
+    autoTable(doc, {
+      head: [headers],
+      body,
+      startY: 68,
+      theme: 'grid',
+      margin: { left: 40, right: 40 },
+      styles: { font: 'helvetica', fontSize: 7, cellPadding: 4, overflow: 'linebreak', valign: 'top' },
+      headStyles: { fillColor: [24, 49, 74], textColor: 255, fontStyle: 'bold', halign: 'left' },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+      didParseCell: (data) => {
+        const raw = String(data.row.raw?.[0] ?? '');
+        const isCategory = data.section === 'body' && allCategories.includes(raw);
+        if (isCategory) {
+          data.cell.styles.fillColor = [238, 242, 247];
+          data.cell.styles.fontStyle = 'bold';
+          data.cell.styles.textColor = [24, 49, 74];
+        }
+        if (data.column.index >= headers.length - 2) data.cell.styles.halign = 'right';
+      },
+    });
 
-    const win = window.open('', '_blank');
-    if (win && !win.closed) {
-      try {
-        win.document.open();
-        win.document.write(fullHtml);
-        win.document.close();
-        return;
-      } catch (e) {
-        console.error('Print window failed, falling back to download:', e);
-        try { win.close(); } catch {}
-      }
-    }
-
-    // Fallback: download as .html (user opens it and prints to PDF)
-    const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `building-${building}-breakdown.html`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    doc.save(`building-${building}-breakdown.pdf`);
   };
 
   return (
