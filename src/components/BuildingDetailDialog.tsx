@@ -29,6 +29,7 @@ const PDF_COL_LABELS: Record<PdfCol, string> = {
 const ALL_PDF_COLS: PdfCol[] = ['item', 'spec', 'dimensions', 'supplier', 'perType', 'qty', 'total'];
 
 type View = 'standard' | ApartmentType;
+type ReadyFile = { url: string; fileName: string };
 
 interface Props {
   open: boolean;
@@ -48,8 +49,8 @@ export default function BuildingDetailDialog({
   const types: ApartmentType[] = view === 'standard' ? [...APARTMENT_TYPES] : [view as ApartmentType];
   const [pdfCols, setPdfCols] = useState<Set<PdfCol>>(new Set(ALL_PDF_COLS));
   const [activeCategory, setActiveCategory] = useState<string>('__all__');
-  const [lastPdf, setLastPdf] = useState<{ url: string; fileName: string } | null>(null);
-  const [lastCsv, setLastCsv] = useState<{ url: string; fileName: string } | null>(null);
+  const [lastPdf, setLastPdf] = useState<ReadyFile | null>(null);
+  const [lastCsv, setLastCsv] = useState<ReadyFile | null>(null);
   const togglePdfCol = (c: PdfCol) => setPdfCols(prev => {
     const next = new Set(prev);
     next.has(c) ? next.delete(c) : next.add(c);
@@ -144,6 +145,23 @@ export default function BuildingDetailDialog({
 
   const totalUnits = types.reduce((s, at) => s + (buildingCounts[at] || 0), 0);
 
+  const downloadReadyFile = (file: ReadyFile, label: string) => {
+    const link = document.createElement('a');
+    link.href = file.url;
+    link.download = file.fileName;
+    link.rel = 'noopener';
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+    link.remove();
+    toast.success(`${label} נשלח להורדה`, { description: 'בדוק בתיקיית Downloads של הדפדפן' });
+  };
+
+  const openReadyFile = (file: ReadyFile) => {
+    const opened = window.open(file.url, '_blank', 'noopener,noreferrer');
+    if (!opened) window.location.assign(file.url);
+  };
+
   const exportCsv = () => {
     if (!building) return;
     const header = ['Category', 'Item', 'Spec', 'Supplier', 'Unit Price €',
@@ -168,6 +186,7 @@ export default function BuildingDetailDialog({
     const fileName = `building-${building}-breakdown.csv`;
     const url = URL.createObjectURL(blob);
     setLastCsv({ url, fileName });
+    downloadReadyFile({ url, fileName }, 'CSV');
     toast.success('CSV מוכן', { description: 'לחץ על כפתור "הורד CSV" שהופיע בחלון' });
   };
 
@@ -242,9 +261,10 @@ export default function BuildingDetailDialog({
       const pdfBlob = doc.output('blob');
       const blobUrl = URL.createObjectURL(pdfBlob);
       setLastPdf({ url: blobUrl, fileName });
+      doc.save(fileName);
 
-      toast.success('PDF מוכן', {
-        description: 'לחץ על כפתורי "פתח PDF" או "הורד PDF" שהופיעו בחלון',
+      toast.success('PDF נשלח להורדה', {
+        description: 'אם הדפדפן חסם הורדה, לחץ על "פתח PDF" או "הורד PDF" שהופיעו בחלון',
         duration: 6000,
       });
     } catch (err) {
