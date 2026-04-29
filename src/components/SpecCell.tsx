@@ -31,7 +31,7 @@ export default function SpecCell({ value, onChange, itemName, inputClassName, pl
 
   return (
     <div className="flex items-center gap-1 w-full">
-      {inline ? (
+      {viewOnly ? null : inline ? (
         <input
           value={value}
           onChange={e => onChange(e.target.value)}
