@@ -185,7 +185,7 @@ export default function BuildingDetailDialog({
 
   const totalUnits = types.reduce((s, at) => s + (buildingCounts[at] || 0), 0);
 
-  const exportCsv = () => {
+  const exportCsv = async () => {
     if (!building) return;
     const header = ['Category', 'Item', 'Spec', 'Supplier', 'Unit Price €',
       ...types.flatMap(at => [`${ROOM_SIZE_LABELS[at]} per-unit`, `${ROOM_SIZE_LABELS[at]} units`, `${ROOM_SIZE_LABELS[at]} qty`]),
@@ -206,23 +206,13 @@ export default function BuildingDetailDialog({
     });
     // Prepend BOM for Excel UTF-8 (Hebrew) compatibility
     const blob = new Blob(["\ufeff" + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
     const fileName = `building-${building}-breakdown.csv`;
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    a.rel = 'noopener';
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => {
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }, 100);
-    toast.success(`CSV הורד: ${fileName}`);
+    const result = await saveBlobToComputer(blob, fileName, 'CSV file');
+    if (result === 'saved') toast.success(`CSV נשמר: ${fileName}`);
+    if (result === 'downloaded') toast.success(`CSV נשלח להורדה: ${fileName}`);
   };
 
-  const exportPdf = () => {
+  const exportPdf = async () => {
     if (!building) return;
     const show = (c: PdfCol) => pdfCols.has(c);
     const showPerType = show('perType');
@@ -294,18 +284,11 @@ export default function BuildingDetailDialog({
       const blobUrl = URL.createObjectURL(pdfBlob);
       setLastPdf({ url: blobUrl, fileName });
 
-      // Force download via anchor (works inside dialogs / when popups blocked)
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = fileName;
-      a.rel = 'noopener';
-      a.style.display = 'none';
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => document.body.removeChild(a), 100);
+      const result = await saveBlobToComputer(pdfBlob, fileName, 'PDF document');
 
-      toast.success(`PDF הורד: ${fileName}`, {
-        description: 'אם לא רואים — בדוק את תיקיית ההורדות או השתמש בכפתורי "פתח/הורד" בחלון',
+      if (result === 'cancelled') return;
+      toast.success(`${result === 'saved' ? 'PDF נשמר' : 'PDF נשלח להורדה'}: ${fileName}`, {
+        description: 'אם הדפדפן לא שאל איפה לשמור — הקובץ נמצא בתיקיית Downloads או בכפתורי "פתח/הורד" בחלון',
         duration: 6000,
       });
     } catch (err) {
