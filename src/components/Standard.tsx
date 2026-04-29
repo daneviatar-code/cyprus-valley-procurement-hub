@@ -954,11 +954,12 @@ function TypeEditor({
   const th = 'text-left text-[10px] font-medium uppercase tracking-wider text-muted-foreground px-2 py-1.5 whitespace-nowrap';
   const td = 'px-2 py-1.5 align-middle';
 
-  const ReadOnlyChip = ({ children }: { children: React.ReactNode }) => (
+  const ReadOnlyChip = ({ children, className = 'max-w-[160px]' }: { children: React.ReactNode; className?: string }) => (
     <Tooltip>
       <TooltipTrigger asChild>
-        <button onClick={onJumpToMaster} className={readOnlyCls + ' hover:text-primary cursor-pointer'}>
-          <Lock className="w-2.5 h-2.5" /> {children}
+        <button onClick={onJumpToMaster} className={`${readOnlyCls} ${className} hover:text-primary cursor-pointer min-w-0`}>
+          <Lock className="w-2.5 h-2.5 shrink-0" />
+          <span className="truncate">{children}</span>
         </button>
       </TooltipTrigger>
       <TooltipContent>Edit in Standard Apartment</TooltipContent>
@@ -997,16 +998,16 @@ function TypeEditor({
             const supplierName = suppliers.find(s => s.id === it.supplierId)?.name || '—';
             return (
               <tr key={it.id} className="border-b last:border-0 hover:bg-muted/30">
-                <td className={td}><ReadOnlyChip>{it.itemName || '(unnamed)'}</ReadOnlyChip></td>
+                <td className={td}><ReadOnlyChip className="max-w-[140px]">{it.itemName || '(unnamed)'}</ReadOnlyChip></td>
                 <td className={td}>
-                  <div className="flex items-center gap-1">
-                    <ReadOnlyChip>{it.spec || '—'}</ReadOnlyChip>
+                  <div className="flex items-center gap-1 min-w-0 max-w-[260px]">
+                    <ReadOnlyChip className="max-w-[220px]">{it.spec || '—'}</ReadOnlyChip>
                     {it.spec && (
                       <SpecCell value={it.spec} onChange={() => {}} itemName={it.itemName} viewOnly />
                     )}
                   </div>
                 </td>
-                <td className={td}><ReadOnlyChip>{it.dimensions || '—'}</ReadOnlyChip></td>
+                <td className={td}><ReadOnlyChip className="max-w-[110px]">{it.dimensions || '—'}</ReadOnlyChip></td>
                 <td className={td}>
                   <Input type="number" className={inputCls + ' text-right w-16'} value={q.qtyPerPackage}
                     onChange={e => onUpdateQty(q.id, { qtyPerPackage: Math.max(0, +e.target.value) })} />
