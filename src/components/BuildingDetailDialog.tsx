@@ -12,6 +12,7 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Download, FileText } from 'lucide-react';
+import { toast } from 'sonner';
 import { eur, ProcurementCategory } from '@/data/roomStandardsData';
 import {
   StandardItem, ApartmentType, APARTMENT_TYPES, ApartmentTypeQuantity,
@@ -227,6 +228,7 @@ export default function BuildingDetailDialog({
     });
 
     doc.save(`building-${building}-breakdown.pdf`);
+    toast.success('PDF downloaded');
   };
 
   return (
