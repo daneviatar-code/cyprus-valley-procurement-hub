@@ -142,8 +142,6 @@ export default function BuildingDetailDialog({
 
   const exportPdf = () => {
     if (!building) return;
-    const w = window.open('', '_blank', 'width=900,height=700');
-    if (!w) return;
     const esc = (s: string) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
     const show = (c: PdfCol) => pdfCols.has(c);
     const showPerType = show('perType');
@@ -156,7 +154,6 @@ export default function BuildingDetailDialog({
     if (show('qty')) headers.push('<th style="text-align:right;background:#f5f8ff">Qty לבניין</th>');
     if (show('total')) headers.push('<th style="text-align:right">Total €</th>');
 
-    const colCount = headers.length;
     const beforeQtyCount = (show('item') ? 1 : 0) + (show('dimensions') ? 1 : 0) + (show('supplier') ? 1 : 0) + (showPerType ? types.length : 0);
 
     const bodyRows = grouped.map(([catName, catRows]) => {
@@ -185,7 +182,7 @@ export default function BuildingDetailDialog({
       return `<tr style="background:#f0f0f0">${catCells.join('')}</tr>${itemRows}`;
     }).join('');
 
-    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Building ${esc(building)} — Breakdown</title>
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Building ${esc(building)} — Breakdown</title>
       <style>
         @page { size: A4 landscape; margin: 12mm; }
         body { font-family: Inter, Arial, sans-serif; color: #111; margin: 0; padding: 16px; }
@@ -196,7 +193,6 @@ export default function BuildingDetailDialog({
         table { width:100%; border-collapse: collapse; font-size:12px; }
         th { text-align:left; padding:6px 8px; border-bottom:2px solid #333; font-size:10px; text-transform:uppercase; color:#666; }
         tr { page-break-inside: avoid; }
-        @media print { button { display:none; } }
       </style></head><body>
       <h1>Building ${esc(building)} — Quantity Breakdown</h1>
       <div class="sub" dir="rtl">פירוט כמויות לבניין · ${totalUnits} units · ${types.map(t => `${esc(ROOM_SIZE_LABELS[t])}: ${buildingCounts[t] || 0}`).join(' · ')}</div>
@@ -205,14 +201,44 @@ export default function BuildingDetailDialog({
         <div>TOTAL QTY<b>${totals.qty.toLocaleString()}</b></div>
         <div>TOTAL COST<b>${esc(eur(totals.cost))}</b></div>
       </div>
-      <button onclick="window.print()" style="margin-bottom:12px;padding:6px 12px;cursor:pointer">Print / Save as PDF</button>
       <table>
         <thead><tr>${headers.join('')}</tr></thead>
         <tbody>${bodyRows}</tbody>
       </table>
-      <script>window.onload=()=>setTimeout(()=>window.print(),300);</script>
-      </body></html>`);
-    w.document.close();
+      </body></html>`;
+
+    // Use hidden iframe — not blocked by popup blockers
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+
+    const cleanup = () => {
+      setTimeout(() => { try { document.body.removeChild(iframe); } catch {} }, 1000);
+    };
+
+    iframe.onload = () => {
+      try {
+        const win = iframe.contentWindow;
+        if (!win) { cleanup(); return; }
+        win.focus();
+        win.print();
+        cleanup();
+      } catch (e) {
+        console.error('PDF export failed:', e);
+        cleanup();
+      }
+    };
+
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!doc) { cleanup(); return; }
+    doc.open();
+    doc.write(html);
+    doc.close();
   };
 
   return (
