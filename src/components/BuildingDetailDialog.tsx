@@ -14,6 +14,7 @@ import {
 } from '@/data/standardItemsData';
 import { RoomSize, ROOM_SIZE_LABELS } from '@/data/masterData';
 import { Supplier } from '@/data/supplierData';
+import SpecCell from './SpecCell';
 
 type View = 'standard' | ApartmentType;
 
@@ -203,8 +204,15 @@ export default function BuildingDetailDialog({
                       {catRows.map(r => (
                         <tr key={r.item.id} className="border-b hover:bg-muted/20 align-top">
                           <td className="px-2 py-1.5 min-w-0">
-                            <div className="font-medium text-foreground truncate">{r.item.itemName || '—'}</div>
-                            {r.item.spec && <div className="text-[10px] text-muted-foreground line-clamp-2" title={r.item.spec}>{r.item.spec}</div>}
+                            <div className="flex items-start gap-1">
+                              <div className="min-w-0 flex-1">
+                                <div className="font-medium text-foreground truncate">{r.item.itemName || '—'}</div>
+                                {r.item.spec && <div className="text-[10px] text-muted-foreground line-clamp-2" title={r.item.spec}>{r.item.spec}</div>}
+                              </div>
+                              {r.item.spec && (
+                                <SpecCell value={r.item.spec} onChange={() => {}} itemName={r.item.itemName} viewOnly />
+                              )}
+                            </div>
                           </td>
                           <td className="px-2 py-1.5 text-xs text-muted-foreground truncate">{r.supplierName || '—'}</td>
                           {types.map(at => {
