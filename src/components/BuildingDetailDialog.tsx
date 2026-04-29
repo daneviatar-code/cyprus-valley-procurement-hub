@@ -145,30 +145,44 @@ export default function BuildingDetailDialog({
     const w = window.open('', '_blank', 'width=900,height=700');
     if (!w) return;
     const esc = (s: string) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
-    const typeHeaders = types.map(at => `<th style="text-align:right;padding:6px 8px;border-bottom:1px solid #ddd;font-size:10px;text-transform:uppercase;color:#666">${esc(ROOM_SIZE_LABELS[at])}<br/><span style="font-weight:normal;font-size:9px">per × units</span></th>`).join('');
+    const show = (c: PdfCol) => pdfCols.has(c);
+    const showPerType = show('perType');
+
+    const headers: string[] = [];
+    if (show('item')) headers.push('<th>Item</th>');
+    if (show('dimensions')) headers.push('<th>Dimensions</th>');
+    if (show('supplier')) headers.push('<th>Supplier</th>');
+    if (showPerType) types.forEach(at => headers.push(`<th style="text-align:right;font-size:10px;text-transform:uppercase;color:#666">${esc(ROOM_SIZE_LABELS[at])}<br/><span style="font-weight:normal;font-size:9px">per × units</span></th>`));
+    if (show('qty')) headers.push('<th style="text-align:right;background:#f5f8ff">Qty לבניין</th>');
+    if (show('total')) headers.push('<th style="text-align:right">Total €</th>');
+
+    const colCount = headers.length;
+    const beforeQtyCount = (show('item') ? 1 : 0) + (show('dimensions') ? 1 : 0) + (show('supplier') ? 1 : 0) + (showPerType ? types.length : 0);
+
     const bodyRows = grouped.map(([catName, catRows]) => {
       const catQty = catRows.reduce((s, r) => s + r.totalQty, 0);
       const catCost = catRows.reduce((s, r) => s + r.totalCost, 0);
-      const itemRows = catRows.map(r => `
-        <tr style="border-bottom:1px solid #eee;vertical-align:top">
-          <td style="padding:6px 8px">
+      const itemRows = catRows.map(r => {
+        const cells: string[] = [];
+        if (show('item')) cells.push(`<td style="padding:6px 8px">
             <div style="font-weight:600">${esc(r.item.itemName || '—')}</div>
-            ${r.item.spec ? `<div style="font-size:10px;color:#666;white-space:pre-wrap;margin-top:2px">${esc(r.item.spec)}</div>` : ''}
-          </td>
-          <td style="padding:6px 8px;font-size:11px;color:#666">${esc(r.supplierName || '—')}</td>
-          ${types.map(at => {
-            const d = r.perType[at];
-            return `<td style="padding:6px 8px;text-align:right;font-family:monospace;font-size:11px;white-space:nowrap">${d ? `<span style="color:#666">${d.perUnit}×${d.units}</span> <b>= ${d.qty}</b>` : '—'}</td>`;
-          }).join('')}
-          <td style="padding:6px 8px;text-align:right;font-family:monospace;font-weight:700;background:#f5f8ff">${r.totalQty.toLocaleString()}</td>
-          <td style="padding:6px 8px;text-align:right;font-family:monospace">${esc(eur(r.totalCost))}</td>
-        </tr>`).join('');
-      return `
-        <tr style="background:#f0f0f0">
-          <td colspan="${2 + types.length}" style="padding:6px 8px;font-size:11px;font-weight:700;text-transform:uppercase">${esc(catName)}</td>
-          <td style="padding:6px 8px;text-align:right;font-family:monospace;font-weight:700;background:#f5f8ff">${catQty.toLocaleString()}</td>
-          <td style="padding:6px 8px;text-align:right;font-family:monospace;font-weight:700">${esc(eur(catCost))}</td>
-        </tr>${itemRows}`;
+            ${show('spec') && r.item.spec ? `<div style="font-size:10px;color:#666;white-space:pre-wrap;margin-top:2px">${esc(r.item.spec)}</div>` : ''}
+          </td>`);
+        if (show('dimensions')) cells.push(`<td style="padding:6px 8px;font-size:11px;color:#444">${esc(r.item.dimensions || '—')}</td>`);
+        if (show('supplier')) cells.push(`<td style="padding:6px 8px;font-size:11px;color:#666">${esc(r.supplierName || '—')}</td>`);
+        if (showPerType) types.forEach(at => {
+          const d = r.perType[at];
+          cells.push(`<td style="padding:6px 8px;text-align:right;font-family:monospace;font-size:11px;white-space:nowrap">${d ? `<span style="color:#666">${d.perUnit}×${d.units}</span> <b>= ${d.qty}</b>` : '—'}</td>`);
+        });
+        if (show('qty')) cells.push(`<td style="padding:6px 8px;text-align:right;font-family:monospace;font-weight:700;background:#f5f8ff">${r.totalQty.toLocaleString()}</td>`);
+        if (show('total')) cells.push(`<td style="padding:6px 8px;text-align:right;font-family:monospace">${esc(eur(r.totalCost))}</td>`);
+        return `<tr style="border-bottom:1px solid #eee;vertical-align:top">${cells.join('')}</tr>`;
+      }).join('');
+      const catCells: string[] = [];
+      if (beforeQtyCount > 0) catCells.push(`<td colspan="${beforeQtyCount}" style="padding:6px 8px;font-size:11px;font-weight:700;text-transform:uppercase">${esc(catName)}</td>`);
+      if (show('qty')) catCells.push(`<td style="padding:6px 8px;text-align:right;font-family:monospace;font-weight:700;background:#f5f8ff">${catQty.toLocaleString()}</td>`);
+      if (show('total')) catCells.push(`<td style="padding:6px 8px;text-align:right;font-family:monospace;font-weight:700">${esc(eur(catCost))}</td>`);
+      return `<tr style="background:#f0f0f0">${catCells.join('')}</tr>${itemRows}`;
     }).join('');
 
     w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Building ${esc(building)} — Breakdown</title>
@@ -193,11 +207,7 @@ export default function BuildingDetailDialog({
       </div>
       <button onclick="window.print()" style="margin-bottom:12px;padding:6px 12px;cursor:pointer">Print / Save as PDF</button>
       <table>
-        <thead><tr>
-          <th>Item</th><th>Supplier</th>${typeHeaders}
-          <th style="text-align:right;background:#f5f8ff">Qty לבניין</th>
-          <th style="text-align:right">Total €</th>
-        </tr></thead>
+        <thead><tr>${headers.join('')}</tr></thead>
         <tbody>${bodyRows}</tbody>
       </table>
       <script>window.onload=()=>setTimeout(()=>window.print(),300);</script>
