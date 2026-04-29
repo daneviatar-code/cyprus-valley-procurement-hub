@@ -21,12 +21,12 @@ import { RoomSize, ROOM_SIZE_LABELS } from '@/data/masterData';
 import { Supplier } from '@/data/supplierData';
 import SpecCell from './SpecCell';
 
-type PdfCol = 'item' | 'spec' | 'dimensions' | 'supplier' | 'perType' | 'qty' | 'total';
+type PdfCol = 'item' | 'spec' | 'dimensions' | 'supplier' | 'unitPrice' | 'perType' | 'qty' | 'total';
 const PDF_COL_LABELS: Record<PdfCol, string> = {
   item: 'Item Name', spec: 'Spec', dimensions: 'Dimensions', supplier: 'Supplier',
-  perType: 'Per-type breakdown', qty: 'Qty לבניין', total: 'Total €',
+  unitPrice: 'Unit Price €', perType: 'Per-type breakdown', qty: 'Qty לבניין', total: 'Total €',
 };
-const ALL_PDF_COLS: PdfCol[] = ['item', 'spec', 'dimensions', 'supplier', 'perType', 'qty', 'total'];
+const ALL_PDF_COLS: PdfCol[] = ['item', 'spec', 'dimensions', 'supplier', 'unitPrice', 'perType', 'qty', 'total'];
 
 type View = 'standard' | ApartmentType;
 type ReadyFile = { url: string; fileName: string };
@@ -198,6 +198,7 @@ export default function BuildingDetailDialog({
     if (show('item')) headers.push(show('spec') ? 'Item / Spec' : 'Item');
     if (show('dimensions')) headers.push('Dimensions');
     if (show('supplier')) headers.push('Supplier');
+    if (show('unitPrice')) headers.push('Unit Price EUR');
     if (showPerType) types.forEach(at => headers.push(`${ROOM_SIZE_LABELS[at]}\nper × units`));
     if (show('qty')) headers.push('Qty Building');
     if (show('total')) headers.push('Total EUR');
@@ -217,6 +218,7 @@ export default function BuildingDetailDialog({
         if (show('item')) row.push(show('spec') && r.item.spec ? `${r.item.itemName || '—'}\n${r.item.spec}` : r.item.itemName || '—');
         if (show('dimensions')) row.push(r.item.dimensions || '—');
         if (show('supplier')) row.push(r.supplierName || '—');
+        if (show('unitPrice')) row.push(eur(r.item.unitPriceEur || 0));
         if (showPerType) types.forEach(at => {
           const d = r.perType[at];
           row.push(d ? `${d.perUnit}x${d.units} = ${d.qty}` : '—');
