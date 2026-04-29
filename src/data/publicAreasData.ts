@@ -178,10 +178,11 @@ export function loadNodes(): PublicAreaNode[] {
   // Try migration from legacy schema first
   const migrated = migrateFromLegacy();
   if (migrated && migrated.length > 0) return migrated;
-  // Fresh seed
-  const seeded = buildSeed();
-  saveNodes(seeded);
-  return seeded;
+  // No local data — return empty. Hydration from cloud (or seeding once
+  // if cloud is also empty) is handled by hydratePublicAreasFromCloud.
+  // IMPORTANT: do NOT auto-seed here, or we'll wipe cloud data with
+  // freshly-generated node IDs and orphan all existing items.
+  return [];
 }
 
 let lastNodesSnap = '';
