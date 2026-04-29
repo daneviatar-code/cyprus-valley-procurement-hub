@@ -44,6 +44,7 @@ export default function BuildingDetailDialog({
 }: Props) {
   const types: ApartmentType[] = view === 'standard' ? [...APARTMENT_TYPES] : [view as ApartmentType];
   const [pdfCols, setPdfCols] = useState<Set<PdfCol>>(new Set(ALL_PDF_COLS));
+  const [activeCategory, setActiveCategory] = useState<string>('__all__');
   const togglePdfCol = (c: PdfCol) => setPdfCols(prev => {
     const next = new Set(prev);
     next.has(c) ? next.delete(c) : next.add(c);
@@ -95,21 +96,32 @@ export default function BuildingDetailDialog({
     );
   }, [building, items, qtysByItem, categories, suppliers, buildingCounts, types]);
 
+  const allCategories = useMemo(() => {
+    const set = new Set<string>();
+    rows.forEach(r => set.add(r.categoryName));
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [rows]);
+
+  const filteredRows = useMemo(
+    () => activeCategory === '__all__' ? rows : rows.filter(r => r.categoryName === activeCategory),
+    [rows, activeCategory],
+  );
+
   const grouped = useMemo(() => {
-    const map = new Map<string, typeof rows>();
-    rows.forEach(r => {
+    const map = new Map<string, typeof filteredRows>();
+    filteredRows.forEach(r => {
       const arr = map.get(r.categoryName) || [];
       arr.push(r);
       map.set(r.categoryName, arr);
     });
     return Array.from(map.entries());
-  }, [rows]);
+  }, [filteredRows]);
 
   const totals = useMemo(() => {
     let qty = 0, cost = 0;
-    rows.forEach(r => { qty += r.totalQty; cost += r.totalCost; });
+    filteredRows.forEach(r => { qty += r.totalQty; cost += r.totalCost; });
     return { qty, cost };
-  }, [rows]);
+  }, [filteredRows]);
 
   const totalUnits = types.reduce((s, at) => s + (buildingCounts[at] || 0), 0);
 
@@ -120,7 +132,7 @@ export default function BuildingDetailDialog({
       'Total Qty', 'Total Cost €',
     ];
     const lines = [header.join(',')];
-    rows.forEach(r => {
+    filteredRows.forEach(r => {
       const cells: (string | number)[] = [
         r.categoryName, r.item.itemName, r.item.spec || '', r.supplierName,
         (r.item.unitPriceEur || 0).toFixed(2),
@@ -197,7 +209,7 @@ export default function BuildingDetailDialog({
       <h1>Building ${esc(building)} — Quantity Breakdown</h1>
       <div class="sub" dir="rtl">פירוט כמויות לבניין · ${totalUnits} units · ${types.map(t => `${esc(ROOM_SIZE_LABELS[t])}: ${buildingCounts[t] || 0}`).join(' · ')}</div>
       <div class="totals">
-        <div>ITEMS<b>${rows.length.toLocaleString()}</b></div>
+        <div>ITEMS<b>${filteredRows.length.toLocaleString()}</b></div>
         <div>TOTAL QTY<b>${totals.qty.toLocaleString()}</b></div>
         <div>TOTAL COST<b>${esc(eur(totals.cost))}</b></div>
       </div>
@@ -290,7 +302,7 @@ export default function BuildingDetailDialog({
         <div className="grid grid-cols-3 gap-3 bg-muted/30 border rounded-md p-3">
           <div>
             <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Items</div>
-            <div className="text-sm font-semibold font-mono">{rows.length.toLocaleString()}</div>
+            <div className="text-sm font-semibold font-mono">{filteredRows.length.toLocaleString()}</div>
           </div>
           <div>
             <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Total Qty</div>
@@ -301,6 +313,38 @@ export default function BuildingDetailDialog({
             <div className="text-sm font-semibold font-mono">{eur(totals.cost)}</div>
           </div>
         </div>
+
+        {/* Category tabs */}
+        {allCategories.length > 0 && (
+          <div className="flex flex-wrap gap-1 border-b -mb-px">
+            <button
+              onClick={() => setActiveCategory('__all__')}
+              className={`px-3 py-1.5 text-xs font-medium rounded-t-md border border-b-0 transition-colors ${
+                activeCategory === '__all__'
+                  ? 'bg-card border-border text-foreground'
+                  : 'bg-transparent border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40'
+              }`}
+            >
+              All <span className="text-muted-foreground/70 ml-1">({rows.length})</span>
+            </button>
+            {allCategories.map(cat => {
+              const count = rows.filter(r => r.categoryName === cat).length;
+              return (
+                <button
+                  key={cat}
+                  onClick={() => setActiveCategory(cat)}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-t-md border border-b-0 transition-colors ${
+                    activeCategory === cat
+                      ? 'bg-card border-border text-foreground'
+                      : 'bg-transparent border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40'
+                  }`}
+                >
+                  {cat} <span className="text-muted-foreground/70 ml-1">({count})</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         <div className="overflow-auto flex-1 -mx-6 px-6">
           {grouped.length === 0 ? (
