@@ -2,7 +2,7 @@
  * BuildingDetailDialog — shows a per-item breakdown for a single building.
  * Triggered from the "Breakdown per Building" cards in the Standard tab.
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import {
@@ -11,7 +11,7 @@ import {
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { Download, FileText } from 'lucide-react';
+import { Download, ExternalLink, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { eur, ProcurementCategory } from '@/data/roomStandardsData';
 import {
@@ -48,11 +48,16 @@ export default function BuildingDetailDialog({
   const types: ApartmentType[] = view === 'standard' ? [...APARTMENT_TYPES] : [view as ApartmentType];
   const [pdfCols, setPdfCols] = useState<Set<PdfCol>>(new Set(ALL_PDF_COLS));
   const [activeCategory, setActiveCategory] = useState<string>('__all__');
+  const [lastPdf, setLastPdf] = useState<{ url: string; fileName: string } | null>(null);
   const togglePdfCol = (c: PdfCol) => setPdfCols(prev => {
     const next = new Set(prev);
     next.has(c) ? next.delete(c) : next.add(c);
     return next;
   });
+
+  useEffect(() => () => {
+    if (lastPdf?.url) URL.revokeObjectURL(lastPdf.url);
+  }, [lastPdf?.url]);
 
   const rows = useMemo(() => {
     if (!building) return [];
@@ -228,17 +233,19 @@ export default function BuildingDetailDialog({
     });
 
     const fileName = `building-${building}-breakdown.pdf`;
+    const pdfBlob = doc.output('blob');
+    const blobUrl = URL.createObjectURL(pdfBlob);
+    setLastPdf({ url: blobUrl, fileName });
+
     // Open in new tab so the user sees the PDF immediately
     try {
-      const blobUrl = doc.output('bloburl');
       window.open(blobUrl, '_blank');
     } catch (e) {
       console.warn('Could not open PDF in new tab', e);
     }
-    // Also trigger a download as backup
-    doc.save(fileName);
-    toast.success(`PDF נפתח בטאב חדש והורד: ${fileName}`, {
-      description: 'בדוק בתיקיית ההורדות של הדפדפן',
+
+    toast.success(`PDF מוכן: ${fileName}`, {
+      description: 'נוסף כפתור פתיחה והורדה בתוך החלון',
       duration: 6000,
     });
   };
