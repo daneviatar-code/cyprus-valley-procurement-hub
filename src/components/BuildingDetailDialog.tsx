@@ -28,6 +28,9 @@ const PDF_COL_LABELS: Record<PdfCol, string> = {
 };
 const ALL_PDF_COLS: PdfCol[] = ['item', 'spec', 'dimensions', 'supplier', 'unitPrice', 'perType', 'qty', 'total'];
 
+const eurFull = (n: number): string =>
+  `€${(n || 0).toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
 type View = 'standard' | ApartmentType;
 type ReadyFile = { url: string; fileName: string };
 
