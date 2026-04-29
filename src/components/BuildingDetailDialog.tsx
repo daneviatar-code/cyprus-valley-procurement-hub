@@ -96,21 +96,32 @@ export default function BuildingDetailDialog({
     );
   }, [building, items, qtysByItem, categories, suppliers, buildingCounts, types]);
 
+  const allCategories = useMemo(() => {
+    const set = new Set<string>();
+    rows.forEach(r => set.add(r.categoryName));
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [rows]);
+
+  const filteredRows = useMemo(
+    () => activeCategory === '__all__' ? rows : rows.filter(r => r.categoryName === activeCategory),
+    [rows, activeCategory],
+  );
+
   const grouped = useMemo(() => {
-    const map = new Map<string, typeof rows>();
-    rows.forEach(r => {
+    const map = new Map<string, typeof filteredRows>();
+    filteredRows.forEach(r => {
       const arr = map.get(r.categoryName) || [];
       arr.push(r);
       map.set(r.categoryName, arr);
     });
     return Array.from(map.entries());
-  }, [rows]);
+  }, [filteredRows]);
 
   const totals = useMemo(() => {
     let qty = 0, cost = 0;
-    rows.forEach(r => { qty += r.totalQty; cost += r.totalCost; });
+    filteredRows.forEach(r => { qty += r.totalQty; cost += r.totalCost; });
     return { qty, cost };
-  }, [rows]);
+  }, [filteredRows]);
 
   const totalUnits = types.reduce((s, at) => s + (buildingCounts[at] || 0), 0);
 
