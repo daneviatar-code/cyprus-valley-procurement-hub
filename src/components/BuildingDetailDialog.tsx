@@ -49,6 +49,7 @@ export default function BuildingDetailDialog({
   const [pdfCols, setPdfCols] = useState<Set<PdfCol>>(new Set(ALL_PDF_COLS));
   const [activeCategory, setActiveCategory] = useState<string>('__all__');
   const [lastPdf, setLastPdf] = useState<{ url: string; fileName: string } | null>(null);
+  const [lastCsv, setLastCsv] = useState<{ url: string; fileName: string } | null>(null);
   const togglePdfCol = (c: PdfCol) => setPdfCols(prev => {
     const next = new Set(prev);
     next.has(c) ? next.delete(c) : next.add(c);
@@ -58,6 +59,10 @@ export default function BuildingDetailDialog({
   useEffect(() => () => {
     if (lastPdf?.url) URL.revokeObjectURL(lastPdf.url);
   }, [lastPdf?.url]);
+
+  useEffect(() => () => {
+    if (lastCsv?.url) URL.revokeObjectURL(lastCsv.url);
+  }, [lastCsv?.url]);
 
   const rows = useMemo(() => {
     if (!building) return [];
@@ -139,7 +144,7 @@ export default function BuildingDetailDialog({
 
   const totalUnits = types.reduce((s, at) => s + (buildingCounts[at] || 0), 0);
 
-  const exportCsv = async () => {
+  const exportCsv = () => {
     if (!building) return;
     const header = ['Category', 'Item', 'Spec', 'Supplier', 'Unit Price €',
       ...types.flatMap(at => [`${ROOM_SIZE_LABELS[at]} per-unit`, `${ROOM_SIZE_LABELS[at]} units`, `${ROOM_SIZE_LABELS[at]} qty`]),
@@ -161,12 +166,12 @@ export default function BuildingDetailDialog({
     // Prepend BOM for Excel UTF-8 (Hebrew) compatibility
     const blob = new Blob(["\ufeff" + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
     const fileName = `building-${building}-breakdown.csv`;
-    const result = await saveBlobToComputer(blob, fileName, 'CSV file');
-    if (result === 'saved') toast.success(`CSV נשמר: ${fileName}`);
-    if (result === 'downloaded') toast.success(`CSV נשלח להורדה: ${fileName}`);
+    const url = URL.createObjectURL(blob);
+    setLastCsv({ url, fileName });
+    toast.success('CSV מוכן', { description: 'לחץ על כפתור "הורד CSV" שהופיע בחלון' });
   };
 
-  const exportPdf = async () => {
+  const exportPdf = () => {
     if (!building) return;
     const show = (c: PdfCol) => pdfCols.has(c);
     const showPerType = show('perType');
@@ -238,11 +243,8 @@ export default function BuildingDetailDialog({
       const blobUrl = URL.createObjectURL(pdfBlob);
       setLastPdf({ url: blobUrl, fileName });
 
-      const result = await saveBlobToComputer(pdfBlob, fileName, 'PDF document');
-
-      if (result === 'cancelled') return;
-      toast.success(`${result === 'saved' ? 'PDF נשמר' : 'PDF נשלח להורדה'}: ${fileName}`, {
-        description: 'אם הדפדפן לא שאל איפה לשמור — הקובץ נמצא בתיקיית Downloads או בכפתורי "פתח/הורד" בחלון',
+      toast.success('PDF מוכן', {
+        description: 'לחץ על כפתורי "פתח PDF" או "הורד PDF" שהופיעו בחלון',
         duration: 6000,
       });
     } catch (err) {
