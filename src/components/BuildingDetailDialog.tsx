@@ -21,12 +21,12 @@ import { RoomSize, ROOM_SIZE_LABELS } from '@/data/masterData';
 import { Supplier } from '@/data/supplierData';
 import SpecCell from './SpecCell';
 
-type PdfCol = 'item' | 'spec' | 'dimensions' | 'supplier' | 'perType' | 'qty' | 'total';
+type PdfCol = 'item' | 'spec' | 'dimensions' | 'supplier' | 'unitPrice' | 'perType' | 'qty' | 'total';
 const PDF_COL_LABELS: Record<PdfCol, string> = {
   item: 'Item Name', spec: 'Spec', dimensions: 'Dimensions', supplier: 'Supplier',
-  perType: 'Per-type breakdown', qty: 'Qty לבניין', total: 'Total €',
+  unitPrice: 'Unit Price €', perType: 'Per-type breakdown', qty: 'Qty לבניין', total: 'Total €',
 };
-const ALL_PDF_COLS: PdfCol[] = ['item', 'spec', 'dimensions', 'supplier', 'perType', 'qty', 'total'];
+const ALL_PDF_COLS: PdfCol[] = ['item', 'spec', 'dimensions', 'supplier', 'unitPrice', 'perType', 'qty', 'total'];
 
 type View = 'standard' | ApartmentType;
 type ReadyFile = { url: string; fileName: string };
@@ -198,6 +198,7 @@ export default function BuildingDetailDialog({
     if (show('item')) headers.push(show('spec') ? 'Item / Spec' : 'Item');
     if (show('dimensions')) headers.push('Dimensions');
     if (show('supplier')) headers.push('Supplier');
+    if (show('unitPrice')) headers.push('Unit Price EUR');
     if (showPerType) types.forEach(at => headers.push(`${ROOM_SIZE_LABELS[at]}\nper × units`));
     if (show('qty')) headers.push('Qty Building');
     if (show('total')) headers.push('Total EUR');
@@ -217,6 +218,7 @@ export default function BuildingDetailDialog({
         if (show('item')) row.push(show('spec') && r.item.spec ? `${r.item.itemName || '—'}\n${r.item.spec}` : r.item.itemName || '—');
         if (show('dimensions')) row.push(r.item.dimensions || '—');
         if (show('supplier')) row.push(r.supplierName || '—');
+        if (show('unitPrice')) row.push(eur(r.item.unitPriceEur || 0));
         if (showPerType) types.forEach(at => {
           const d = r.perType[at];
           row.push(d ? `${d.perUnit}x${d.units} = ${d.qty}` : '—');
@@ -413,10 +415,11 @@ export default function BuildingDetailDialog({
           ) : (
             <table className="w-full text-sm table-fixed">
               <colgroup>
-                <col style={{ width: '28%' }} />
-                <col style={{ width: '12%' }} />
-                <col style={{ width: '12%' }} />
-                {types.map(at => <col key={at} style={{ width: `${Math.max(8, 36 / types.length)}%` }} />)}
+                <col style={{ width: '24%' }} />
+                <col style={{ width: '11%' }} />
+                <col style={{ width: '10%' }} />
+                <col style={{ width: '10%' }} />
+                {types.map(at => <col key={at} style={{ width: `${Math.max(7, 31 / types.length)}%` }} />)}
                 <col style={{ width: '10%' }} />
                 <col style={{ width: '12%' }} />
               </colgroup>
@@ -425,6 +428,7 @@ export default function BuildingDetailDialog({
                   <th className="text-left text-[10px] font-medium uppercase tracking-wider text-muted-foreground px-2 py-2">Item</th>
                   <th className="text-left text-[10px] font-medium uppercase tracking-wider text-muted-foreground px-2 py-2">Dimensions</th>
                   <th className="text-left text-[10px] font-medium uppercase tracking-wider text-muted-foreground px-2 py-2">Supplier</th>
+                  <th className="text-right text-[10px] font-medium uppercase tracking-wider text-muted-foreground px-2 py-2">Unit Price €</th>
                   {types.map(at => (
                     <th key={at} className="text-right text-[10px] font-medium uppercase tracking-wider text-muted-foreground px-2 py-2 whitespace-nowrap">
                       {ROOM_SIZE_LABELS[at]}<br />
@@ -442,7 +446,7 @@ export default function BuildingDetailDialog({
                   return (
                     <>
                       <tr key={`cat-${catName}`} className="bg-muted/40">
-                        <td colSpan={3 + types.length} className="px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-foreground">
+                        <td colSpan={4 + types.length} className="px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-foreground">
                           {catName}
                         </td>
                         <td className="px-2 py-1.5 text-right text-[11px] font-mono font-semibold bg-primary/5">{catQty.toLocaleString()}</td>
@@ -456,6 +460,7 @@ export default function BuildingDetailDialog({
                           </td>
                           <td className="px-2 py-1.5 text-xs text-foreground/80 whitespace-pre-wrap break-words">{r.item.dimensions || '—'}</td>
                           <td className="px-2 py-1.5 text-xs text-muted-foreground truncate">{r.supplierName || '—'}</td>
+                          <td className="px-2 py-1.5 text-right font-mono text-xs text-foreground whitespace-nowrap">{eur(r.item.unitPriceEur || 0)}</td>
                           {types.map(at => {
                             const d = r.perType[at];
                             return (
