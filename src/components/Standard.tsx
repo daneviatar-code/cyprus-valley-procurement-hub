@@ -21,6 +21,7 @@ import {
 import { Supplier, loadSuppliers } from '@/data/supplierData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import SpecCell from '@/components/SpecCell';
 import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
 } from '@/components/ui/tooltip';
@@ -853,9 +854,12 @@ function SortableItemRow({
           placeholder="Item name…" />
       </td>
       <td className={td}>
-        <Input className={inputCls + ' min-w-[140px]'} value={it.spec}
-          onChange={e => onUpdateItem(it.id, { spec: e.target.value })}
-          placeholder="Spec/model" />
+        <SpecCell
+          value={it.spec}
+          onChange={v => onUpdateItem(it.id, { spec: v })}
+          itemName={it.itemName}
+          inputClassName={inputCls + ' min-w-[140px]'}
+        />
       </td>
       <td className={td}>
         <Input className={inputCls + ' min-w-[120px]'} value={it.dimensions || ''}
@@ -994,7 +998,14 @@ function TypeEditor({
             return (
               <tr key={it.id} className="border-b last:border-0 hover:bg-muted/30">
                 <td className={td}><ReadOnlyChip>{it.itemName || '(unnamed)'}</ReadOnlyChip></td>
-                <td className={td}><ReadOnlyChip>{it.spec || '—'}</ReadOnlyChip></td>
+                <td className={td}>
+                  <div className="flex items-center gap-1">
+                    <ReadOnlyChip>{it.spec || '—'}</ReadOnlyChip>
+                    {it.spec && (
+                      <SpecCell value={it.spec} onChange={() => {}} itemName={it.itemName} viewOnly />
+                    )}
+                  </div>
+                </td>
                 <td className={td}><ReadOnlyChip>{it.dimensions || '—'}</ReadOnlyChip></td>
                 <td className={td}>
                   <Input type="number" className={inputCls + ' text-right w-16'} value={q.qtyPerPackage}
