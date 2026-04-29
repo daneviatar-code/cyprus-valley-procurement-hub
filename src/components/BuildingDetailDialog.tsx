@@ -321,7 +321,7 @@ export default function BuildingDetailDialog({
         </div>
 
         {/* Category tabs */}
-        {rows.length > 0 && (
+        {allCategories.length > 0 && (
           <div className="flex flex-wrap gap-1.5 border-b border-border pb-0">
             <button
               onClick={() => setActiveCategory('__all__')}
@@ -334,8 +334,9 @@ export default function BuildingDetailDialog({
               All <span className="opacity-70 ml-1">({rows.length})</span>
             </button>
             {allCategories.map(cat => {
-              const count = rows.filter(r => r.categoryName === cat).length;
+              const count = countsByCategory.get(cat) || 0;
               const isActive = activeCategory === cat;
+              const isEmpty = count === 0;
               return (
                 <button
                   key={cat}
@@ -343,7 +344,9 @@ export default function BuildingDetailDialog({
                   className={`px-3 py-2 text-xs font-semibold rounded-t-md border-2 border-b-0 transition-colors ${
                     isActive
                       ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-muted/40 border-border text-muted-foreground hover:text-foreground hover:bg-muted'
+                      : isEmpty
+                        ? 'bg-muted/20 border-border/60 text-muted-foreground/60 hover:text-foreground hover:bg-muted/40'
+                        : 'bg-muted/40 border-border text-muted-foreground hover:text-foreground hover:bg-muted'
                   }`}
                 >
                   {cat} <span className="opacity-70 ml-1">({count})</span>
