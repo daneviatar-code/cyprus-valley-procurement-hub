@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, Pencil, Trash2, ExternalLink, Package, Search, ChevronDown, ChevronRight, FileText, CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -21,7 +21,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import {
-  Supplier, SupplierItem, loadSuppliers, saveSuppliers, generateSupplierId,
+  Supplier, SupplierItem, loadSuppliers, saveSuppliers, generateSupplierId, subscribeSuppliers,
 } from '@/data/supplierData';
 import {
   PurchaseOrder, POLineItem, loadPurchaseOrders, savePurchaseOrders, generatePONumber, generatePOId,
@@ -59,6 +59,9 @@ export default function Suppliers() {
   const [editItemIdx, setEditItemIdx] = useState<number | null>(null);
   const [itemForm, setItemForm] = useState<SupplierItem>(emptyItem());
   const [itemSupplierId, setItemSupplierId] = useState<string | null>(null);
+
+  // Sync with cloud after hydration
+  useEffect(() => subscribeSuppliers(setSuppliers), []);
 
   // Purchase Orders state
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>(loadPurchaseOrders);
