@@ -26,6 +26,7 @@ import {
 import { Supplier, loadSuppliers } from '@/data/supplierData';
 import { PublicAreaPlan, loadPlans, savePlans, subscribePublicAreaPlans } from '@/data/publicAreaPlansData';
 import NodePlans from './NodePlans';
+import SpecCell from './SpecCell';
 
 type View = 'editor' | 'bySupplier' | 'byCategory';
 
