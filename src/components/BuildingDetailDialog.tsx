@@ -3,6 +3,8 @@
  * Triggered from the "Breakdown per Building" cards in the Standard tab.
  */
 import { useMemo, useState } from 'react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
