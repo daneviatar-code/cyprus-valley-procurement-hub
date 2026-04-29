@@ -225,38 +225,35 @@ export default function BuildingDetailDialog({
       </table>
       </body></html>`;
 
-    // Use hidden iframe — not blocked by popup blockers
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'fixed';
-    iframe.style.right = '0';
-    iframe.style.bottom = '0';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = '0';
-    document.body.appendChild(iframe);
+    // Strategy: open new tab and trigger print. If popup blocked, fall back to HTML download.
+    const fullHtml = html.replace(
+      '</body>',
+      `<script>window.onload=function(){setTimeout(function(){window.focus();window.print();},300);};</script></body>`
+    );
 
-    const cleanup = () => {
-      setTimeout(() => { try { document.body.removeChild(iframe); } catch {} }, 1000);
-    };
-
-    iframe.onload = () => {
+    const win = window.open('', '_blank');
+    if (win && !win.closed) {
       try {
-        const win = iframe.contentWindow;
-        if (!win) { cleanup(); return; }
-        win.focus();
-        win.print();
-        cleanup();
+        win.document.open();
+        win.document.write(fullHtml);
+        win.document.close();
+        return;
       } catch (e) {
-        console.error('PDF export failed:', e);
-        cleanup();
+        console.error('Print window failed, falling back to download:', e);
+        try { win.close(); } catch {}
       }
-    };
+    }
 
-    const doc = iframe.contentDocument || iframe.contentWindow?.document;
-    if (!doc) { cleanup(); return; }
-    doc.open();
-    doc.write(html);
-    doc.close();
+    // Fallback: download as .html (user opens it and prints to PDF)
+    const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `building-${building}-breakdown.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   return (
