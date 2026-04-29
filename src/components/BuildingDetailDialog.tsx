@@ -316,23 +316,36 @@ export default function BuildingDetailDialog({
           </div>
         </div>
 
-        {lastPdf && (
+        {(lastPdf || lastCsv) && (
           <div className="flex flex-wrap items-center justify-between gap-3 border rounded-md bg-primary/5 p-3" dir="rtl">
             <div>
-              <div className="text-sm font-semibold text-foreground">ה-PDF מוכן לצפייה</div>
-              <div className="text-xs text-muted-foreground" dir="ltr">{lastPdf.fileName}</div>
+              <div className="text-sm font-semibold text-foreground">הקובץ מוכן להורדה</div>
+              <div className="text-xs text-muted-foreground" dir="ltr">
+                {[lastPdf?.fileName, lastCsv?.fileName].filter(Boolean).join(' · ')}
+              </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button size="sm" variant="outline" className="gap-2" asChild>
-                <a href={lastPdf.url} target="_blank" rel="noreferrer">
-                  <ExternalLink className="w-4 h-4" /> פתח
-                </a>
-              </Button>
-              <Button size="sm" className="gap-2" asChild>
-                <a href={lastPdf.url} download={lastPdf.fileName}>
-                  <Download className="w-4 h-4" /> הורד
-                </a>
-              </Button>
+              {lastPdf && (
+                <>
+                  <Button size="sm" variant="outline" className="gap-2" asChild>
+                    <a href={lastPdf.url} target="_blank" rel="noreferrer">
+                      <ExternalLink className="w-4 h-4" /> פתח PDF
+                    </a>
+                  </Button>
+                  <Button size="sm" className="gap-2" asChild>
+                    <a href={lastPdf.url} download={lastPdf.fileName}>
+                      <Download className="w-4 h-4" /> הורד PDF
+                    </a>
+                  </Button>
+                </>
+              )}
+              {lastCsv && (
+                <Button size="sm" variant="outline" className="gap-2" asChild>
+                  <a href={lastCsv.url} download={lastCsv.fileName}>
+                    <Download className="w-4 h-4" /> הורד CSV
+                  </a>
+                </Button>
+              )}
             </div>
           </div>
         )}
