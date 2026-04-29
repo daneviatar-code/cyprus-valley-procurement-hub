@@ -157,6 +157,16 @@ function migrateFromLegacy(): PublicAreaNode[] | null {
 }
 
 // ── Loaders / Savers ──────────────────────────────────────────────────────
+import { supabase } from '@/integrations/supabase/client';
+
+const HYDRATED_FLAG = 'cyprus-valley_publicAreas_hydrated';
+type NodesListener = (rows: PublicAreaNode[]) => void;
+type ItemsListener = (rows: PublicAreaItem[]) => void;
+const nodeListeners = new Set<NodesListener>();
+const itemListeners = new Set<ItemsListener>();
+export function subscribePublicAreaNodes(fn: NodesListener) { nodeListeners.add(fn); return () => { nodeListeners.delete(fn); }; }
+export function subscribePublicAreaItems(fn: ItemsListener) { itemListeners.add(fn); return () => { itemListeners.delete(fn); }; }
+
 export function loadNodes(): PublicAreaNode[] {
   try {
     const raw = localStorage.getItem(NODES_KEY);
@@ -174,8 +184,14 @@ export function loadNodes(): PublicAreaNode[] {
   return seeded;
 }
 
-export const saveNodes = (d: PublicAreaNode[]) =>
-  localStorage.setItem(NODES_KEY, JSON.stringify(d));
+let lastNodesSnap = '';
+export function saveNodes(d: PublicAreaNode[]) {
+  const json = JSON.stringify(d);
+  if (json === lastNodesSnap) return;
+  lastNodesSnap = json;
+  localStorage.setItem(NODES_KEY, json);
+  void pushNodesToCloud(d);
+}
 
 export function loadItems(): PublicAreaItem[] {
   try {
@@ -193,8 +209,118 @@ export function loadItems(): PublicAreaItem[] {
   return [];
 }
 
-export const saveItems = (d: PublicAreaItem[]) =>
-  localStorage.setItem(ITEMS_KEY, JSON.stringify(d));
+let lastItemsSnap = '';
+export function saveItems(d: PublicAreaItem[]) {
+  const json = JSON.stringify(d);
+  if (json === lastItemsSnap) return;
+  lastItemsSnap = json;
+  localStorage.setItem(ITEMS_KEY, json);
+  void pushItemsToCloud(d);
+}
+
+// ── Cloud sync ────────────────────────────────────────────────────────────
+function nodeToDb(n: PublicAreaNode): any {
+  return {
+    id: n.id, name: n.name, name_he: n.nameHe ?? null, type: n.type,
+    parent_id: n.parentId, order: n.order, archived: !!n.archived,
+  };
+}
+function nodeFromDb(r: any): PublicAreaNode {
+  return {
+    id: r.id, name: r.name ?? '', nameHe: r.name_he ?? undefined,
+    type: r.type, parentId: r.parent_id ?? null, order: r.order ?? 0,
+    archived: !!r.archived,
+  };
+}
+function itemToDb(i: PublicAreaItem): any {
+  return {
+    id: i.id, node_id: i.nodeId, zone_id: i.zoneId ?? null,
+    item_name: i.itemName, spec: i.spec, category_id: i.categoryId,
+    qty: i.qty, spare: i.spare, supplier_id: i.supplierId ?? null,
+    unit_price_eur: i.unitPriceEur ?? null, status: i.status,
+    ordered_qty: i.orderedQty, delivered_qty: i.deliveredQty,
+    notes: i.notes, created_at: i.createdAt, updated_at: i.updatedAt,
+  };
+}
+function itemFromDb(r: any): PublicAreaItem {
+  return {
+    id: r.id, nodeId: r.node_id, zoneId: r.zone_id ?? undefined,
+    itemName: r.item_name ?? '', spec: r.spec ?? '',
+    categoryId: r.category_id ?? '', qty: r.qty ?? 0, spare: r.spare ?? 0,
+    supplierId: r.supplier_id ?? undefined,
+    unitPriceEur: r.unit_price_eur ?? undefined,
+    status: r.status ?? 'Planned',
+    orderedQty: r.ordered_qty ?? 0, deliveredQty: r.delivered_qty ?? 0,
+    notes: r.notes ?? '',
+    createdAt: r.created_at, updatedAt: r.updated_at,
+  };
+}
+
+async function pushNodesToCloud(rows: PublicAreaNode[]) {
+  try {
+    const { data: existing } = await supabase.from('public_area_nodes').select('id');
+    const cloudIds = new Set((existing ?? []).map(r => r.id));
+    const localIds = new Set(rows.map(r => r.id));
+    const toDelete = [...cloudIds].filter(id => !localIds.has(id));
+    if (toDelete.length > 0) await supabase.from('public_area_nodes').delete().in('id', toDelete);
+    if (rows.length > 0) await supabase.from('public_area_nodes').upsert(rows.map(nodeToDb));
+  } catch (err) { console.error('[public_area_nodes] sync failed', err); }
+}
+async function pushItemsToCloud(rows: PublicAreaItem[]) {
+  try {
+    const { data: existing } = await supabase.from('public_area_items').select('id');
+    const cloudIds = new Set((existing ?? []).map(r => r.id));
+    const localIds = new Set(rows.map(r => r.id));
+    const toDelete = [...cloudIds].filter(id => !localIds.has(id));
+    if (toDelete.length > 0) await supabase.from('public_area_items').delete().in('id', toDelete);
+    if (rows.length > 0) await supabase.from('public_area_items').upsert(rows.map(itemToDb));
+  } catch (err) { console.error('[public_area_items] sync failed', err); }
+}
+
+export async function hydratePublicAreasFromCloud(): Promise<void> {
+  try {
+    const [nRes, iRes] = await Promise.all([
+      supabase.from('public_area_nodes').select('*').order('order', { ascending: true }),
+      supabase.from('public_area_items').select('*'),
+    ]);
+    if (nRes.error) throw nRes.error;
+    if (iRes.error) throw iRes.error;
+    const nodes = (nRes.data ?? []).map(nodeFromDb);
+    const items = (iRes.data ?? []).map(itemFromDb);
+
+    const cachedNodes = loadNodes();
+    const cachedItems = loadItems();
+    const firstHydrate = !localStorage.getItem(HYDRATED_FLAG);
+
+    if (firstHydrate && nodes.length === 0 && cachedNodes.length > 0) {
+      await pushNodesToCloud(cachedNodes);
+      await pushItemsToCloud(cachedItems);
+      localStorage.setItem(HYDRATED_FLAG, '1');
+      return;
+    }
+
+    if (nodes.length === 0) {
+      // Cloud is empty AND no local cache → seed locally + push.
+      const seeded = buildSeed();
+      lastNodesSnap = JSON.stringify(seeded);
+      localStorage.setItem(NODES_KEY, lastNodesSnap);
+      await pushNodesToCloud(seeded);
+      localStorage.setItem(HYDRATED_FLAG, '1');
+      nodeListeners.forEach(l => { try { l(seeded); } catch {} });
+      return;
+    }
+
+    lastNodesSnap = JSON.stringify(nodes);
+    lastItemsSnap = JSON.stringify(items);
+    localStorage.setItem(NODES_KEY, lastNodesSnap);
+    localStorage.setItem(ITEMS_KEY, lastItemsSnap);
+    localStorage.setItem(HYDRATED_FLAG, '1');
+    nodeListeners.forEach(l => { try { l(nodes); } catch {} });
+    itemListeners.forEach(l => { try { l(items); } catch {} });
+  } catch (err) {
+    console.error('[publicAreas] hydrate failed', err);
+  }
+}
 
 // ── Factory ───────────────────────────────────────────────────────────────
 export function emptyItem(nodeId: string, categoryId = ''): PublicAreaItem {

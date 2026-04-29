@@ -16,7 +16,7 @@ import {
   StandardItem, ApartmentType, APARTMENT_TYPES,
   loadStandardItems, saveStandardItems, genItemId,
   ApartmentTypeQuantity, loadApartmentTypeQuantities, saveApartmentTypeQuantities, genQtyId,
-  computeQuantity,
+  computeQuantity, subscribeStandardItems, subscribeApartmentTypeQuantities,
 } from '@/data/standardItemsData';
 import { Supplier, loadSuppliers } from '@/data/supplierData';
 import { Button } from '@/components/ui/button';
@@ -85,6 +85,10 @@ export default function Standard() {
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [justSaved, setJustSaved] = useState(false);
   const [openBuilding, setOpenBuilding] = useState<string | null>(null);
+
+  // Sync with cloud after hydration
+  useEffect(() => subscribeStandardItems(setItems), []);
+  useEffect(() => subscribeApartmentTypeQuantities(setQtys), []);
 
   const handleManualSave = useCallback(() => {
     saveCategories(categories);

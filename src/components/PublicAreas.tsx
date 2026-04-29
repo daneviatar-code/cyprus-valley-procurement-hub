@@ -17,13 +17,14 @@ import {
   loadNodes, loadItems, saveNodes, saveItems,
   genNodeId, emptyItem, computeItem, summarizeScope,
   getChildren, getScopeNodeIds, getNodeBreadcrumb,
+  subscribePublicAreaNodes, subscribePublicAreaItems,
 } from '@/data/publicAreasData';
 import {
   ProcurementCategory, loadCategories,
   STANDARD_STATUSES, StandardStatus, eur,
 } from '@/data/roomStandardsData';
 import { Supplier, loadSuppliers } from '@/data/supplierData';
-import { PublicAreaPlan, loadPlans, savePlans } from '@/data/publicAreaPlansData';
+import { PublicAreaPlan, loadPlans, savePlans, subscribePublicAreaPlans } from '@/data/publicAreaPlansData';
 import NodePlans from './NodePlans';
 
 type View = 'editor' | 'bySupplier' | 'byCategory';
@@ -48,6 +49,11 @@ export default function PublicAreas(_: { masterData?: unknown; userData?: unknow
   useEffect(() => { saveNodes(nodes); }, [nodes]);
   useEffect(() => { saveItems(items); }, [items]);
   useEffect(() => { savePlans(plans); }, [plans]);
+
+  // Sync with cloud after hydration
+  useEffect(() => subscribePublicAreaNodes(setNodes), []);
+  useEffect(() => subscribePublicAreaItems(setItems), []);
+  useEffect(() => subscribePublicAreaPlans(setPlans), []);
 
   // Auto-select first leaf
   useEffect(() => {
