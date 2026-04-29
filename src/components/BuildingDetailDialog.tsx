@@ -21,6 +21,52 @@ import { RoomSize, ROOM_SIZE_LABELS } from '@/data/masterData';
 import { Supplier } from '@/data/supplierData';
 import SpecCell from './SpecCell';
 
+type SaveFilePickerOptions = {
+  suggestedName?: string;
+  types?: { description: string; accept: Record<string, string[]> }[];
+};
+
+const saveBlobToComputer = async (blob: Blob, fileName: string, fallbackLabel: string) => {
+  const picker = (window as typeof window & {
+    showSaveFilePicker?: (options: SaveFilePickerOptions) => Promise<{
+      createWritable: () => Promise<{ write: (data: Blob) => Promise<void>; close: () => Promise<void> }>;
+    }>;
+  }).showSaveFilePicker;
+
+  if (picker) {
+    try {
+      const extension = fileName.split('.').pop()?.toLowerCase() || '';
+      const handle = await picker({
+        suggestedName: fileName,
+        types: [{
+          description: fallbackLabel,
+          accept: { [blob.type || 'application/octet-stream']: extension ? [`.${extension}`] : [] },
+        }],
+      });
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      return 'saved' as const;
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return 'cancelled' as const;
+    }
+  }
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  a.rel = 'noopener';
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 1000);
+  return 'downloaded' as const;
+};
+
 type PdfCol = 'item' | 'spec' | 'dimensions' | 'supplier' | 'perType' | 'qty' | 'total';
 const PDF_COL_LABELS: Record<PdfCol, string> = {
   item: 'Item Name', spec: 'Spec', dimensions: 'Dimensions', supplier: 'Supplier',
