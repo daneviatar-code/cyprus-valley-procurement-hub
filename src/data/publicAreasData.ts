@@ -164,8 +164,8 @@ type NodesListener = (rows: PublicAreaNode[]) => void;
 type ItemsListener = (rows: PublicAreaItem[]) => void;
 const nodeListeners = new Set<NodesListener>();
 const itemListeners = new Set<ItemsListener>();
-export function subscribePublicAreaNodes(fn: NodesListener) { nodeListeners.add(fn); return () => nodeListeners.delete(fn); }
-export function subscribePublicAreaItems(fn: ItemsListener) { itemListeners.add(fn); return () => itemListeners.delete(fn); }
+export function subscribePublicAreaNodes(fn: NodesListener) { nodeListeners.add(fn); return () => { nodeListeners.delete(fn); }; }
+export function subscribePublicAreaItems(fn: ItemsListener) { itemListeners.add(fn); return () => { itemListeners.delete(fn); }; }
 
 export function loadNodes(): PublicAreaNode[] {
   try {

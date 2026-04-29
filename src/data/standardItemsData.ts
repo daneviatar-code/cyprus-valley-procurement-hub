@@ -63,10 +63,10 @@ const itemListeners = new Set<ItemsListener>();
 const qtyListeners = new Set<QtysListener>();
 
 export function subscribeStandardItems(fn: ItemsListener): () => void {
-  itemListeners.add(fn); return () => itemListeners.delete(fn);
+  itemListeners.add(fn); return () => { itemListeners.delete(fn); };
 }
 export function subscribeApartmentTypeQuantities(fn: QtysListener): () => void {
-  qtyListeners.add(fn); return () => qtyListeners.delete(fn);
+  qtyListeners.add(fn); return () => { qtyListeners.delete(fn); };
 }
 
 // ── Sync cache reads ────────────────────────────────────────────────────

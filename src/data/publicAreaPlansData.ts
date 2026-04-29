@@ -47,7 +47,7 @@ import { supabase } from '@/integrations/supabase/client';
 const HYDRATED_FLAG = 'cyprus-valley_publicAreaPlans_hydrated';
 type Listener = (rows: PublicAreaPlan[]) => void;
 const planListeners = new Set<Listener>();
-export function subscribePublicAreaPlans(fn: Listener) { planListeners.add(fn); return () => planListeners.delete(fn); }
+export function subscribePublicAreaPlans(fn: Listener) { planListeners.add(fn); return () => { planListeners.delete(fn); }; }
 
 export function loadPlans(): PublicAreaPlan[] {
   try {
