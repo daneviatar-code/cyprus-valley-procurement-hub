@@ -243,21 +243,31 @@ export default function BuildingDetailDialog({
     });
 
     const fileName = `building-${building}-breakdown.pdf`;
-    const pdfBlob = doc.output('blob');
-    const blobUrl = URL.createObjectURL(pdfBlob);
-    setLastPdf({ url: blobUrl, fileName });
-
-    // Open in new tab so the user sees the PDF immediately
     try {
-      window.open(blobUrl, '_blank');
-    } catch (e) {
-      console.warn('Could not open PDF in new tab', e);
-    }
+      const pdfBlob = doc.output('blob');
+      const blobUrl = URL.createObjectURL(pdfBlob);
+      setLastPdf({ url: blobUrl, fileName });
 
-    toast.success(`PDF מוכן: ${fileName}`, {
-      description: 'נוסף כפתור פתיחה והורדה בתוך החלון',
-      duration: 6000,
-    });
+      // Force download via anchor (works inside dialogs / when popups blocked)
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = fileName;
+      a.rel = 'noopener';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => document.body.removeChild(a), 100);
+
+      toast.success(`PDF הורד: ${fileName}`, {
+        description: 'אם לא רואים — בדוק את תיקיית ההורדות או השתמש בכפתורי "פתח/הורד" בחלון',
+        duration: 6000,
+      });
+    } catch (err) {
+      console.error('PDF export failed', err);
+      // Fallback to jsPDF native save
+      try { doc.save(fileName); } catch {}
+      toast.error('שגיאה בייצוא PDF — נוסה להוריד ישירות');
+    }
   };
 
   return (
