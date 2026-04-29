@@ -86,6 +86,10 @@ export default function Standard() {
   const [justSaved, setJustSaved] = useState(false);
   const [openBuilding, setOpenBuilding] = useState<string | null>(null);
 
+  // Sync with cloud after hydration
+  useEffect(() => subscribeStandardItems(setItems), []);
+  useEffect(() => subscribeApartmentTypeQuantities(setQtys), []);
+
   const handleManualSave = useCallback(() => {
     saveCategories(categories);
     saveStandardItems(items);
