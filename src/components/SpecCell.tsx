@@ -12,9 +12,10 @@ interface SpecCellProps {
   inputClassName?: string;
   placeholder?: string;
   inline?: boolean; // use bare input style (for PublicAreas compact tables)
+  viewOnly?: boolean; // render only the expand button (no input)
 }
 
-export default function SpecCell({ value, onChange, itemName, inputClassName, placeholder = 'Spec/model', inline }: SpecCellProps) {
+export default function SpecCell({ value, onChange, itemName, inputClassName, placeholder = 'Spec/model', inline, viewOnly }: SpecCellProps) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(value);
 
