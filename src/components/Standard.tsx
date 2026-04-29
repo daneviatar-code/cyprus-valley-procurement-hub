@@ -854,9 +854,12 @@ function SortableItemRow({
           placeholder="Item name…" />
       </td>
       <td className={td}>
-        <Input className={inputCls + ' min-w-[140px]'} value={it.spec}
-          onChange={e => onUpdateItem(it.id, { spec: e.target.value })}
-          placeholder="Spec/model" />
+        <SpecCell
+          value={it.spec}
+          onChange={v => onUpdateItem(it.id, { spec: v })}
+          itemName={it.itemName}
+          inputClassName={inputCls + ' min-w-[140px]'}
+        />
       </td>
       <td className={td}>
         <Input className={inputCls + ' min-w-[120px]'} value={it.dimensions || ''}
