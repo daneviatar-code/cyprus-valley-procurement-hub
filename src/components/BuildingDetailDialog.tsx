@@ -132,7 +132,7 @@ export default function BuildingDetailDialog({
       'Total Qty', 'Total Cost €',
     ];
     const lines = [header.join(',')];
-    rows.forEach(r => {
+    filteredRows.forEach(r => {
       const cells: (string | number)[] = [
         r.categoryName, r.item.itemName, r.item.spec || '', r.supplierName,
         (r.item.unitPriceEur || 0).toFixed(2),
