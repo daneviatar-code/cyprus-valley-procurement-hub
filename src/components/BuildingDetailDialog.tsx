@@ -165,7 +165,14 @@ export default function BuildingDetailDialog({
               No items with quantities for this building.
             </div>
           ) : (
-            <table className="w-full text-sm">
+            <table className="w-full text-sm table-fixed">
+              <colgroup>
+                <col style={{ width: '32%' }} />
+                <col style={{ width: '14%' }} />
+                {types.map(at => <col key={at} style={{ width: `${Math.max(10, 38 / types.length)}%` }} />)}
+                <col style={{ width: '10%' }} />
+                <col style={{ width: '12%' }} />
+              </colgroup>
               <thead className="sticky top-0 bg-card z-10">
                 <tr className="border-b">
                   <th className="text-left text-[10px] font-medium uppercase tracking-wider text-muted-foreground px-2 py-2">Item</th>
@@ -176,7 +183,7 @@ export default function BuildingDetailDialog({
                       <span className="font-normal normal-case text-[9px]">per × units</span>
                     </th>
                   ))}
-                  <th className="text-right text-[10px] font-medium uppercase tracking-wider text-muted-foreground px-2 py-2">Total Qty</th>
+                  <th className="text-right text-[10px] font-medium uppercase tracking-wider text-muted-foreground px-2 py-2 bg-primary/5">Qty לבניין</th>
                   <th className="text-right text-[10px] font-medium uppercase tracking-wider text-muted-foreground px-2 py-2">Total €</th>
                 </tr>
               </thead>
@@ -190,20 +197,20 @@ export default function BuildingDetailDialog({
                         <td colSpan={2 + types.length} className="px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-foreground">
                           {catName}
                         </td>
-                        <td className="px-2 py-1.5 text-right text-[11px] font-mono font-semibold">{catQty.toLocaleString()}</td>
+                        <td className="px-2 py-1.5 text-right text-[11px] font-mono font-semibold bg-primary/5">{catQty.toLocaleString()}</td>
                         <td className="px-2 py-1.5 text-right text-[11px] font-mono font-semibold">{eur(catCost)}</td>
                       </tr>
                       {catRows.map(r => (
-                        <tr key={r.item.id} className="border-b hover:bg-muted/20">
-                          <td className="px-2 py-1.5">
-                            <div className="font-medium text-foreground">{r.item.itemName || '—'}</div>
-                            {r.item.spec && <div className="text-[10px] text-muted-foreground">{r.item.spec}</div>}
+                        <tr key={r.item.id} className="border-b hover:bg-muted/20 align-top">
+                          <td className="px-2 py-1.5 min-w-0">
+                            <div className="font-medium text-foreground truncate">{r.item.itemName || '—'}</div>
+                            {r.item.spec && <div className="text-[10px] text-muted-foreground line-clamp-2" title={r.item.spec}>{r.item.spec}</div>}
                           </td>
-                          <td className="px-2 py-1.5 text-xs text-muted-foreground">{r.supplierName || '—'}</td>
+                          <td className="px-2 py-1.5 text-xs text-muted-foreground truncate">{r.supplierName || '—'}</td>
                           {types.map(at => {
                             const d = r.perType[at];
                             return (
-                              <td key={at} className="px-2 py-1.5 text-right font-mono text-xs">
+                              <td key={at} className="px-2 py-1.5 text-right font-mono text-xs whitespace-nowrap">
                                 {d ? (
                                   <>
                                     <span className="text-muted-foreground">{d.perUnit}×{d.units}</span>{' '}
@@ -213,8 +220,8 @@ export default function BuildingDetailDialog({
                               </td>
                             );
                           })}
-                          <td className="px-2 py-1.5 text-right font-mono font-semibold text-foreground">{r.totalQty.toLocaleString()}</td>
-                          <td className="px-2 py-1.5 text-right font-mono text-foreground">{eur(r.totalCost)}</td>
+                          <td className="px-2 py-1.5 text-right font-mono font-bold text-foreground bg-primary/5 whitespace-nowrap">{r.totalQty.toLocaleString()}</td>
+                          <td className="px-2 py-1.5 text-right font-mono text-foreground whitespace-nowrap">{eur(r.totalCost)}</td>
                         </tr>
                       ))}
                     </>
