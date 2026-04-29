@@ -209,7 +209,7 @@ export default function BuildingDetailDialog({
       <h1>Building ${esc(building)} — Quantity Breakdown</h1>
       <div class="sub" dir="rtl">פירוט כמויות לבניין · ${totalUnits} units · ${types.map(t => `${esc(ROOM_SIZE_LABELS[t])}: ${buildingCounts[t] || 0}`).join(' · ')}</div>
       <div class="totals">
-        <div>ITEMS<b>${rows.length.toLocaleString()}</b></div>
+        <div>ITEMS<b>${filteredRows.length.toLocaleString()}</b></div>
         <div>TOTAL QTY<b>${totals.qty.toLocaleString()}</b></div>
         <div>TOTAL COST<b>${esc(eur(totals.cost))}</b></div>
       </div>
