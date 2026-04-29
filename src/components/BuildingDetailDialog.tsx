@@ -2,10 +2,12 @@
  * BuildingDetailDialog — shows a per-item breakdown for a single building.
  * Triggered from the "Breakdown per Building" cards in the Standard tab.
  */
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Download, FileText } from 'lucide-react';
 import { eur, ProcurementCategory } from '@/data/roomStandardsData';
@@ -15,6 +17,13 @@ import {
 import { RoomSize, ROOM_SIZE_LABELS } from '@/data/masterData';
 import { Supplier } from '@/data/supplierData';
 import SpecCell from './SpecCell';
+
+type PdfCol = 'item' | 'spec' | 'dimensions' | 'supplier' | 'perType' | 'qty' | 'total';
+const PDF_COL_LABELS: Record<PdfCol, string> = {
+  item: 'Item Name', spec: 'Spec', dimensions: 'Dimensions', supplier: 'Supplier',
+  perType: 'Per-type breakdown', qty: 'Qty לבניין', total: 'Total €',
+};
+const ALL_PDF_COLS: PdfCol[] = ['item', 'spec', 'dimensions', 'supplier', 'perType', 'qty', 'total'];
 
 type View = 'standard' | ApartmentType;
 
@@ -34,6 +43,12 @@ export default function BuildingDetailDialog({
   open, onClose, building, view, items, qtysByItem, categories, suppliers, buildingCounts,
 }: Props) {
   const types: ApartmentType[] = view === 'standard' ? [...APARTMENT_TYPES] : [view as ApartmentType];
+  const [pdfCols, setPdfCols] = useState<Set<PdfCol>>(new Set(ALL_PDF_COLS));
+  const togglePdfCol = (c: PdfCol) => setPdfCols(prev => {
+    const next = new Set(prev);
+    next.has(c) ? next.delete(c) : next.add(c);
+    return next;
+  });
 
   const rows = useMemo(() => {
     if (!building) return [];
