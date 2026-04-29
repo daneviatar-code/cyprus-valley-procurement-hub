@@ -998,7 +998,14 @@ function TypeEditor({
             return (
               <tr key={it.id} className="border-b last:border-0 hover:bg-muted/30">
                 <td className={td}><ReadOnlyChip>{it.itemName || '(unnamed)'}</ReadOnlyChip></td>
-                <td className={td}><ReadOnlyChip>{it.spec || '—'}</ReadOnlyChip></td>
+                <td className={td}>
+                  <div className="flex items-center gap-1">
+                    <ReadOnlyChip>{it.spec || '—'}</ReadOnlyChip>
+                    {it.spec && (
+                      <SpecCell value={it.spec} onChange={() => {}} itemName={it.itemName} inline />
+                    )}
+                  </div>
+                </td>
                 <td className={td}><ReadOnlyChip>{it.dimensions || '—'}</ReadOnlyChip></td>
                 <td className={td}>
                   <Input type="number" className={inputCls + ' text-right w-16'} value={q.qtyPerPackage}
