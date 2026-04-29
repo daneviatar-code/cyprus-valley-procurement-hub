@@ -42,6 +42,7 @@ export interface ApartmentTypeQuantity {
 }
 
 import { supabase } from '@/integrations/supabase/client';
+import { enqueue } from '@/lib/cloudWriteQueue';
 
 const ITEMS_KEY = 'cyprus-valley_standardItems';
 const QUANTITIES_KEY = 'cyprus-valley_apartmentTypeQuantities';
@@ -88,7 +89,7 @@ export function saveStandardItems(rows: StandardItem[]) {
   if (json === lastItemsSnap) return;
   lastItemsSnap = json;
   localStorage.setItem(ITEMS_KEY, json);
-  void pushItemsToCloud(rows);
+  void enqueue('standard_items', () => pushItemsToCloud(rows));
 }
 
 export function loadApartmentTypeQuantities(): ApartmentTypeQuantity[] {
@@ -109,7 +110,7 @@ export function saveApartmentTypeQuantities(rows: ApartmentTypeQuantity[]) {
   if (json === lastQtysSnap) return;
   lastQtysSnap = json;
   localStorage.setItem(QUANTITIES_KEY, json);
-  void pushQtysToCloud(rows);
+  void enqueue('apartment_type_quantities', () => pushQtysToCloud(rows));
 }
 
 // ── Cloud push ──────────────────────────────────────────────────────────

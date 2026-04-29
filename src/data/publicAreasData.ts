@@ -158,6 +158,7 @@ function migrateFromLegacy(): PublicAreaNode[] | null {
 
 // ── Loaders / Savers ──────────────────────────────────────────────────────
 import { supabase } from '@/integrations/supabase/client';
+import { enqueue } from '@/lib/cloudWriteQueue';
 
 const HYDRATED_FLAG = 'cyprus-valley_publicAreas_hydrated';
 type NodesListener = (rows: PublicAreaNode[]) => void;
@@ -191,7 +192,7 @@ export function saveNodes(d: PublicAreaNode[]) {
   if (json === lastNodesSnap) return;
   lastNodesSnap = json;
   localStorage.setItem(NODES_KEY, json);
-  void pushNodesToCloud(d);
+  void enqueue('public_area_nodes', () => pushNodesToCloud(d));
 }
 
 export function loadItems(): PublicAreaItem[] {
@@ -216,7 +217,7 @@ export function saveItems(d: PublicAreaItem[]) {
   if (json === lastItemsSnap) return;
   lastItemsSnap = json;
   localStorage.setItem(ITEMS_KEY, json);
-  void pushItemsToCloud(d);
+  void enqueue('public_area_items', () => pushItemsToCloud(d));
 }
 
 // ── Cloud sync ────────────────────────────────────────────────────────────

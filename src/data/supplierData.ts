@@ -4,6 +4,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { enqueue } from '@/lib/cloudWriteQueue';
 
 export interface SupplierItem {
   itemName: string;
@@ -105,8 +106,8 @@ function writeCache(data: Supplier[]) {
 
 export function saveSuppliers(data: Supplier[]): void {
   writeCache(data);
-  // Push entire snapshot to cloud (small dataset, simple correctness).
-  void pushAllToCloud(data);
+  // Push serialized to avoid races between rapid edits.
+  void enqueue('suppliers', () => pushAllToCloud(data));
 }
 
 async function pushAllToCloud(data: Supplier[]): Promise<void> {
