@@ -42,6 +42,13 @@ export const genPlanId = () =>
   `pap_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
 // ── Persistence (metadata) ───────────────────────────────────────────────
+import { supabase } from '@/integrations/supabase/client';
+
+const HYDRATED_FLAG = 'cyprus-valley_publicAreaPlans_hydrated';
+type Listener = (rows: PublicAreaPlan[]) => void;
+const planListeners = new Set<Listener>();
+export function subscribePublicAreaPlans(fn: Listener) { planListeners.add(fn); return () => planListeners.delete(fn); }
+
 export function loadPlans(): PublicAreaPlan[] {
   try {
     const raw = localStorage.getItem(PLANS_META_KEY);
@@ -50,8 +57,52 @@ export function loadPlans(): PublicAreaPlan[] {
     return Array.isArray(p) ? p : [];
   } catch { return []; }
 }
-export const savePlans = (plans: PublicAreaPlan[]) =>
-  localStorage.setItem(PLANS_META_KEY, JSON.stringify(plans));
+
+let lastPlansSnap = '';
+export function savePlans(plans: PublicAreaPlan[]) {
+  const json = JSON.stringify(plans);
+  if (json === lastPlansSnap) return;
+  lastPlansSnap = json;
+  localStorage.setItem(PLANS_META_KEY, json);
+  void pushPlansToCloud(plans);
+}
+
+async function pushPlansToCloud(rows: PublicAreaPlan[]) {
+  try {
+    const { data: existing } = await supabase.from('public_area_plans').select('id');
+    const cloudIds = new Set((existing ?? []).map(r => r.id));
+    const localIds = new Set(rows.map(r => r.id));
+    const toDelete = [...cloudIds].filter(id => !localIds.has(id));
+    if (toDelete.length > 0) await supabase.from('public_area_plans').delete().in('id', toDelete);
+    if (rows.length > 0) {
+      // Store the entire metadata blob in `data`. Keep `node_id` denormalized for queries.
+      await supabase.from('public_area_plans').upsert(
+        rows.map(p => ({ id: p.id, node_id: p.nodeId, data: p as any }))
+      );
+    }
+  } catch (err) { console.error('[public_area_plans] sync failed', err); }
+}
+
+export async function hydratePublicAreaPlansFromCloud(): Promise<void> {
+  try {
+    const { data, error } = await supabase.from('public_area_plans').select('*');
+    if (error) throw error;
+    const rows = (data ?? []).map((r: any) => r.data as PublicAreaPlan).filter(Boolean);
+    const cached = loadPlans();
+    const firstHydrate = !localStorage.getItem(HYDRATED_FLAG);
+    if (firstHydrate && rows.length === 0 && cached.length > 0) {
+      await pushPlansToCloud(cached);
+      localStorage.setItem(HYDRATED_FLAG, '1');
+      return;
+    }
+    lastPlansSnap = JSON.stringify(rows);
+    localStorage.setItem(PLANS_META_KEY, lastPlansSnap);
+    localStorage.setItem(HYDRATED_FLAG, '1');
+    planListeners.forEach(l => { try { l(rows); } catch {} });
+  } catch (err) {
+    console.error('[publicAreaPlans] hydrate failed', err);
+  }
+}
 
 // ── IndexedDB helpers (blobs) ────────────────────────────────────────────
 function openDb(): Promise<IDBDatabase> {
