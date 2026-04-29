@@ -302,7 +302,7 @@ export default function BuildingDetailDialog({
         <div className="grid grid-cols-3 gap-3 bg-muted/30 border rounded-md p-3">
           <div>
             <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Items</div>
-            <div className="text-sm font-semibold font-mono">{rows.length.toLocaleString()}</div>
+            <div className="text-sm font-semibold font-mono">{filteredRows.length.toLocaleString()}</div>
           </div>
           <div>
             <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Total Qty</div>
@@ -313,6 +313,38 @@ export default function BuildingDetailDialog({
             <div className="text-sm font-semibold font-mono">{eur(totals.cost)}</div>
           </div>
         </div>
+
+        {/* Category tabs */}
+        {allCategories.length > 0 && (
+          <div className="flex flex-wrap gap-1 border-b -mb-px">
+            <button
+              onClick={() => setActiveCategory('__all__')}
+              className={`px-3 py-1.5 text-xs font-medium rounded-t-md border border-b-0 transition-colors ${
+                activeCategory === '__all__'
+                  ? 'bg-card border-border text-foreground'
+                  : 'bg-transparent border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40'
+              }`}
+            >
+              All <span className="text-muted-foreground/70 ml-1">({rows.length})</span>
+            </button>
+            {allCategories.map(cat => {
+              const count = rows.filter(r => r.categoryName === cat).length;
+              return (
+                <button
+                  key={cat}
+                  onClick={() => setActiveCategory(cat)}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-t-md border border-b-0 transition-colors ${
+                    activeCategory === cat
+                      ? 'bg-card border-border text-foreground'
+                      : 'bg-transparent border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40'
+                  }`}
+                >
+                  {cat} <span className="text-muted-foreground/70 ml-1">({count})</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         <div className="overflow-auto flex-1 -mx-6 px-6">
           {grouped.length === 0 ? (
