@@ -49,16 +49,35 @@ export function loadCategories(): ProcurementCategory[] {
     const raw = localStorage.getItem(CATEGORIES_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) return normalizeCategories(parsed);
     }
   } catch {}
-  const seeded = SEED_CATEGORIES.map(c => ({ ...c, id: genCategoryId() }));
+  const seeded = SEED_CATEGORIES.map(c => ({ ...c }));
   saveCategories(seeded);
   return seeded;
 }
 
 export function saveCategories(data: ProcurementCategory[]) {
   localStorage.setItem(CATEGORIES_KEY, JSON.stringify(data));
+}
+
+function normalizeCategories(data: ProcurementCategory[]): ProcurementCategory[] {
+  const seedsByName = new Map(SEED_CATEGORIES.map(c => [c.nameEn.toLowerCase(), c]));
+  let changed = false;
+  const normalized = data.map(cat => {
+    const seed = seedsByName.get(cat.nameEn.toLowerCase());
+    if (!seed || cat.id === seed.id) return cat;
+    changed = true;
+    return { ...cat, id: seed.id };
+  });
+  SEED_CATEGORIES.forEach(seed => {
+    if (!normalized.some(cat => cat.id === seed.id || cat.nameEn.toLowerCase() === seed.nameEn.toLowerCase())) {
+      normalized.push({ ...seed });
+      changed = true;
+    }
+  });
+  if (changed) saveCategories(normalized);
+  return normalized;
 }
 
 // ── Room Standards ────────────────────────────────────────────────────────
