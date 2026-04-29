@@ -28,6 +28,9 @@ const PDF_COL_LABELS: Record<PdfCol, string> = {
 };
 const ALL_PDF_COLS: PdfCol[] = ['item', 'spec', 'dimensions', 'supplier', 'unitPrice', 'perType', 'qty', 'total'];
 
+const eurFull = (n: number): string =>
+  `€${(n || 0).toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
 type View = 'standard' | ApartmentType;
 type ReadyFile = { url: string; fileName: string };
 
@@ -218,7 +221,7 @@ export default function BuildingDetailDialog({
         if (show('item')) row.push(show('spec') && r.item.spec ? `${r.item.itemName || '—'}\n${r.item.spec}` : r.item.itemName || '—');
         if (show('dimensions')) row.push(r.item.dimensions || '—');
         if (show('supplier')) row.push(r.supplierName || '—');
-        if (show('unitPrice')) row.push(eur(r.item.unitPriceEur || 0));
+        if (show('unitPrice')) row.push(eurFull(r.item.unitPriceEur || 0));
         if (showPerType) types.forEach(at => {
           const d = r.perType[at];
           row.push(d ? `${d.perUnit}x${d.units} = ${d.qty}` : '—');
@@ -460,7 +463,7 @@ export default function BuildingDetailDialog({
                           </td>
                           <td className="px-2 py-1.5 text-xs text-foreground/80 whitespace-pre-wrap break-words">{r.item.dimensions || '—'}</td>
                           <td className="px-2 py-1.5 text-xs text-muted-foreground truncate">{r.supplierName || '—'}</td>
-                          <td className="px-2 py-1.5 text-right font-mono text-xs text-foreground whitespace-nowrap">{eur(r.item.unitPriceEur || 0)}</td>
+                          <td className="px-2 py-1.5 text-right font-mono text-xs text-foreground whitespace-nowrap">{eurFull(r.item.unitPriceEur || 0)}</td>
                           {types.map(at => {
                             const d = r.perType[at];
                             return (
