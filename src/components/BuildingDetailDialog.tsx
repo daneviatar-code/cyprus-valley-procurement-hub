@@ -2,10 +2,12 @@
  * BuildingDetailDialog — shows a per-item breakdown for a single building.
  * Triggered from the "Breakdown per Building" cards in the Standard tab.
  */
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Download, FileText } from 'lucide-react';
 import { eur, ProcurementCategory } from '@/data/roomStandardsData';
@@ -15,6 +17,13 @@ import {
 import { RoomSize, ROOM_SIZE_LABELS } from '@/data/masterData';
 import { Supplier } from '@/data/supplierData';
 import SpecCell from './SpecCell';
+
+type PdfCol = 'item' | 'spec' | 'dimensions' | 'supplier' | 'perType' | 'qty' | 'total';
+const PDF_COL_LABELS: Record<PdfCol, string> = {
+  item: 'Item Name', spec: 'Spec', dimensions: 'Dimensions', supplier: 'Supplier',
+  perType: 'Per-type breakdown', qty: 'Qty לבניין', total: 'Total €',
+};
+const ALL_PDF_COLS: PdfCol[] = ['item', 'spec', 'dimensions', 'supplier', 'perType', 'qty', 'total'];
 
 type View = 'standard' | ApartmentType;
 
@@ -34,6 +43,12 @@ export default function BuildingDetailDialog({
   open, onClose, building, view, items, qtysByItem, categories, suppliers, buildingCounts,
 }: Props) {
   const types: ApartmentType[] = view === 'standard' ? [...APARTMENT_TYPES] : [view as ApartmentType];
+  const [pdfCols, setPdfCols] = useState<Set<PdfCol>>(new Set(ALL_PDF_COLS));
+  const togglePdfCol = (c: PdfCol) => setPdfCols(prev => {
+    const next = new Set(prev);
+    next.has(c) ? next.delete(c) : next.add(c);
+    return next;
+  });
 
   const rows = useMemo(() => {
     if (!building) return [];
@@ -130,30 +145,44 @@ export default function BuildingDetailDialog({
     const w = window.open('', '_blank', 'width=900,height=700');
     if (!w) return;
     const esc = (s: string) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
-    const typeHeaders = types.map(at => `<th style="text-align:right;padding:6px 8px;border-bottom:1px solid #ddd;font-size:10px;text-transform:uppercase;color:#666">${esc(ROOM_SIZE_LABELS[at])}<br/><span style="font-weight:normal;font-size:9px">per × units</span></th>`).join('');
+    const show = (c: PdfCol) => pdfCols.has(c);
+    const showPerType = show('perType');
+
+    const headers: string[] = [];
+    if (show('item')) headers.push('<th>Item</th>');
+    if (show('dimensions')) headers.push('<th>Dimensions</th>');
+    if (show('supplier')) headers.push('<th>Supplier</th>');
+    if (showPerType) types.forEach(at => headers.push(`<th style="text-align:right;font-size:10px;text-transform:uppercase;color:#666">${esc(ROOM_SIZE_LABELS[at])}<br/><span style="font-weight:normal;font-size:9px">per × units</span></th>`));
+    if (show('qty')) headers.push('<th style="text-align:right;background:#f5f8ff">Qty לבניין</th>');
+    if (show('total')) headers.push('<th style="text-align:right">Total €</th>');
+
+    const colCount = headers.length;
+    const beforeQtyCount = (show('item') ? 1 : 0) + (show('dimensions') ? 1 : 0) + (show('supplier') ? 1 : 0) + (showPerType ? types.length : 0);
+
     const bodyRows = grouped.map(([catName, catRows]) => {
       const catQty = catRows.reduce((s, r) => s + r.totalQty, 0);
       const catCost = catRows.reduce((s, r) => s + r.totalCost, 0);
-      const itemRows = catRows.map(r => `
-        <tr style="border-bottom:1px solid #eee;vertical-align:top">
-          <td style="padding:6px 8px">
+      const itemRows = catRows.map(r => {
+        const cells: string[] = [];
+        if (show('item')) cells.push(`<td style="padding:6px 8px">
             <div style="font-weight:600">${esc(r.item.itemName || '—')}</div>
-            ${r.item.spec ? `<div style="font-size:10px;color:#666;white-space:pre-wrap;margin-top:2px">${esc(r.item.spec)}</div>` : ''}
-          </td>
-          <td style="padding:6px 8px;font-size:11px;color:#666">${esc(r.supplierName || '—')}</td>
-          ${types.map(at => {
-            const d = r.perType[at];
-            return `<td style="padding:6px 8px;text-align:right;font-family:monospace;font-size:11px;white-space:nowrap">${d ? `<span style="color:#666">${d.perUnit}×${d.units}</span> <b>= ${d.qty}</b>` : '—'}</td>`;
-          }).join('')}
-          <td style="padding:6px 8px;text-align:right;font-family:monospace;font-weight:700;background:#f5f8ff">${r.totalQty.toLocaleString()}</td>
-          <td style="padding:6px 8px;text-align:right;font-family:monospace">${esc(eur(r.totalCost))}</td>
-        </tr>`).join('');
-      return `
-        <tr style="background:#f0f0f0">
-          <td colspan="${2 + types.length}" style="padding:6px 8px;font-size:11px;font-weight:700;text-transform:uppercase">${esc(catName)}</td>
-          <td style="padding:6px 8px;text-align:right;font-family:monospace;font-weight:700;background:#f5f8ff">${catQty.toLocaleString()}</td>
-          <td style="padding:6px 8px;text-align:right;font-family:monospace;font-weight:700">${esc(eur(catCost))}</td>
-        </tr>${itemRows}`;
+            ${show('spec') && r.item.spec ? `<div style="font-size:10px;color:#666;white-space:pre-wrap;margin-top:2px">${esc(r.item.spec)}</div>` : ''}
+          </td>`);
+        if (show('dimensions')) cells.push(`<td style="padding:6px 8px;font-size:11px;color:#444">${esc(r.item.dimensions || '—')}</td>`);
+        if (show('supplier')) cells.push(`<td style="padding:6px 8px;font-size:11px;color:#666">${esc(r.supplierName || '—')}</td>`);
+        if (showPerType) types.forEach(at => {
+          const d = r.perType[at];
+          cells.push(`<td style="padding:6px 8px;text-align:right;font-family:monospace;font-size:11px;white-space:nowrap">${d ? `<span style="color:#666">${d.perUnit}×${d.units}</span> <b>= ${d.qty}</b>` : '—'}</td>`);
+        });
+        if (show('qty')) cells.push(`<td style="padding:6px 8px;text-align:right;font-family:monospace;font-weight:700;background:#f5f8ff">${r.totalQty.toLocaleString()}</td>`);
+        if (show('total')) cells.push(`<td style="padding:6px 8px;text-align:right;font-family:monospace">${esc(eur(r.totalCost))}</td>`);
+        return `<tr style="border-bottom:1px solid #eee;vertical-align:top">${cells.join('')}</tr>`;
+      }).join('');
+      const catCells: string[] = [];
+      if (beforeQtyCount > 0) catCells.push(`<td colspan="${beforeQtyCount}" style="padding:6px 8px;font-size:11px;font-weight:700;text-transform:uppercase">${esc(catName)}</td>`);
+      if (show('qty')) catCells.push(`<td style="padding:6px 8px;text-align:right;font-family:monospace;font-weight:700;background:#f5f8ff">${catQty.toLocaleString()}</td>`);
+      if (show('total')) catCells.push(`<td style="padding:6px 8px;text-align:right;font-family:monospace;font-weight:700">${esc(eur(catCost))}</td>`);
+      return `<tr style="background:#f0f0f0">${catCells.join('')}</tr>${itemRows}`;
     }).join('');
 
     w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Building ${esc(building)} — Breakdown</title>
@@ -178,11 +207,7 @@ export default function BuildingDetailDialog({
       </div>
       <button onclick="window.print()" style="margin-bottom:12px;padding:6px 12px;cursor:pointer">Print / Save as PDF</button>
       <table>
-        <thead><tr>
-          <th>Item</th><th>Supplier</th>${typeHeaders}
-          <th style="text-align:right;background:#f5f8ff">Qty לבניין</th>
-          <th style="text-align:right">Total €</th>
-        </tr></thead>
+        <thead><tr>${headers.join('')}</tr></thead>
         <tbody>${bodyRows}</tbody>
       </table>
       <script>window.onload=()=>setTimeout(()=>window.print(),300);</script>
@@ -204,9 +229,30 @@ export default function BuildingDetailDialog({
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <Button size="sm" variant="outline" onClick={exportPdf} className="gap-2">
-                <FileText className="w-4 h-4" /> PDF
-              </Button>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button size="sm" variant="outline" className="gap-2">
+                    <FileText className="w-4 h-4" /> PDF
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-64 p-3">
+                  <div className="text-xs font-semibold mb-2 text-foreground">Columns to include</div>
+                  <div className="space-y-1.5 mb-3">
+                    {ALL_PDF_COLS.map(c => (
+                      <label key={c} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-muted/40 rounded px-1 py-0.5">
+                        <Checkbox
+                          checked={pdfCols.has(c)}
+                          onCheckedChange={() => togglePdfCol(c)}
+                        />
+                        <span>{PDF_COL_LABELS[c]}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <Button size="sm" className="w-full gap-2" onClick={exportPdf} disabled={pdfCols.size === 0}>
+                    <FileText className="w-3.5 h-3.5" /> Export PDF
+                  </Button>
+                </PopoverContent>
+              </Popover>
               <Button size="sm" variant="outline" onClick={exportCsv} className="gap-2">
                 <Download className="w-4 h-4" /> CSV
               </Button>
@@ -238,15 +284,17 @@ export default function BuildingDetailDialog({
           ) : (
             <table className="w-full text-sm table-fixed">
               <colgroup>
-                <col style={{ width: '32%' }} />
-                <col style={{ width: '14%' }} />
-                {types.map(at => <col key={at} style={{ width: `${Math.max(10, 38 / types.length)}%` }} />)}
+                <col style={{ width: '28%' }} />
+                <col style={{ width: '12%' }} />
+                <col style={{ width: '12%' }} />
+                {types.map(at => <col key={at} style={{ width: `${Math.max(8, 36 / types.length)}%` }} />)}
                 <col style={{ width: '10%' }} />
                 <col style={{ width: '12%' }} />
               </colgroup>
               <thead className="sticky top-0 bg-card z-10">
                 <tr className="border-b">
                   <th className="text-left text-[10px] font-medium uppercase tracking-wider text-muted-foreground px-2 py-2">Item</th>
+                  <th className="text-left text-[10px] font-medium uppercase tracking-wider text-muted-foreground px-2 py-2">Dimensions</th>
                   <th className="text-left text-[10px] font-medium uppercase tracking-wider text-muted-foreground px-2 py-2">Supplier</th>
                   {types.map(at => (
                     <th key={at} className="text-right text-[10px] font-medium uppercase tracking-wider text-muted-foreground px-2 py-2 whitespace-nowrap">
@@ -265,7 +313,7 @@ export default function BuildingDetailDialog({
                   return (
                     <>
                       <tr key={`cat-${catName}`} className="bg-muted/40">
-                        <td colSpan={2 + types.length} className="px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-foreground">
+                        <td colSpan={3 + types.length} className="px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-foreground">
                           {catName}
                         </td>
                         <td className="px-2 py-1.5 text-right text-[11px] font-mono font-semibold bg-primary/5">{catQty.toLocaleString()}</td>
@@ -277,6 +325,7 @@ export default function BuildingDetailDialog({
                             <div className="font-medium text-foreground">{r.item.itemName || '—'}</div>
                             {r.item.spec && <div className="text-[10px] text-muted-foreground whitespace-pre-wrap break-words mt-0.5">{r.item.spec}</div>}
                           </td>
+                          <td className="px-2 py-1.5 text-xs text-foreground/80 whitespace-pre-wrap break-words">{r.item.dimensions || '—'}</td>
                           <td className="px-2 py-1.5 text-xs text-muted-foreground truncate">{r.supplierName || '—'}</td>
                           {types.map(at => {
                             const d = r.perType[at];
