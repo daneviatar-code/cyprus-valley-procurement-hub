@@ -16,7 +16,7 @@ import {
   StandardItem, ApartmentType, APARTMENT_TYPES,
   loadStandardItems, saveStandardItems, genItemId,
   ApartmentTypeQuantity, loadApartmentTypeQuantities, saveApartmentTypeQuantities, genQtyId,
-  computeQuantity,
+  computeQuantity, subscribeStandardItems, subscribeApartmentTypeQuantities,
 } from '@/data/standardItemsData';
 import { Supplier, loadSuppliers } from '@/data/supplierData';
 import { Button } from '@/components/ui/button';
