@@ -21,52 +21,6 @@ import { RoomSize, ROOM_SIZE_LABELS } from '@/data/masterData';
 import { Supplier } from '@/data/supplierData';
 import SpecCell from './SpecCell';
 
-type SaveFilePickerOptions = {
-  suggestedName?: string;
-  types?: { description: string; accept: Record<string, string[]> }[];
-};
-
-const saveBlobToComputer = async (blob: Blob, fileName: string, fallbackLabel: string) => {
-  const picker = (window as typeof window & {
-    showSaveFilePicker?: (options: SaveFilePickerOptions) => Promise<{
-      createWritable: () => Promise<{ write: (data: Blob) => Promise<void>; close: () => Promise<void> }>;
-    }>;
-  }).showSaveFilePicker;
-
-  if (picker) {
-    try {
-      const extension = fileName.split('.').pop()?.toLowerCase() || '';
-      const handle = await picker({
-        suggestedName: fileName,
-        types: [{
-          description: fallbackLabel,
-          accept: { [blob.type || 'application/octet-stream']: extension ? [`.${extension}`] : [] },
-        }],
-      });
-      const writable = await handle.createWritable();
-      await writable.write(blob);
-      await writable.close();
-      return 'saved' as const;
-    } catch (error) {
-      if (error instanceof DOMException && error.name === 'AbortError') return 'cancelled' as const;
-    }
-  }
-
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = fileName;
-  a.rel = 'noopener';
-  a.style.display = 'none';
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => {
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }, 1000);
-  return 'downloaded' as const;
-};
-
 type PdfCol = 'item' | 'spec' | 'dimensions' | 'supplier' | 'perType' | 'qty' | 'total';
 const PDF_COL_LABELS: Record<PdfCol, string> = {
   item: 'Item Name', spec: 'Spec', dimensions: 'Dimensions', supplier: 'Supplier',
@@ -95,6 +49,7 @@ export default function BuildingDetailDialog({
   const [pdfCols, setPdfCols] = useState<Set<PdfCol>>(new Set(ALL_PDF_COLS));
   const [activeCategory, setActiveCategory] = useState<string>('__all__');
   const [lastPdf, setLastPdf] = useState<{ url: string; fileName: string } | null>(null);
+  const [lastCsv, setLastCsv] = useState<{ url: string; fileName: string } | null>(null);
   const togglePdfCol = (c: PdfCol) => setPdfCols(prev => {
     const next = new Set(prev);
     next.has(c) ? next.delete(c) : next.add(c);
@@ -104,6 +59,10 @@ export default function BuildingDetailDialog({
   useEffect(() => () => {
     if (lastPdf?.url) URL.revokeObjectURL(lastPdf.url);
   }, [lastPdf?.url]);
+
+  useEffect(() => () => {
+    if (lastCsv?.url) URL.revokeObjectURL(lastCsv.url);
+  }, [lastCsv?.url]);
 
   const rows = useMemo(() => {
     if (!building) return [];
@@ -185,7 +144,7 @@ export default function BuildingDetailDialog({
 
   const totalUnits = types.reduce((s, at) => s + (buildingCounts[at] || 0), 0);
 
-  const exportCsv = async () => {
+  const exportCsv = () => {
     if (!building) return;
     const header = ['Category', 'Item', 'Spec', 'Supplier', 'Unit Price €',
       ...types.flatMap(at => [`${ROOM_SIZE_LABELS[at]} per-unit`, `${ROOM_SIZE_LABELS[at]} units`, `${ROOM_SIZE_LABELS[at]} qty`]),
@@ -207,12 +166,12 @@ export default function BuildingDetailDialog({
     // Prepend BOM for Excel UTF-8 (Hebrew) compatibility
     const blob = new Blob(["\ufeff" + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
     const fileName = `building-${building}-breakdown.csv`;
-    const result = await saveBlobToComputer(blob, fileName, 'CSV file');
-    if (result === 'saved') toast.success(`CSV נשמר: ${fileName}`);
-    if (result === 'downloaded') toast.success(`CSV נשלח להורדה: ${fileName}`);
+    const url = URL.createObjectURL(blob);
+    setLastCsv({ url, fileName });
+    toast.success('CSV מוכן', { description: 'לחץ על כפתור "הורד CSV" שהופיע בחלון' });
   };
 
-  const exportPdf = async () => {
+  const exportPdf = () => {
     if (!building) return;
     const show = (c: PdfCol) => pdfCols.has(c);
     const showPerType = show('perType');
@@ -284,11 +243,8 @@ export default function BuildingDetailDialog({
       const blobUrl = URL.createObjectURL(pdfBlob);
       setLastPdf({ url: blobUrl, fileName });
 
-      const result = await saveBlobToComputer(pdfBlob, fileName, 'PDF document');
-
-      if (result === 'cancelled') return;
-      toast.success(`${result === 'saved' ? 'PDF נשמר' : 'PDF נשלח להורדה'}: ${fileName}`, {
-        description: 'אם הדפדפן לא שאל איפה לשמור — הקובץ נמצא בתיקיית Downloads או בכפתורי "פתח/הורד" בחלון',
+      toast.success('PDF מוכן', {
+        description: 'לחץ על כפתורי "פתח PDF" או "הורד PDF" שהופיעו בחלון',
         duration: 6000,
       });
     } catch (err) {
@@ -360,23 +316,36 @@ export default function BuildingDetailDialog({
           </div>
         </div>
 
-        {lastPdf && (
+        {(lastPdf || lastCsv) && (
           <div className="flex flex-wrap items-center justify-between gap-3 border rounded-md bg-primary/5 p-3" dir="rtl">
             <div>
-              <div className="text-sm font-semibold text-foreground">ה-PDF מוכן לצפייה</div>
-              <div className="text-xs text-muted-foreground" dir="ltr">{lastPdf.fileName}</div>
+              <div className="text-sm font-semibold text-foreground">הקובץ מוכן להורדה</div>
+              <div className="text-xs text-muted-foreground" dir="ltr">
+                {[lastPdf?.fileName, lastCsv?.fileName].filter(Boolean).join(' · ')}
+              </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button size="sm" variant="outline" className="gap-2" asChild>
-                <a href={lastPdf.url} target="_blank" rel="noreferrer">
-                  <ExternalLink className="w-4 h-4" /> פתח
-                </a>
-              </Button>
-              <Button size="sm" className="gap-2" asChild>
-                <a href={lastPdf.url} download={lastPdf.fileName}>
-                  <Download className="w-4 h-4" /> הורד
-                </a>
-              </Button>
+              {lastPdf && (
+                <>
+                  <Button size="sm" variant="outline" className="gap-2" asChild>
+                    <a href={lastPdf.url} target="_blank" rel="noreferrer">
+                      <ExternalLink className="w-4 h-4" /> פתח PDF
+                    </a>
+                  </Button>
+                  <Button size="sm" className="gap-2" asChild>
+                    <a href={lastPdf.url} download={lastPdf.fileName}>
+                      <Download className="w-4 h-4" /> הורד PDF
+                    </a>
+                  </Button>
+                </>
+              )}
+              {lastCsv && (
+                <Button size="sm" variant="outline" className="gap-2" asChild>
+                  <a href={lastCsv.url} download={lastCsv.fileName}>
+                    <Download className="w-4 h-4" /> הורד CSV
+                  </a>
+                </Button>
+              )}
             </div>
           </div>
         )}
