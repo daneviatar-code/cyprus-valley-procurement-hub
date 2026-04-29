@@ -61,15 +61,16 @@ export default function SpecCell({ value, onChange, itemName, inputClassName, pl
             <DialogTitle>SPEC {itemName ? `— ${itemName}` : ''}</DialogTitle>
           </DialogHeader>
           <Textarea
-            value={draft}
+            value={viewOnly ? value : draft}
             onChange={e => setDraft(e.target.value)}
             placeholder="Full specification, model, materials, finishes…"
             className="min-h-[260px] text-sm font-mono whitespace-pre-wrap"
             dir="auto"
+            readOnly={viewOnly}
           />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave}>Save</Button>
+            <Button variant="outline" onClick={() => setOpen(false)}>{viewOnly ? 'Close' : 'Cancel'}</Button>
+            {!viewOnly && <Button onClick={handleSave}>Save</Button>}
           </DialogFooter>
         </DialogContent>
       </Dialog>
