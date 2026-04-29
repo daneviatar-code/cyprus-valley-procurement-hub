@@ -158,12 +158,22 @@ export default function BuildingDetailDialog({
       cells.push(r.totalQty, r.totalCost.toFixed(2));
       lines.push(cells.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
     });
-    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    // Prepend BOM for Excel UTF-8 (Hebrew) compatibility
+    const blob = new Blob(["\ufeff" + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
+    const fileName = `building-${building}-breakdown.csv`;
     const a = document.createElement('a');
-    a.href = url; a.download = `building-${building}-breakdown.csv`;
+    a.href = url;
+    a.download = fileName;
+    a.rel = 'noopener';
+    a.style.display = 'none';
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(url);
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 100);
+    toast.success(`CSV הורד: ${fileName}`);
   };
 
   const exportPdf = () => {
