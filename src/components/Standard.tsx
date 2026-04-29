@@ -1002,7 +1002,7 @@ function TypeEditor({
                   <div className="flex items-center gap-1">
                     <ReadOnlyChip>{it.spec || '—'}</ReadOnlyChip>
                     {it.spec && (
-                      <SpecCell value={it.spec} onChange={() => {}} itemName={it.itemName} inline />
+                      <SpecCell value={it.spec} onChange={() => {}} itemName={it.itemName} viewOnly />
                     )}
                   </div>
                 </td>
