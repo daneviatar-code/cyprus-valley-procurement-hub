@@ -96,10 +96,16 @@ export default function BuildingDetailDialog({
     );
   }, [building, items, qtysByItem, categories, suppliers, buildingCounts, types]);
 
-  const allCategories = useMemo(() => {
-    const set = new Set<string>();
-    rows.forEach(r => set.add(r.categoryName));
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  // All defined categories (from Standard screen) — even those with 0 items in this building
+  const allCategories = useMemo(
+    () => categories.map(c => c.nameEn).filter(Boolean),
+    [categories],
+  );
+
+  const countsByCategory = useMemo(() => {
+    const map = new Map<string, number>();
+    rows.forEach(r => map.set(r.categoryName, (map.get(r.categoryName) || 0) + 1));
+    return map;
   }, [rows]);
 
   const filteredRows = useMemo(
