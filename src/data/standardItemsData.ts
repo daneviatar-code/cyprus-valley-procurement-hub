@@ -9,7 +9,7 @@
  */
 
 import { RoomSize, RESIDENTIAL_ROOM_SIZES, countUnitsByRoomSize } from './masterData';
-import { RoomStandard, StandardStatus, loadStandards as loadLegacyStandards } from './roomStandardsData';
+import { RoomStandard, StandardStatus, loadStandards as loadLegacyStandards, normalizeCategoryId } from './roomStandardsData';
 
 export type ApartmentType = 'studio' | '1br' | '2br' | '3br' | '4br';
 export const APARTMENT_TYPES: ApartmentType[] = ['studio', '1br', '2br', '3br', '4br'];
@@ -77,7 +77,7 @@ export function loadStandardItems(): StandardItem[] {
     const raw = localStorage.getItem(ITEMS_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed;
+      if (Array.isArray(parsed)) return parsed.map(i => ({ ...i, categoryId: normalizeCategoryId(i.categoryId ?? '') }));
     }
   } catch {}
   return [];
@@ -117,7 +117,7 @@ export function saveApartmentTypeQuantities(rows: ApartmentTypeQuantity[]) {
 function itemToDb(i: StandardItem): any {
   return {
     id: i.id,
-    category_id: i.categoryId,
+    category_id: normalizeCategoryId(i.categoryId),
     item_name: i.itemName,
     spec: i.spec,
     dimensions: i.dimensions ?? null,
@@ -132,7 +132,7 @@ function itemToDb(i: StandardItem): any {
 function itemFromDb(r: any): StandardItem {
   return {
     id: r.id,
-    categoryId: r.category_id ?? '',
+    categoryId: normalizeCategoryId(r.category_id ?? ''),
     itemName: r.item_name ?? '',
     spec: r.spec ?? '',
     dimensions: r.dimensions ?? undefined,

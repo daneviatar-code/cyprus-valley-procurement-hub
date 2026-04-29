@@ -21,23 +21,27 @@ export interface ProcurementCategory {
 }
 
 const CATEGORIES_KEY = 'cyprus-valley_procurementCategories';
+const LEGACY_CATEGORY_IDS_KEY = 'cyprus-valley_legacyCategoryIds';
+const KNOWN_LEGACY_CATEGORY_IDS: Record<string, string> = {
+  cat_1777465316487_hhio1: 'cat_linens',
+};
 
-export const SEED_CATEGORIES: Omit<ProcurementCategory, 'id'>[] = [
-  { nameEn: 'Linens',                nameHe: 'לובנה',                       scope: 'apartments', order: 1 },
-  { nameEn: 'Appliances',            nameHe: 'מוצרי חשמל',                  scope: 'both',       order: 2 },
-  { nameEn: 'Lighting',              nameHe: 'תאורה',                       scope: 'both',       order: 3 },
-  { nameEn: 'Air Conditioners',      nameHe: 'מזגנים',                      scope: 'both',       order: 4 },
-  { nameEn: 'Televisions',           nameHe: 'טלוויזיות',                   scope: 'both',       order: 5 },
-  { nameEn: 'Door Locks',            nameHe: 'מנעולים לדלתות',              scope: 'apartments', order: 6 },
-  { nameEn: 'Apartment Safes',       nameHe: 'כספות',                       scope: 'apartments', order: 7 },
-  { nameEn: 'Mobile Furniture',      nameHe: 'ריהוט נייד לחלל ציבורי',      scope: 'public',     order: 8 },
-  { nameEn: 'Art & Decor',           nameHe: 'אומנות ואביזרי נוי',          scope: 'both',       order: 9 },
-  { nameEn: 'Accessories',           nameHe: 'אקססוריז',                    scope: 'both',       order: 10 },
-  { nameEn: 'Bathroom Accessories',  nameHe: 'אביזרי אמבטיה',               scope: 'both',       order: 11 },
-  { nameEn: 'Tableware Sets',        nameHe: 'מערכות כלי אוכל',             scope: 'both',       order: 12 },
-  { nameEn: 'Rugs',                  nameHe: 'שטיחים',                      scope: 'both',       order: 13 },
-  { nameEn: 'Curtains',              nameHe: 'וילונות',                     scope: 'both',       order: 14 },
-  { nameEn: 'Mirrors',               nameHe: 'מראות ומראות גוף',            scope: 'both',       order: 15 },
+export const SEED_CATEGORIES: ProcurementCategory[] = [
+  { id: 'cat_linens',                nameEn: 'Linens',                nameHe: 'לובנה',                       scope: 'apartments', order: 1 },
+  { id: 'cat_appliances',            nameEn: 'Appliances',            nameHe: 'מוצרי חשמל',                  scope: 'both',       order: 2 },
+  { id: 'cat_lighting',              nameEn: 'Lighting',              nameHe: 'תאורה',                       scope: 'both',       order: 3 },
+  { id: 'cat_air_conditioners',      nameEn: 'Air Conditioners',      nameHe: 'מזגנים',                      scope: 'both',       order: 4 },
+  { id: 'cat_televisions',           nameEn: 'Televisions',           nameHe: 'טלוויזיות',                   scope: 'both',       order: 5 },
+  { id: 'cat_door_locks',            nameEn: 'Door Locks',            nameHe: 'מנעולים לדלתות',              scope: 'apartments', order: 6 },
+  { id: 'cat_apartment_safes',       nameEn: 'Apartment Safes',       nameHe: 'כספות',                       scope: 'apartments', order: 7 },
+  { id: 'cat_mobile_furniture',      nameEn: 'Mobile Furniture',      nameHe: 'ריהוט נייד לחלל ציבורי',      scope: 'public',     order: 8 },
+  { id: 'cat_art_decor',             nameEn: 'Art & Decor',           nameHe: 'אומנות ואביזרי נוי',          scope: 'both',       order: 9 },
+  { id: 'cat_accessories',           nameEn: 'Accessories',           nameHe: 'אקססוריז',                    scope: 'both',       order: 10 },
+  { id: 'cat_bathroom_accessories',  nameEn: 'Bathroom Accessories',  nameHe: 'אביזרי אמבטיה',               scope: 'both',       order: 11 },
+  { id: 'cat_tableware_sets',        nameEn: 'Tableware Sets',        nameHe: 'מערכות כלי אוכל',             scope: 'both',       order: 12 },
+  { id: 'cat_rugs',                  nameEn: 'Rugs',                  nameHe: 'שטיחים',                      scope: 'both',       order: 13 },
+  { id: 'cat_curtains',              nameEn: 'Curtains',              nameHe: 'וילונות',                     scope: 'both',       order: 14 },
+  { id: 'cat_mirrors',               nameEn: 'Mirrors',               nameHe: 'מראות ומראות גוף',            scope: 'both',       order: 15 },
 ];
 
 export function genCategoryId(): string {
@@ -49,16 +53,54 @@ export function loadCategories(): ProcurementCategory[] {
     const raw = localStorage.getItem(CATEGORIES_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) return normalizeCategories(parsed);
     }
   } catch {}
-  const seeded = SEED_CATEGORIES.map(c => ({ ...c, id: genCategoryId() }));
+  const seeded = SEED_CATEGORIES.map(c => ({ ...c }));
   saveCategories(seeded);
   return seeded;
 }
 
 export function saveCategories(data: ProcurementCategory[]) {
   localStorage.setItem(CATEGORIES_KEY, JSON.stringify(data));
+}
+
+function normalizeCategories(data: ProcurementCategory[]): ProcurementCategory[] {
+  const seedsByName = new Map(SEED_CATEGORIES.map(c => [c.nameEn.toLowerCase(), c]));
+  const legacyIds: Record<string, string> = readLegacyCategoryIds();
+  let changed = false;
+  const normalized = data.map(cat => {
+    const seed = seedsByName.get(cat.nameEn.toLowerCase());
+    if (!seed || cat.id === seed.id) return cat;
+    legacyIds[cat.id] = seed.id;
+    changed = true;
+    return { ...cat, id: seed.id };
+  });
+  SEED_CATEGORIES.forEach(seed => {
+    if (!normalized.some(cat => cat.id === seed.id || cat.nameEn.toLowerCase() === seed.nameEn.toLowerCase())) {
+      normalized.push({ ...seed });
+      changed = true;
+    }
+  });
+  if (changed) {
+    localStorage.setItem(LEGACY_CATEGORY_IDS_KEY, JSON.stringify(legacyIds));
+    saveCategories(normalized);
+  }
+  return normalized;
+}
+
+export function normalizeCategoryId(categoryId: string): string {
+  if (KNOWN_LEGACY_CATEGORY_IDS[categoryId]) return KNOWN_LEGACY_CATEGORY_IDS[categoryId];
+  return readLegacyCategoryIds()[categoryId] || categoryId;
+}
+
+function readLegacyCategoryIds(): Record<string, string> {
+  try {
+    const raw = localStorage.getItem(LEGACY_CATEGORY_IDS_KEY);
+    return raw ? { ...KNOWN_LEGACY_CATEGORY_IDS, ...JSON.parse(raw) } : { ...KNOWN_LEGACY_CATEGORY_IDS };
+  } catch {
+    return { ...KNOWN_LEGACY_CATEGORY_IDS };
+  }
 }
 
 // ── Room Standards ────────────────────────────────────────────────────────
