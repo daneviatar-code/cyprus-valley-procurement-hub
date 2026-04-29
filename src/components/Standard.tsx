@@ -21,6 +21,7 @@ import {
 import { Supplier, loadSuppliers } from '@/data/supplierData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import SpecCell from '@/components/SpecCell';
 import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
 } from '@/components/ui/tooltip';
