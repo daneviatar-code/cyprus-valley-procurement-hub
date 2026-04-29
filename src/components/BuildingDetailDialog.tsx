@@ -187,7 +187,6 @@ export default function BuildingDetailDialog({
     const url = URL.createObjectURL(blob);
     setLastCsv({ url, fileName });
     downloadReadyFile({ url, fileName }, 'CSV');
-    toast.success('CSV מוכן', { description: 'לחץ על כפתור "הורד CSV" שהופיע בחלון' });
   };
 
   const exportPdf = () => {
