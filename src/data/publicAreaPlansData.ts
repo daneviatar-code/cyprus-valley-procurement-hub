@@ -43,6 +43,7 @@ export const genPlanId = () =>
 
 // ── Persistence (metadata) ───────────────────────────────────────────────
 import { supabase } from '@/integrations/supabase/client';
+import { enqueue } from '@/lib/cloudWriteQueue';
 
 const HYDRATED_FLAG = 'cyprus-valley_publicAreaPlans_hydrated';
 type Listener = (rows: PublicAreaPlan[]) => void;
@@ -64,7 +65,7 @@ export function savePlans(plans: PublicAreaPlan[]) {
   if (json === lastPlansSnap) return;
   lastPlansSnap = json;
   localStorage.setItem(PLANS_META_KEY, json);
-  void pushPlansToCloud(plans);
+  void enqueue('public_area_plans', () => pushPlansToCloud(plans));
 }
 
 async function pushPlansToCloud(rows: PublicAreaPlan[]) {
