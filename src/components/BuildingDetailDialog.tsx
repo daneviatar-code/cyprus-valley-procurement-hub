@@ -7,7 +7,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Download } from 'lucide-react';
+import { Download, FileText } from 'lucide-react';
 import { eur, ProcurementCategory } from '@/data/roomStandardsData';
 import {
   StandardItem, ApartmentType, APARTMENT_TYPES, ApartmentTypeQuantity,
@@ -125,6 +125,71 @@ export default function BuildingDetailDialog({
     URL.revokeObjectURL(url);
   };
 
+  const exportPdf = () => {
+    if (!building) return;
+    const w = window.open('', '_blank', 'width=900,height=700');
+    if (!w) return;
+    const esc = (s: string) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+    const typeHeaders = types.map(at => `<th style="text-align:right;padding:6px 8px;border-bottom:1px solid #ddd;font-size:10px;text-transform:uppercase;color:#666">${esc(ROOM_SIZE_LABELS[at])}<br/><span style="font-weight:normal;font-size:9px">per × units</span></th>`).join('');
+    const bodyRows = grouped.map(([catName, catRows]) => {
+      const catQty = catRows.reduce((s, r) => s + r.totalQty, 0);
+      const catCost = catRows.reduce((s, r) => s + r.totalCost, 0);
+      const itemRows = catRows.map(r => `
+        <tr style="border-bottom:1px solid #eee;vertical-align:top">
+          <td style="padding:6px 8px">
+            <div style="font-weight:600">${esc(r.item.itemName || '—')}</div>
+            ${r.item.spec ? `<div style="font-size:10px;color:#666;white-space:pre-wrap;margin-top:2px">${esc(r.item.spec)}</div>` : ''}
+          </td>
+          <td style="padding:6px 8px;font-size:11px;color:#666">${esc(r.supplierName || '—')}</td>
+          ${types.map(at => {
+            const d = r.perType[at];
+            return `<td style="padding:6px 8px;text-align:right;font-family:monospace;font-size:11px;white-space:nowrap">${d ? `<span style="color:#666">${d.perUnit}×${d.units}</span> <b>= ${d.qty}</b>` : '—'}</td>`;
+          }).join('')}
+          <td style="padding:6px 8px;text-align:right;font-family:monospace;font-weight:700;background:#f5f8ff">${r.totalQty.toLocaleString()}</td>
+          <td style="padding:6px 8px;text-align:right;font-family:monospace">${esc(eur(r.totalCost))}</td>
+        </tr>`).join('');
+      return `
+        <tr style="background:#f0f0f0">
+          <td colspan="${2 + types.length}" style="padding:6px 8px;font-size:11px;font-weight:700;text-transform:uppercase">${esc(catName)}</td>
+          <td style="padding:6px 8px;text-align:right;font-family:monospace;font-weight:700;background:#f5f8ff">${catQty.toLocaleString()}</td>
+          <td style="padding:6px 8px;text-align:right;font-family:monospace;font-weight:700">${esc(eur(catCost))}</td>
+        </tr>${itemRows}`;
+    }).join('');
+
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Building ${esc(building)} — Breakdown</title>
+      <style>
+        @page { size: A4 landscape; margin: 12mm; }
+        body { font-family: Inter, Arial, sans-serif; color: #111; margin: 0; padding: 16px; }
+        h1 { font-size: 18px; margin: 0 0 4px; }
+        .sub { font-size: 11px; color: #666; margin-bottom: 12px; }
+        .totals { display:flex; gap:24px; padding:10px 12px; background:#f7f7f7; border:1px solid #e5e5e5; border-radius:6px; margin-bottom:12px; font-size:12px; }
+        .totals b { display:block; font-size:14px; font-family:monospace; }
+        table { width:100%; border-collapse: collapse; font-size:12px; }
+        th { text-align:left; padding:6px 8px; border-bottom:2px solid #333; font-size:10px; text-transform:uppercase; color:#666; }
+        tr { page-break-inside: avoid; }
+        @media print { button { display:none; } }
+      </style></head><body>
+      <h1>Building ${esc(building)} — Quantity Breakdown</h1>
+      <div class="sub" dir="rtl">פירוט כמויות לבניין · ${totalUnits} units · ${types.map(t => `${esc(ROOM_SIZE_LABELS[t])}: ${buildingCounts[t] || 0}`).join(' · ')}</div>
+      <div class="totals">
+        <div>ITEMS<b>${rows.length.toLocaleString()}</b></div>
+        <div>TOTAL QTY<b>${totals.qty.toLocaleString()}</b></div>
+        <div>TOTAL COST<b>${esc(eur(totals.cost))}</b></div>
+      </div>
+      <button onclick="window.print()" style="margin-bottom:12px;padding:6px 12px;cursor:pointer">Print / Save as PDF</button>
+      <table>
+        <thead><tr>
+          <th>Item</th><th>Supplier</th>${typeHeaders}
+          <th style="text-align:right;background:#f5f8ff">Qty לבניין</th>
+          <th style="text-align:right">Total €</th>
+        </tr></thead>
+        <tbody>${bodyRows}</tbody>
+      </table>
+      <script>window.onload=()=>setTimeout(()=>window.print(),300);</script>
+      </body></html>`);
+    w.document.close();
+  };
+
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-5xl max-h-[85vh] overflow-hidden flex flex-col">
@@ -138,9 +203,14 @@ export default function BuildingDetailDialog({
                 פירוט כמויות לבניין · {totalUnits} units · {types.map(t => `${ROOM_SIZE_LABELS[t]}: ${buildingCounts[t] || 0}`).join(' · ')}
               </div>
             </div>
-            <Button size="sm" variant="outline" onClick={exportCsv} className="gap-2 shrink-0">
-              <Download className="w-4 h-4" /> CSV
-            </Button>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button size="sm" variant="outline" onClick={exportPdf} className="gap-2">
+                <FileText className="w-4 h-4" /> PDF
+              </Button>
+              <Button size="sm" variant="outline" onClick={exportCsv} className="gap-2">
+                <Download className="w-4 h-4" /> CSV
+              </Button>
+            </div>
           </div>
         </DialogHeader>
 
