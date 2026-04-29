@@ -631,7 +631,7 @@ function ItemsTable(p: ItemsTableProps) {
             return (
               <tr key={it.id} className="border-b last:border-0 hover:bg-muted/30">
                 <td className={td}><Inp v={it.itemName} onChange={v => p.onUpdate(it.id, { itemName: v })} w="w-32" /></td>
-                <td className={td}><Inp v={it.spec} onChange={v => p.onUpdate(it.id, { spec: v })} w="w-28" /></td>
+                <td className={td}><SpecCell value={it.spec} onChange={v => p.onUpdate(it.id, { spec: v })} itemName={it.itemName} inline /></td>
                 <td className={td}>
                   <select value={it.categoryId} onChange={e => p.onUpdate(it.id, { categoryId: e.target.value })}
                     className="h-6 rounded border bg-background px-1 text-xs w-32">
