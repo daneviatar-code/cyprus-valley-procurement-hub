@@ -227,8 +227,20 @@ export default function BuildingDetailDialog({
       },
     });
 
-    doc.save(`building-${building}-breakdown.pdf`);
-    toast.success('PDF downloaded');
+    const fileName = `building-${building}-breakdown.pdf`;
+    // Open in new tab so the user sees the PDF immediately
+    try {
+      const blobUrl = doc.output('bloburl');
+      window.open(blobUrl, '_blank');
+    } catch (e) {
+      console.warn('Could not open PDF in new tab', e);
+    }
+    // Also trigger a download as backup
+    doc.save(fileName);
+    toast.success(`PDF נפתח בטאב חדש והורד: ${fileName}`, {
+      description: 'בדוק בתיקיית ההורדות של הדפדפן',
+      duration: 6000,
+    });
   };
 
   return (
