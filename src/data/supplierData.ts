@@ -47,24 +47,7 @@ function notify(data: Supplier[]) {
 }
 
 // ── DB ↔ App mapping ──────────────────────────────────────────────────────
-type DbRow = {
-  id: string;
-  name: string;
-  contact_person: string;
-  email: string;
-  phone: string;
-  website: string;
-  country: string;
-  address: string;
-  payment_terms: string;
-  currency: string;
-  notes: string;
-  category: string;
-  items: SupplierItem[] | null;
-  created_at: string;
-};
-
-function fromDb(r: DbRow): Supplier {
+function fromDb(r: any): Supplier {
   return {
     id: r.id,
     name: r.name ?? '',
@@ -97,7 +80,7 @@ function toDb(s: Supplier) {
     currency: s.currency,
     notes: s.notes,
     category: s.category,
-    items: s.items as unknown as object,
+    items: s.items as any,
     created_at: s.createdAt,
   };
 }
