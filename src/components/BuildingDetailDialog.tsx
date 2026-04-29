@@ -315,31 +315,32 @@ export default function BuildingDetailDialog({
         </div>
 
         {/* Category tabs */}
-        {allCategories.length > 0 && (
-          <div className="flex flex-wrap gap-1 border-b -mb-px">
+        {rows.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 border-b border-border pb-0">
             <button
               onClick={() => setActiveCategory('__all__')}
-              className={`px-3 py-1.5 text-xs font-medium rounded-t-md border border-b-0 transition-colors ${
+              className={`px-3 py-2 text-xs font-semibold rounded-t-md border-2 border-b-0 transition-colors ${
                 activeCategory === '__all__'
-                  ? 'bg-card border-border text-foreground'
-                  : 'bg-transparent border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40'
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'bg-muted/40 border-border text-muted-foreground hover:text-foreground hover:bg-muted'
               }`}
             >
-              All <span className="text-muted-foreground/70 ml-1">({rows.length})</span>
+              All <span className="opacity-70 ml-1">({rows.length})</span>
             </button>
             {allCategories.map(cat => {
               const count = rows.filter(r => r.categoryName === cat).length;
+              const isActive = activeCategory === cat;
               return (
                 <button
                   key={cat}
                   onClick={() => setActiveCategory(cat)}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-t-md border border-b-0 transition-colors ${
-                    activeCategory === cat
-                      ? 'bg-card border-border text-foreground'
-                      : 'bg-transparent border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40'
+                  className={`px-3 py-2 text-xs font-semibold rounded-t-md border-2 border-b-0 transition-colors ${
+                    isActive
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-muted/40 border-border text-muted-foreground hover:text-foreground hover:bg-muted'
                   }`}
                 >
-                  {cat} <span className="text-muted-foreground/70 ml-1">({count})</span>
+                  {cat} <span className="opacity-70 ml-1">({count})</span>
                 </button>
               );
             })}
