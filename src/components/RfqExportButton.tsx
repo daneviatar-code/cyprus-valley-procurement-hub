@@ -2,13 +2,14 @@
  * RFQ PDF export — reuses the BuildingDetailDialog PDF template,
  * but aggregates data across selected blocks (A/B/C) and filters by a category.
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { FileText } from 'lucide-react';
+import { Download, Eye, FileText, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { eur, ProcurementCategory } from '@/data/roomStandardsData';
 import {
@@ -44,6 +45,10 @@ export default function RfqExportButton({
   const [pdfCols, setPdfCols] = useState<Set<PdfCol>>(new Set(ALL_PDF_COLS));
   const [blocks, setBlocks] = useState<Set<Concept>>(new Set(['A', 'B', 'C']));
   const [categoryId, setCategoryId] = useState<string>('__all__');
+  const [preview, setPreview] = useState<{ url: string; fileName: string } | null>(null);
+
+  // Cleanup blob URL when preview closes / replaced / unmount
+  useEffect(() => () => { if (preview?.url) URL.revokeObjectURL(preview.url); }, [preview?.url]);
 
   const togglePdfCol = (c: PdfCol) => setPdfCols(prev => {
     const next = new Set(prev); next.has(c) ? next.delete(c) : next.add(c); return next;
@@ -70,8 +75,8 @@ export default function RfqExportButton({
 
   const types: ApartmentType[] = [...APARTMENT_TYPES];
 
-  const exportPdf = () => {
-    if (blocks.size === 0) { toast.error('Select at least one block'); return; }
+  const buildPdf = (): { doc: jsPDF; fileName: string } | null => {
+    if (blocks.size === 0) { toast.error('Select at least one block'); return null; }
 
     const selectedCatName = categoryId === '__all__'
       ? 'All'
@@ -207,14 +212,44 @@ export default function RfqExportButton({
     const blockTag = sortedBlocks.join('-');
     const catTag = selectedCatName.replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'All';
     const fileName = `RFQ-CyprusValley-${blockTag}-${catTag}.pdf`;
+    return { doc, fileName };
+  };
 
+  const handlePreview = () => {
+    const built = buildPdf();
+    if (!built) return;
     try {
-      doc.save(fileName);
-      toast.success('PDF נשלח להורדה', { description: fileName, duration: 5000 });
+      const blob = built.doc.output('blob');
+      const url = URL.createObjectURL(blob);
+      if (preview?.url) URL.revokeObjectURL(preview.url);
+      setPreview({ url, fileName: built.fileName });
+    } catch (err) {
+      console.error('PDF preview failed', err);
+      toast.error('שגיאה ביצירת תצוגה מקדימה');
+    }
+  };
+
+  const handleExport = () => {
+    const built = buildPdf();
+    if (!built) return;
+    try {
+      built.doc.save(built.fileName);
+      toast.success('PDF נשלח להורדה', { description: built.fileName, duration: 5000 });
     } catch (err) {
       console.error('RFQ PDF export failed', err);
       toast.error('שגיאה בייצוא PDF');
     }
+  };
+
+  const downloadFromPreview = () => {
+    if (!preview) return;
+    const a = document.createElement('a');
+    a.href = preview.url;
+    a.download = preview.fileName;
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   };
 
   return (
@@ -260,15 +295,57 @@ export default function RfqExportButton({
           ))}
         </div>
 
-        <Button
-          size="sm"
-          className="w-full gap-2"
-          onClick={exportPdf}
-          disabled={pdfCols.size === 0 || blocks.size === 0}
-        >
-          <FileText className="w-3.5 h-3.5" /> Export PDF
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            className="flex-1 gap-2"
+            onClick={handlePreview}
+            disabled={pdfCols.size === 0 || blocks.size === 0}
+          >
+            <Eye className="w-3.5 h-3.5" /> Preview
+          </Button>
+          <Button
+            size="sm"
+            className="flex-1 gap-2"
+            onClick={handleExport}
+            disabled={pdfCols.size === 0 || blocks.size === 0}
+          >
+            <FileText className="w-3.5 h-3.5" /> Export PDF
+          </Button>
+        </div>
       </PopoverContent>
+
+      <Dialog open={!!preview} onOpenChange={(v) => !v && setPreview(null)}>
+        <DialogContent className="max-w-6xl w-[95vw] h-[90vh] p-0 flex flex-col">
+          <DialogHeader className="px-4 py-3 border-b flex-shrink-0">
+            <div className="flex items-center justify-between gap-3">
+              <DialogTitle className="text-sm font-semibold truncate">
+                {preview?.fileName}
+              </DialogTitle>
+              <div className="flex items-center gap-2 mr-6">
+                {preview && (
+                  <Button size="sm" variant="outline" className="gap-2" asChild>
+                    <a href={preview.url} target="_blank" rel="noreferrer">
+                      <ExternalLink className="w-4 h-4" /> Open in new tab
+                    </a>
+                  </Button>
+                )}
+                <Button size="sm" className="gap-2" onClick={downloadFromPreview}>
+                  <Download className="w-4 h-4" /> Download
+                </Button>
+              </div>
+            </div>
+          </DialogHeader>
+          {preview && (
+            <iframe
+              src={preview.url}
+              title="RFQ PDF preview"
+              className="flex-1 w-full border-0 bg-muted"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </Popover>
   );
 }
