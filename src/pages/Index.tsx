@@ -137,6 +137,8 @@ export default function Index() {
 
         {activeTab === 'suppliers' && <Suppliers />}
 
+        {activeTab === 'catalog' && <Catalog />}
+
         {activeTab === 'selections' && <Selections />}
 
         {activeTab === 'publicAreas' && <PublicAreas />}
