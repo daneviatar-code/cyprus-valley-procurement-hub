@@ -45,6 +45,10 @@ export default function RfqExportButton({
   const [pdfCols, setPdfCols] = useState<Set<PdfCol>>(new Set(ALL_PDF_COLS));
   const [blocks, setBlocks] = useState<Set<Concept>>(new Set(['A', 'B', 'C']));
   const [categoryId, setCategoryId] = useState<string>('__all__');
+  const [preview, setPreview] = useState<{ url: string; fileName: string } | null>(null);
+
+  // Cleanup blob URL when preview closes / replaced / unmount
+  useEffect(() => () => { if (preview?.url) URL.revokeObjectURL(preview.url); }, [preview?.url]);
 
   const togglePdfCol = (c: PdfCol) => setPdfCols(prev => {
     const next = new Set(prev); next.has(c) ? next.delete(c) : next.add(c); return next;
