@@ -75,8 +75,8 @@ export default function RfqExportButton({
 
   const types: ApartmentType[] = [...APARTMENT_TYPES];
 
-  const exportPdf = () => {
-    if (blocks.size === 0) { toast.error('Select at least one block'); return; }
+  const buildPdf = (): { doc: jsPDF; fileName: string } | null => {
+    if (blocks.size === 0) { toast.error('Select at least one block'); return null; }
 
     const selectedCatName = categoryId === '__all__'
       ? 'All'
