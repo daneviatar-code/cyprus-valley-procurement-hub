@@ -18,4 +18,5 @@ export function startCloudHydration() {
   void hydrateStandardItemsFromCloud();
   void hydratePublicAreasFromCloud();
   void hydratePublicAreaPlansFromCloud();
+  void hydrateCatalogFromCloud();
 }
