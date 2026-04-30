@@ -11,6 +11,7 @@ import Selections from '@/components/Selections';
 import Suppliers from '@/components/Suppliers';
 import PublicAreas from '@/components/PublicAreas';
 import Standard from '@/components/Standard';
+import Catalog from '@/components/Catalog';
 import { type UserItemData, loadUserData, saveUserData } from '@/data/projectData';
 import {
   MasterRow,
