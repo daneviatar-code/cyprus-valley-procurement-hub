@@ -53,6 +53,48 @@ export default function BuildingDrillDown({ conceptId, onClose, masterData }: Bu
     return map;
   }, [units]);
 
+  // Apartment-type counts for the selected building (excludes zones/public areas)
+  const unitTypeBreakdown = useMemo(() => {
+    const counts: Record<string, number> = {};
+    units.forEach(u => {
+      if ((u as any).isZone) return;
+      const desc = u.description || '';
+      counts[desc] = (counts[desc] || 0) + (unitTotalInstances[u.code] || 0);
+    });
+    const labelMap: Array<[string, string]> = [
+      ['Studio', 'Studio'],
+      ['1BD', '1-Bedroom'],
+      ['2BD', '2-Bedroom'],
+      ['3BD', '3-Bedroom'],
+      ['4BD Penthouse', '4-Bedroom'],
+      ['4BD', '4-Bedroom'],
+    ];
+    const seen = new Set<string>();
+    const parts: string[] = [];
+    let total = 0;
+    labelMap.forEach(([key, label]) => {
+      if (seen.has(label)) return;
+      // Sum any descriptions that map to the same label (e.g. 4BD + 4BD Penthouse)
+      const sum = labelMap
+        .filter(([, l]) => l === label)
+        .reduce((s, [k]) => s + (counts[k] || 0), 0);
+      seen.add(label);
+      if (sum > 0) {
+        parts.push(`${label}: ${sum}`);
+        total += sum;
+      }
+    });
+    // Include any other descriptions not in our map
+    Object.entries(counts).forEach(([desc, n]) => {
+      if (!labelMap.some(([k]) => k === desc) && n > 0) {
+        parts.push(`${desc}: ${n}`);
+        total += n;
+      }
+    });
+    parts.push(`Total: ${total} units`);
+    return parts.join(' · ');
+  }, [units, unitTotalInstances]);
+
   const floorData = useMemo(() => {
     return floors.map(floor => {
       const floorUnits = units.filter(u => u.floors.includes(floor));
@@ -149,6 +191,9 @@ export default function BuildingDrillDown({ conceptId, onClose, masterData }: Bu
               <h2 className="text-lg font-semibold text-foreground">{concept.name} — Building Drill-Down</h2>
               <p className="text-xs text-muted-foreground">
                 Viewing {selectedBuilding} · {floors.length} floors
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {unitTypeBreakdown}
               </p>
             </div>
           </div>
