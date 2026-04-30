@@ -17,7 +17,9 @@ import {
 import {
   Package, PackageLineItem, loadPackages, savePackages, subscribePackages,
   generatePackageId, getRoomTypesForBlock, BlockRoomType,
+  getRoomTypesByFloorForBlock, floorLabel,
 } from '@/data/packagesData';
+import { ChevronRight } from 'lucide-react';
 import {
   CatalogProduct, loadCatalog, subscribeCatalog,
 } from '@/data/catalogData';
