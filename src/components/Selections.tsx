@@ -106,7 +106,6 @@ export default function Selections() {
 
   const filteredCards = useMemo(() => {
     return allCards.filter(card => {
-      if (filterConcept !== 'all' && card.concept !== filterConcept) return false;
       if (filterUnit !== 'all' && card.unitCode !== filterUnit) return false;
       if (filterStatus === 'complete' && !card.isComplete) return false;
       if (filterStatus === 'pending' && card.isComplete) return false;
@@ -117,7 +116,7 @@ export default function Selections() {
       }
       return true;
     });
-  }, [allCards, filterConcept, filterUnit, filterStatus, searchText]);
+  }, [allCards, filterUnit, filterStatus, searchText]);
 
   // All unique unit codes for filter
   const allUnitCodes = useMemo(() => {
