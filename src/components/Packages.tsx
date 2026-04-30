@@ -61,6 +61,8 @@ export default function Packages() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerSearch, setPickerSearch] = useState('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [rtSearch, setRtSearch] = useState('');
+  const [expandedFloors, setExpandedFloors] = useState<Set<number>>(new Set());
 
   useEffect(() => subscribePackages(setPackages), []);
   useEffect(() => subscribeCatalog(setCatalog), []);
