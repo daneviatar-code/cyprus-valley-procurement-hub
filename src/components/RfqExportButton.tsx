@@ -186,7 +186,14 @@ export default function RfqExportButton({
     doc.text(title, 40, 34);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-    doc.text(`Items: ${rows.length.toLocaleString()}   Total Qty: ${totals.qty.toLocaleString()}   Total Cost: ${eur(totals.cost)}   Units: ${totalUnits}`, 40, 52);
+    const showCost = show('unitPrice') || show('total');
+    const summaryParts = [
+      `Items: ${rows.length.toLocaleString()}`,
+      `Total Qty: ${totals.qty.toLocaleString()}`,
+      ...(showCost ? [`Total Cost: ${eur(totals.cost)}`] : []),
+      `Units: ${totalUnits}`,
+    ];
+    doc.text(summaryParts.join('   '), 40, 52);
 
     autoTable(doc, {
       head: [headers],
