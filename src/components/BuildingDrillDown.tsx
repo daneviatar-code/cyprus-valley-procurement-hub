@@ -192,6 +192,9 @@ export default function BuildingDrillDown({ conceptId, onClose, masterData }: Bu
               <p className="text-xs text-muted-foreground">
                 Viewing {selectedBuilding} · {floors.length} floors
               </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {unitTypeBreakdown}
+              </p>
             </div>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-md hover:bg-muted">
