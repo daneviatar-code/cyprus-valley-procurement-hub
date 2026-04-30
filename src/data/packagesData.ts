@@ -101,7 +101,7 @@ async function pushAllToCloud(data: Package[]): Promise<void> {
       await supabase.from('packages').delete().in('id', toDelete);
     }
     if (data.length > 0) {
-      await supabase.from('packages').upsert(data.map(toDb));
+      await supabase.from('packages').upsert(data.map(toDb) as any);
     }
   } catch (err) {
     console.error('[packages] cloud sync failed', err);
