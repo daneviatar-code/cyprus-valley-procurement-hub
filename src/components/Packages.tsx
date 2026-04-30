@@ -83,6 +83,18 @@ export default function Packages() {
     [activeBlock]
   );
 
+  const roomTypesByFloor = useMemo(() => {
+    const list = getRoomTypesByFloorForBlock(activeBlock);
+    const groups = new Map<number, typeof list>();
+    list.forEach(rt => {
+      if (!groups.has(rt.floor)) groups.set(rt.floor, []);
+      groups.get(rt.floor)!.push(rt);
+    });
+    return Array.from(groups.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([floor, items]) => ({ floor, items }));
+  }, [activeBlock]);
+
   const visiblePackages = useMemo(
     () => packages.filter(p => p.block === activeBlock),
     [packages, activeBlock]
