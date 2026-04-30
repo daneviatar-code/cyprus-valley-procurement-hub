@@ -389,27 +389,125 @@ export default function Packages() {
             {/* Room Types */}
             <div className="space-y-2">
               <Label>Compatible Room Types ({BLOCKS.find(b => b.id === activeBlock)?.label})</Label>
-              {blockRoomTypes.length === 0 ? (
+              {roomTypesByFloor.length === 0 ? (
                 <div className="text-xs text-muted-foreground">No room types available for this block.</div>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 border rounded-md p-3">
-                  {blockRoomTypes.map(rt => {
-                    const checked = form.roomTypes.includes(rt.code);
-                    return (
-                      <label key={rt.code} className="flex items-center gap-2 cursor-pointer text-xs">
-                        <Checkbox
-                          checked={checked}
-                          onCheckedChange={() => toggleRoomType(rt.code)}
+              ) : (() => {
+                const q = rtSearch.trim().toLowerCase();
+                const matches = (rt: { code: string; description: string }) =>
+                  !q || rt.code.toLowerCase().includes(q) || rt.description.toLowerCase().includes(q);
+
+                const allVisibleTokens: string[] = [];
+                roomTypesByFloor.forEach(g => g.items.forEach(rt => {
+                  if (matches(rt)) allVisibleTokens.push(rt.token);
+                }));
+
+                const selectAllVisible = () => {
+                  const set = new Set(form.roomTypes);
+                  allVisibleTokens.forEach(t => set.add(t));
+                  setTokens([...set]);
+                };
+                const deselectAllVisible = () => {
+                  const set = new Set(form.roomTypes);
+                  allVisibleTokens.forEach(t => set.delete(t));
+                  setTokens([...set]);
+                };
+
+                return (
+                  <div className="border rounded-md p-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="relative flex-1">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                        <Input
+                          value={rtSearch}
+                          onChange={e => setRtSearch(e.target.value)}
+                          placeholder="Search room types..."
+                          className="pl-8 h-8 text-xs"
                         />
-                        <span className="text-foreground">
-                          <span className="font-medium">{rt.code}</span>
-                          <span className="text-muted-foreground"> ({rt.description})</span>
-                        </span>
-                      </label>
-                    );
-                  })}
-                </div>
-              )}
+                      </div>
+                      <Button type="button" variant="outline" size="sm" className="h-8 text-xs" onClick={selectAllVisible}>
+                        Select All
+                      </Button>
+                      <Button type="button" variant="outline" size="sm" className="h-8 text-xs" onClick={deselectAllVisible}>
+                        Deselect All
+                      </Button>
+                    </div>
+
+                    <div className="space-y-1">
+                      {roomTypesByFloor.map(({ floor, items }) => {
+                        const visibleItems = items.filter(matches);
+                        if (visibleItems.length === 0) return null;
+                        const isExpanded = expandedFloors.has(floor) || q.length > 0;
+                        const visibleTokens = visibleItems.map(i => i.token);
+                        const selectedInFloor = visibleTokens.filter(t => form.roomTypes.includes(t)).length;
+                        const allSelected = selectedInFloor === visibleTokens.length && visibleTokens.length > 0;
+                        const someSelected = selectedInFloor > 0 && !allSelected;
+
+                        const toggleFloorExpand = () => {
+                          const next = new Set(expandedFloors);
+                          if (next.has(floor)) next.delete(floor); else next.add(floor);
+                          setExpandedFloors(next);
+                        };
+
+                        const toggleAllInFloor = () => {
+                          const set = new Set(form.roomTypes);
+                          if (allSelected) {
+                            visibleTokens.forEach(t => set.delete(t));
+                          } else {
+                            visibleTokens.forEach(t => set.add(t));
+                          }
+                          setTokens([...set]);
+                        };
+
+                        return (
+                          <div key={floor} className="border rounded-md">
+                            <div className="flex items-center justify-between px-2 py-1.5 bg-muted/30">
+                              <button
+                                type="button"
+                                onClick={toggleFloorExpand}
+                                className="flex items-center gap-1.5 text-xs font-medium text-foreground hover:text-accent"
+                              >
+                                <ChevronRight
+                                  className={`w-3.5 h-3.5 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+                                />
+                                {floorLabel(floor)}
+                                <span className="text-muted-foreground font-normal">
+                                  ({selectedInFloor}/{visibleTokens.length})
+                                </span>
+                              </button>
+                              <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer">
+                                All in floor
+                                <Checkbox
+                                  checked={allSelected ? true : someSelected ? 'indeterminate' : false}
+                                  onCheckedChange={toggleAllInFloor}
+                                />
+                              </label>
+                            </div>
+                            {isExpanded && (
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-2">
+                                {visibleItems.map(rt => {
+                                  const checked = form.roomTypes.includes(rt.token);
+                                  return (
+                                    <label key={rt.token} className="flex items-center gap-2 cursor-pointer text-xs">
+                                      <Checkbox
+                                        checked={checked}
+                                        onCheckedChange={() => toggleToken(rt.token)}
+                                      />
+                                      <span className="text-foreground">
+                                        <span className="font-medium">{rt.code}</span>
+                                        <span className="text-muted-foreground"> ({rt.description})</span>
+                                      </span>
+                                    </label>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
 
