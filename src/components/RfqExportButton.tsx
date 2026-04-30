@@ -2,13 +2,14 @@
  * RFQ PDF export — reuses the BuildingDetailDialog PDF template,
  * but aggregates data across selected blocks (A/B/C) and filters by a category.
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { FileText } from 'lucide-react';
+import { Download, Eye, FileText, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { eur, ProcurementCategory } from '@/data/roomStandardsData';
 import {
