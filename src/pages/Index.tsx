@@ -12,6 +12,7 @@ import Suppliers from '@/components/Suppliers';
 import PublicAreas from '@/components/PublicAreas';
 import Standard from '@/components/Standard';
 import Catalog from '@/components/Catalog';
+import Packages from '@/components/Packages';
 import { type UserItemData, loadUserData, saveUserData } from '@/data/projectData';
 import {
   MasterRow,
@@ -21,7 +22,7 @@ import {
   computeTotalItemsCount,
 } from '@/data/masterData';
 
-type Tab = 'procurement' | 'standard' | 'rooms' | 'packages' | 'pricing' | 'projectData' | 'itemAssignment' | 'suppliers' | 'catalog' | 'selections' | 'publicAreas';
+type Tab = 'procurement' | 'standard' | 'rooms' | 'packages' | 'pricing' | 'projectData' | 'itemAssignment' | 'suppliers' | 'catalog' | 'packagesV2' | 'selections' | 'publicAreas';
 
 export default function Index() {
   const [userData, setUserData] = useState<Record<number, UserItemData>>(loadUserData);
@@ -55,6 +56,7 @@ export default function Index() {
     { key: 'itemAssignment', label: 'Item Assignment' },
     { key: 'suppliers', label: 'Suppliers' },
     { key: 'catalog', label: 'Catalog' },
+    { key: 'packagesV2', label: 'Packages' },
     { key: 'selections', label: 'Selections' },
     { key: 'publicAreas', label: 'Public Areas' },
   ];
@@ -97,7 +99,7 @@ export default function Index() {
 
       {/* Main */}
       <main className="max-w-[1440px] mx-auto px-6 py-6 space-y-8">
-        {activeTab !== 'projectData' && activeTab !== 'packages' && activeTab !== 'pricing' && activeTab !== 'publicAreas' && activeTab !== 'standard' && activeTab !== 'catalog' && (
+        {activeTab !== 'projectData' && activeTab !== 'packages' && activeTab !== 'pricing' && activeTab !== 'publicAreas' && activeTab !== 'standard' && activeTab !== 'catalog' && activeTab !== 'packagesV2' && (
           <Dashboard
             onConceptClick={(id) => setDrillDownConcept(id)}
             masterData={masterData}
@@ -138,6 +140,8 @@ export default function Index() {
         {activeTab === 'suppliers' && <Suppliers />}
 
         {activeTab === 'catalog' && <Catalog />}
+
+        {activeTab === 'packagesV2' && <Packages />}
 
         {activeTab === 'selections' && <Selections />}
 
