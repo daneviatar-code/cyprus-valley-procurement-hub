@@ -295,15 +295,57 @@ export default function RfqExportButton({
           ))}
         </div>
 
-        <Button
-          size="sm"
-          className="w-full gap-2"
-          onClick={exportPdf}
-          disabled={pdfCols.size === 0 || blocks.size === 0}
-        >
-          <FileText className="w-3.5 h-3.5" /> Export PDF
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            className="flex-1 gap-2"
+            onClick={handlePreview}
+            disabled={pdfCols.size === 0 || blocks.size === 0}
+          >
+            <Eye className="w-3.5 h-3.5" /> Preview
+          </Button>
+          <Button
+            size="sm"
+            className="flex-1 gap-2"
+            onClick={handleExport}
+            disabled={pdfCols.size === 0 || blocks.size === 0}
+          >
+            <FileText className="w-3.5 h-3.5" /> Export PDF
+          </Button>
+        </div>
       </PopoverContent>
+
+      <Dialog open={!!preview} onOpenChange={(v) => !v && setPreview(null)}>
+        <DialogContent className="max-w-6xl w-[95vw] h-[90vh] p-0 flex flex-col">
+          <DialogHeader className="px-4 py-3 border-b flex-shrink-0">
+            <div className="flex items-center justify-between gap-3">
+              <DialogTitle className="text-sm font-semibold truncate">
+                {preview?.fileName}
+              </DialogTitle>
+              <div className="flex items-center gap-2 mr-6">
+                {preview && (
+                  <Button size="sm" variant="outline" className="gap-2" asChild>
+                    <a href={preview.url} target="_blank" rel="noreferrer">
+                      <ExternalLink className="w-4 h-4" /> Open in new tab
+                    </a>
+                  </Button>
+                )}
+                <Button size="sm" className="gap-2" onClick={downloadFromPreview}>
+                  <Download className="w-4 h-4" /> Download
+                </Button>
+              </div>
+            </div>
+          </DialogHeader>
+          {preview && (
+            <iframe
+              src={preview.url}
+              title="RFQ PDF preview"
+              className="flex-1 w-full border-0 bg-muted"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </Popover>
   );
 }
