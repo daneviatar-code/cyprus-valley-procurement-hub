@@ -417,6 +417,13 @@ export default function Standard() {
                 נשמר לאחרונה · {lastSavedAt.toLocaleTimeString('he-IL')}
               </span>
             )}
+            <RfqExportButton
+              items={items}
+              qtysByItem={qtysByItem}
+              categories={visibleCategories}
+              suppliers={suppliers}
+              unitCountsPerBuilding={unitCountsPerBuilding}
+            />
             <Button
               size="sm"
               variant="outline"
