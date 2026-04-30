@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Download, Eye, FileText, ExternalLink } from 'lucide-react';
