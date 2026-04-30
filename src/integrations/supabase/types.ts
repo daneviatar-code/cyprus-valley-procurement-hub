@@ -98,6 +98,39 @@ export type Database = {
         }
         Relationships: []
       }
+      packages: {
+        Row: {
+          block: string
+          created_at: string
+          description: string
+          id: string
+          items: Json
+          name: string
+          room_types: Json
+          updated_at: string
+        }
+        Insert: {
+          block: string
+          created_at?: string
+          description?: string
+          id: string
+          items?: Json
+          name?: string
+          room_types?: Json
+          updated_at?: string
+        }
+        Update: {
+          block?: string
+          created_at?: string
+          description?: string
+          id?: string
+          items?: Json
+          name?: string
+          room_types?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       public_area_items: {
         Row: {
           category_id: string
