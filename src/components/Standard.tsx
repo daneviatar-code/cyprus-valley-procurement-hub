@@ -46,6 +46,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import BuildingDetailDialog from '@/components/BuildingDetailDialog';
+import RfqExportButton from '@/components/RfqExportButton';
 
 const FragmentRow = Fragment;
 
@@ -416,6 +417,13 @@ export default function Standard() {
                 נשמר לאחרונה · {lastSavedAt.toLocaleTimeString('he-IL')}
               </span>
             )}
+            <RfqExportButton
+              items={items}
+              qtysByItem={qtysByItem}
+              categories={visibleCategories}
+              suppliers={suppliers}
+              unitCountsPerBuilding={unitCountsPerBuilding}
+            />
             <Button
               size="sm"
               variant="outline"
