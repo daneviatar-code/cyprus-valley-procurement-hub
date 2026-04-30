@@ -262,6 +262,15 @@ export default function Selections() {
         <p className="text-xs text-muted-foreground">Track product selections for every room type — see what's chosen and what's missing</p>
       </div>
 
+      {/* Block sub-tabs — each block's selections are independent */}
+      <Tabs value={activeBlock} onValueChange={(v) => setActiveBlock(v as Concept)}>
+        <TabsList>
+          <TabsTrigger value="A">Block A (HAPPINESS)</TabsTrigger>
+          <TabsTrigger value="B">Block B (WELLNESS)</TabsTrigger>
+          <TabsTrigger value="C">Block C (BOUTIQUE)</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       {/* Summary */}
       <div className="grid grid-cols-3 gap-4">
         <Card>
