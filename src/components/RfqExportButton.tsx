@@ -212,14 +212,44 @@ export default function RfqExportButton({
     const blockTag = sortedBlocks.join('-');
     const catTag = selectedCatName.replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'All';
     const fileName = `RFQ-CyprusValley-${blockTag}-${catTag}.pdf`;
+    return { doc, fileName };
+  };
 
+  const handlePreview = () => {
+    const built = buildPdf();
+    if (!built) return;
     try {
-      doc.save(fileName);
-      toast.success('PDF נשלח להורדה', { description: fileName, duration: 5000 });
+      const blob = built.doc.output('blob');
+      const url = URL.createObjectURL(blob);
+      if (preview?.url) URL.revokeObjectURL(preview.url);
+      setPreview({ url, fileName: built.fileName });
+    } catch (err) {
+      console.error('PDF preview failed', err);
+      toast.error('שגיאה ביצירת תצוגה מקדימה');
+    }
+  };
+
+  const handleExport = () => {
+    const built = buildPdf();
+    if (!built) return;
+    try {
+      built.doc.save(built.fileName);
+      toast.success('PDF נשלח להורדה', { description: built.fileName, duration: 5000 });
     } catch (err) {
       console.error('RFQ PDF export failed', err);
       toast.error('שגיאה בייצוא PDF');
     }
+  };
+
+  const downloadFromPreview = () => {
+    if (!preview) return;
+    const a = document.createElement('a');
+    a.href = preview.url;
+    a.download = preview.fileName;
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   };
 
   return (
