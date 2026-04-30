@@ -53,6 +53,51 @@ export type Database = {
         }
         Relationships: []
       }
+      catalog_products: {
+        Row: {
+          area: string
+          created_at: string
+          description: string
+          discipline: string
+          id: string
+          image_url: string | null
+          name: string
+          sku: string
+          supplier_id: string | null
+          supplier_name: string
+          unit_price_eur: number | null
+          updated_at: string
+        }
+        Insert: {
+          area?: string
+          created_at?: string
+          description?: string
+          discipline?: string
+          id: string
+          image_url?: string | null
+          name?: string
+          sku?: string
+          supplier_id?: string | null
+          supplier_name?: string
+          unit_price_eur?: number | null
+          updated_at?: string
+        }
+        Update: {
+          area?: string
+          created_at?: string
+          description?: string
+          discipline?: string
+          id?: string
+          image_url?: string | null
+          name?: string
+          sku?: string
+          supplier_id?: string | null
+          supplier_name?: string
+          unit_price_eur?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       public_area_items: {
         Row: {
           category_id: string

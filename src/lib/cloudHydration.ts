@@ -6,6 +6,7 @@ import { hydrateSuppliersFromCloud } from '@/data/supplierData';
 import { hydrateStandardItemsFromCloud } from '@/data/standardItemsData';
 import { hydratePublicAreasFromCloud } from '@/data/publicAreasData';
 import { hydratePublicAreaPlansFromCloud } from '@/data/publicAreaPlansData';
+import { hydrateCatalogFromCloud } from '@/data/catalogData';
 
 let started = false;
 
@@ -17,4 +18,5 @@ export function startCloudHydration() {
   void hydrateStandardItemsFromCloud();
   void hydratePublicAreasFromCloud();
   void hydratePublicAreaPlansFromCloud();
+  void hydrateCatalogFromCloud();
 }
