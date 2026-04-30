@@ -99,6 +99,7 @@ export default function Dashboard({ onConceptClick, masterData }: DashboardProps
         {concepts.map((concept, i) => {
           const totalItems = procurementItems
             .reduce((s, item) => s + (concept.id === 'A' ? item.qtyA : concept.id === 'B' ? item.qtyB : item.qtyC), 0);
+          const unitBreakdown = computeUnitTypeBreakdown(concept.id as 'A' | 'B' | 'C');
           return (
             <div
               key={concept.id}
@@ -129,6 +130,9 @@ export default function Dashboard({ onConceptClick, masterData }: DashboardProps
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Items</p>
                 </div>
               </div>
+              <p className="text-[11px] text-muted-foreground mt-3 pt-3 border-t">
+                {unitBreakdown}
+              </p>
             </div>
           );
         })}
