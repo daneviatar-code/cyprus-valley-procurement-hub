@@ -160,3 +160,30 @@ export function getRoomTypesForBlock(block: Concept): BlockRoomType[] {
   });
   return out;
 }
+
+export interface BlockRoomTypeByFloor {
+  floor: number;
+  code: string;
+  description: string;
+  /** Stable token used in package.roomTypes — format "floor:code" */
+  token: string;
+}
+
+/** Floor-aware room type list for a block. Same code on multiple floors = multiple entries. */
+export function getRoomTypesByFloorForBlock(block: Concept): BlockRoomTypeByFloor[] {
+  const out: BlockRoomTypeByFloor[] = [];
+  getUnitsForBlock(block).forEach(u => {
+    if (u.isZone) return;
+    u.floors.forEach(f => {
+      out.push({ floor: f, code: u.code, description: u.description, token: `${f}:${u.code}` });
+    });
+  });
+  // sort by floor, then code
+  out.sort((a, b) => a.floor - b.floor || a.code.localeCompare(b.code));
+  return out;
+}
+
+export function floorLabel(floor: number): string {
+  if (floor === 0) return 'Floor 1 (Ground)';
+  return `Floor ${floor + 1}`;
+}
