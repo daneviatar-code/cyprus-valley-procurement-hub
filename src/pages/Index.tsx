@@ -54,6 +54,7 @@ export default function Index() {
     { key: 'projectData', label: 'Project Data' },
     { key: 'itemAssignment', label: 'Item Assignment' },
     { key: 'suppliers', label: 'Suppliers' },
+    { key: 'catalog', label: 'Catalog' },
     { key: 'selections', label: 'Selections' },
     { key: 'publicAreas', label: 'Public Areas' },
   ];
