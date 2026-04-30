@@ -165,13 +165,17 @@ export default function Packages() {
     setForm({ ...form, items: form.items.filter(it => it.productId !== productId) });
   };
 
-  const toggleRoomType = (code: string) => {
-    setForm({
-      ...form,
-      roomTypes: form.roomTypes.includes(code)
-        ? form.roomTypes.filter(c => c !== code)
-        : [...form.roomTypes, code],
-    });
+  const setTokens = (tokens: string[]) => {
+    setForm(f => ({ ...f, roomTypes: tokens }));
+  };
+
+  const toggleToken = (token: string) => {
+    setForm(f => ({
+      ...f,
+      roomTypes: f.roomTypes.includes(token)
+        ? f.roomTypes.filter(t => t !== token)
+        : [...f.roomTypes, token],
+    }));
   };
 
   const formTotal = useMemo(
