@@ -44,6 +44,7 @@ import { loadPackage, PackageItem } from '@/data/packageData';
 import { Selection, SelectionMap, loadSelections, saveSelections } from '@/data/selectionData';
 import { buildingAUnits, buildingBUnits, buildingCUnits, UnitType } from '@/data/unitFurnitureData';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 function getUnitsForConcept(concept: Concept): UnitType[] {
   switch (concept) {
@@ -64,7 +65,7 @@ interface RoomTypeCard {
 }
 
 export default function Selections() {
-  const [filterConcept, setFilterConcept] = useState<string>('all');
+  const [activeBlock, setActiveBlock] = useState<Concept>('A');
   const [filterUnit, setFilterUnit] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchText, setSearchText] = useState('');
@@ -77,37 +78,34 @@ export default function Selections() {
   // Force re-render after saves
   const [version, setVersion] = useState(0);
 
-  // Build all room type cards
+  // Build all room type cards FOR THE ACTIVE BLOCK ONLY.
+  // Selections in localStorage are already keyed by concept+unitCode, so each block is independent.
   const allCards: RoomTypeCard[] = useMemo(() => {
     const cards: RoomTypeCard[] = [];
-    const concepts: Concept[] = ['A', 'B', 'C'];
-
-    concepts.forEach(concept => {
-      const units = getUnitsForConcept(concept);
-      units.forEach(unit => {
-        const pkg = loadPackage(concept, unit.code);
-        if (pkg.items.length === 0) return;
-        const sels = loadSelections(concept, unit.code);
-        const selectedCount = pkg.items.filter(i => sels[i.itemName]).length;
-        cards.push({
-          concept,
-          unitCode: unit.code,
-          items: pkg.items,
-          selections: sels,
-          selectedCount,
-          totalCount: pkg.items.length,
-          isComplete: selectedCount === pkg.items.length,
-        });
+    const concept = activeBlock;
+    const units = getUnitsForConcept(concept);
+    units.forEach(unit => {
+      const pkg = loadPackage(concept, unit.code);
+      if (pkg.items.length === 0) return;
+      const sels = loadSelections(concept, unit.code);
+      const selectedCount = pkg.items.filter(i => sels[i.itemName]).length;
+      cards.push({
+        concept,
+        unitCode: unit.code,
+        items: pkg.items,
+        selections: sels,
+        selectedCount,
+        totalCount: pkg.items.length,
+        isComplete: selectedCount === pkg.items.length,
       });
     });
 
     return cards;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [version]);
+  }, [version, activeBlock]);
 
   const filteredCards = useMemo(() => {
     return allCards.filter(card => {
-      if (filterConcept !== 'all' && card.concept !== filterConcept) return false;
       if (filterUnit !== 'all' && card.unitCode !== filterUnit) return false;
       if (filterStatus === 'complete' && !card.isComplete) return false;
       if (filterStatus === 'pending' && card.isComplete) return false;
@@ -118,7 +116,7 @@ export default function Selections() {
       }
       return true;
     });
-  }, [allCards, filterConcept, filterUnit, filterStatus, searchText]);
+  }, [allCards, filterUnit, filterStatus, searchText]);
 
   // All unique unit codes for filter
   const allUnitCodes = useMemo(() => {
@@ -264,6 +262,15 @@ export default function Selections() {
         <p className="text-xs text-muted-foreground">Track product selections for every room type — see what's chosen and what's missing</p>
       </div>
 
+      {/* Block sub-tabs — each block's selections are independent */}
+      <Tabs value={activeBlock} onValueChange={(v) => setActiveBlock(v as Concept)}>
+        <TabsList>
+          <TabsTrigger value="A">Block A (HAPPINESS)</TabsTrigger>
+          <TabsTrigger value="B">Block B (WELLNESS)</TabsTrigger>
+          <TabsTrigger value="C">Block C (BOUTIQUE)</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       {/* Summary */}
       <div className="grid grid-cols-3 gap-4">
         <Card>
@@ -307,15 +314,7 @@ export default function Selections() {
             className="pl-9 h-9"
           />
         </div>
-        <Select value={filterConcept} onValueChange={setFilterConcept}>
-          <SelectTrigger className="h-9 w-[140px]"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Concepts</SelectItem>
-            <SelectItem value="A">Concept A</SelectItem>
-            <SelectItem value="B">Concept B</SelectItem>
-            <SelectItem value="C">Concept C</SelectItem>
-          </SelectContent>
-        </Select>
+        {/* Concept dropdown removed — block selection is now handled via the top-level Block tabs */}
         <Select value={filterUnit} onValueChange={setFilterUnit}>
           <SelectTrigger className="h-9 w-[140px]"><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -331,8 +330,8 @@ export default function Selections() {
             <SelectItem value="pending">Pending</SelectItem>
           </SelectContent>
         </Select>
-        {(searchText || filterConcept !== 'all' || filterUnit !== 'all' || filterStatus !== 'all') && (
-          <Button variant="ghost" size="sm" className="h-9 text-xs" onClick={() => { setSearchText(''); setFilterConcept('all'); setFilterUnit('all'); setFilterStatus('all'); }}>
+        {(searchText || filterUnit !== 'all' || filterStatus !== 'all') && (
+          <Button variant="ghost" size="sm" className="h-9 text-xs" onClick={() => { setSearchText(''); setFilterUnit('all'); setFilterStatus('all'); }}>
             Clear filters
           </Button>
         )}
