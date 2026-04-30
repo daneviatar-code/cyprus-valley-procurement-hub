@@ -1,8 +1,42 @@
 import { useMemo } from 'react';
 import { Building, Home, Package, Layers, CheckCircle } from 'lucide-react';
 import { concepts, categoryEmojis } from '@/data/projectData';
-import { MasterRow, computeProcurementItems, computeTotalItemsCount } from '@/data/masterData';
+import { MasterRow, computeProcurementItems, computeTotalItemsCount, ALL_BUILDINGS } from '@/data/masterData';
+import { getBuildingData } from '@/data/unitFurnitureData';
 import { loadAllSelections } from '@/data/selectionData';
+
+function computeUnitTypeBreakdown(conceptId: 'A' | 'B' | 'C'): string {
+  const { units } = getBuildingData(conceptId);
+  const buildingsCount = ALL_BUILDINGS[conceptId].length;
+  const counts: Record<string, number> = {};
+  units.forEach(u => {
+    if ((u as any).isZone) return;
+    let perBuilding = 0;
+    u.floors.forEach(f => { perBuilding += u.unitsPerFloor[f] || 0; });
+    const desc = u.description || '';
+    counts[desc] = (counts[desc] || 0) + perBuilding * buildingsCount;
+  });
+  const labelMap: Array<[string, string]> = [
+    ['Studio', 'Studio'],
+    ['1BD', '1-Bedroom'],
+    ['2BD', '2-Bedroom'],
+    ['3BD', '3-Bedroom'],
+    ['4BD Penthouse', '4-Bedroom'],
+    ['4BD', '4-Bedroom'],
+  ];
+  const seen = new Set<string>();
+  const parts: string[] = [];
+  labelMap.forEach(([, label]) => {
+    if (seen.has(label)) return;
+    const sum = labelMap.filter(([, l]) => l === label).reduce((s, [k]) => s + (counts[k] || 0), 0);
+    seen.add(label);
+    if (sum > 0) parts.push(`${label}: ${sum}`);
+  });
+  Object.entries(counts).forEach(([desc, n]) => {
+    if (!labelMap.some(([k]) => k === desc) && n > 0) parts.push(`${desc}: ${n}`);
+  });
+  return parts.join(' · ');
+}
 
 interface DashboardProps {
   onConceptClick?: (conceptId: 'A' | 'B' | 'C') => void;
