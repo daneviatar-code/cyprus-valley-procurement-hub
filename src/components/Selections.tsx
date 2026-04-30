@@ -305,15 +305,7 @@ export default function Selections() {
             className="pl-9 h-9"
           />
         </div>
-        <Select value={filterConcept} onValueChange={setFilterConcept}>
-          <SelectTrigger className="h-9 w-[140px]"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Concepts</SelectItem>
-            <SelectItem value="A">Concept A</SelectItem>
-            <SelectItem value="B">Concept B</SelectItem>
-            <SelectItem value="C">Concept C</SelectItem>
-          </SelectContent>
-        </Select>
+        {/* Concept dropdown removed — block selection is now handled via the top-level Block tabs */}
         <Select value={filterUnit} onValueChange={setFilterUnit}>
           <SelectTrigger className="h-9 w-[140px]"><SelectValue /></SelectTrigger>
           <SelectContent>
