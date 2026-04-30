@@ -65,7 +65,7 @@ interface RoomTypeCard {
 }
 
 export default function Selections() {
-  const [filterConcept, setFilterConcept] = useState<string>('all');
+  const [activeBlock, setActiveBlock] = useState<Concept>('A');
   const [filterUnit, setFilterUnit] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchText, setSearchText] = useState('');
