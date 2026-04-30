@@ -78,33 +78,31 @@ export default function Selections() {
   // Force re-render after saves
   const [version, setVersion] = useState(0);
 
-  // Build all room type cards
+  // Build all room type cards FOR THE ACTIVE BLOCK ONLY.
+  // Selections in localStorage are already keyed by concept+unitCode, so each block is independent.
   const allCards: RoomTypeCard[] = useMemo(() => {
     const cards: RoomTypeCard[] = [];
-    const concepts: Concept[] = ['A', 'B', 'C'];
-
-    concepts.forEach(concept => {
-      const units = getUnitsForConcept(concept);
-      units.forEach(unit => {
-        const pkg = loadPackage(concept, unit.code);
-        if (pkg.items.length === 0) return;
-        const sels = loadSelections(concept, unit.code);
-        const selectedCount = pkg.items.filter(i => sels[i.itemName]).length;
-        cards.push({
-          concept,
-          unitCode: unit.code,
-          items: pkg.items,
-          selections: sels,
-          selectedCount,
-          totalCount: pkg.items.length,
-          isComplete: selectedCount === pkg.items.length,
-        });
+    const concept = activeBlock;
+    const units = getUnitsForConcept(concept);
+    units.forEach(unit => {
+      const pkg = loadPackage(concept, unit.code);
+      if (pkg.items.length === 0) return;
+      const sels = loadSelections(concept, unit.code);
+      const selectedCount = pkg.items.filter(i => sels[i.itemName]).length;
+      cards.push({
+        concept,
+        unitCode: unit.code,
+        items: pkg.items,
+        selections: sels,
+        selectedCount,
+        totalCount: pkg.items.length,
+        isComplete: selectedCount === pkg.items.length,
       });
     });
 
     return cards;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [version]);
+  }, [version, activeBlock]);
 
   const filteredCards = useMemo(() => {
     return allCards.filter(card => {
