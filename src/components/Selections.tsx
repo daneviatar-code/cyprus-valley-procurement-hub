@@ -321,8 +321,8 @@ export default function Selections() {
             <SelectItem value="pending">Pending</SelectItem>
           </SelectContent>
         </Select>
-        {(searchText || filterConcept !== 'all' || filterUnit !== 'all' || filterStatus !== 'all') && (
-          <Button variant="ghost" size="sm" className="h-9 text-xs" onClick={() => { setSearchText(''); setFilterConcept('all'); setFilterUnit('all'); setFilterStatus('all'); }}>
+        {(searchText || filterUnit !== 'all' || filterStatus !== 'all') && (
+          <Button variant="ghost" size="sm" className="h-9 text-xs" onClick={() => { setSearchText(''); setFilterUnit('all'); setFilterStatus('all'); }}>
             Clear filters
           </Button>
         )}
