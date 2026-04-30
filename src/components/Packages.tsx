@@ -91,6 +91,8 @@ export default function Packages() {
   const openCreate = () => {
     setEditId(null);
     setForm(emptyForm());
+    setRtSearch('');
+    setExpandedFloors(new Set());
     setEditorOpen(true);
   };
 
@@ -102,6 +104,8 @@ export default function Packages() {
       items: p.items.map(it => ({ ...it })),
       roomTypes: [...p.roomTypes],
     });
+    setRtSearch('');
+    setExpandedFloors(new Set());
     setEditorOpen(true);
   };
 
