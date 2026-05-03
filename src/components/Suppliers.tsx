@@ -27,9 +27,13 @@ import {
   PurchaseOrder, POLineItem, loadPurchaseOrders, savePurchaseOrders, generatePONumber, generatePOId,
 } from '@/data/purchaseOrderData';
 import { loadAllSelections } from '@/data/selectionData';
+import {
+  Category, loadCategoriesShared, saveCategoriesShared,
+  subscribeCategories, genCategoryIdShared,
+} from '@/data/categoriesData';
+import ManageCategoriesDialog from './ManageCategoriesDialog';
 import { toast } from '@/hooks/use-toast';
 
-const CATEGORIES = ['Furniture', 'Lighting', 'Textiles', 'Appliances', 'Bathroom', 'Kitchen', 'Outdoor', 'Accessories', 'Other'];
 const STATUS_OPTIONS: SupplierItem['status'][] = ['quoted', 'ordered', 'delivered', 'cancelled'];
 
 const statusColors: Record<SupplierItem['status'], string> = {
