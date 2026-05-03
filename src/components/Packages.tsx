@@ -39,6 +39,7 @@ import {
 import { ChevronRight } from 'lucide-react';
 import {
   CatalogProduct, loadCatalog, saveCatalog, subscribeCatalog, uploadCatalogImage,
+  generateProductId, DISCIPLINES,
 } from '@/data/catalogData';
 import { Concept } from '@/data/masterData';
 import { toast } from '@/hooks/use-toast';
@@ -302,13 +303,53 @@ export default function Packages() {
 
   const saveProductDraft = () => {
     if (!productDraft) return;
-    const next = catalog.map(p => p.id === productDraft.id ? productDraft : p);
+    const exists = catalog.some(p => p.id === productDraft.id);
+    const next = exists
+      ? catalog.map(p => p.id === productDraft.id ? productDraft : p)
+      : [...catalog, productDraft];
     setCatalog(next);
     saveCatalog(next);
     setEditProductId(null);
     setProductDraft(null);
-    toast({ title: 'Product updated' });
+    toast({ title: exists ? 'Product updated' : 'Product added' });
   };
+
+  const createNewProduct = () => {
+    const draft: CatalogProduct = {
+      id: generateProductId(),
+      name: '',
+      description: '',
+      imageUrl: '',
+      unitPriceEur: null,
+      supplierId: null,
+      supplierName: '',
+      discipline: DISCIPLINES[0],
+      area: 'Indoor',
+      sku: '',
+    };
+    setEditProductId(draft.id);
+    setProductDraft(draft);
+  };
+
+  const deleteCatalogProduct = (productId: string) => {
+    // Remove from all packages
+    const updatedPackages = packages.map(pkg =>
+      pkg.items.some(it => it.productId === productId)
+        ? { ...pkg, items: pkg.items.filter(it => it.productId !== productId) }
+        : pkg
+    );
+    persist(updatedPackages);
+    if (form.items.some(it => it.productId === productId)) {
+      setForm(f => ({ ...f, items: f.items.filter(it => it.productId !== productId) }));
+    }
+    const nextCatalog = catalog.filter(p => p.id !== productId);
+    setCatalog(nextCatalog);
+    saveCatalog(nextCatalog);
+    toast({ title: 'Product deleted' });
+  };
+
+  const [deleteCatalogId, setDeleteCatalogId] = useState<string | null>(null);
+
 
   const filteredCatalog = useMemo(() => {
     const q = pickerSearch.trim().toLowerCase();
@@ -707,6 +748,9 @@ export default function Packages() {
                 <TabsTrigger value="reorder" className="text-xs" disabled={pickerSort !== 'default' || !!pickerSearch.trim()}>Drag = Reorder</TabsTrigger>
               </TabsList>
             </Tabs>
+            <Button type="button" size="sm" onClick={createNewProduct} className="gap-1 h-10">
+              <Plus className="w-4 h-4" /> New Product
+            </Button>
           </div>
 
           <div className="overflow-y-auto flex-1 -mx-2 px-2">
@@ -754,10 +798,28 @@ export default function Packages() {
                       setPickerDragOverId(null);
                     }}
                     onClick={() => addProductToForm(p.id)}
-                    className={`bg-card border rounded-md overflow-hidden flex flex-col cursor-pointer hover:border-accent hover:shadow-sm transition-all ${
+                    className={`group relative bg-card border rounded-md overflow-hidden flex flex-col cursor-pointer hover:border-accent hover:shadow-sm transition-all ${
                       pickerDragOverId === p.id ? 'ring-2 ring-accent border-accent' : ''
                     } ${pickerDragId === p.id ? 'opacity-50' : ''}`}
                   >
+                    <div className="absolute top-1 right-1 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); openProductEditor(p.id); }}
+                        className="bg-background/90 border rounded p-1 hover:bg-accent hover:text-accent-foreground"
+                        title="Edit product"
+                      >
+                        <Pencil className="w-3 h-3" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setDeleteCatalogId(p.id); }}
+                        className="bg-background/90 border rounded p-1 hover:bg-destructive hover:text-destructive-foreground"
+                        title="Delete product"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
                     <div className="aspect-[4/3] bg-muted flex items-center justify-center overflow-hidden">
                       {p.imageUrl ? (
                         <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
@@ -768,6 +830,7 @@ export default function Packages() {
                     <div className="p-1.5 flex-1 flex flex-col gap-0.5">
                       <div className="text-[11px] font-medium text-foreground line-clamp-2 leading-tight">{p.name}</div>
                       <div className="text-[10px] text-muted-foreground truncate">{p.supplierName || '—'}</div>
+                      <div className="text-[10px] text-muted-foreground truncate">{p.discipline || '—'}</div>
                       <div className="text-[11px] font-bold text-foreground mt-auto pt-0.5">
                         {p.unitPriceEur != null ? `€${p.unitPriceEur.toFixed(2)}` : '—'}
                       </div>
@@ -788,7 +851,7 @@ export default function Packages() {
       <Dialog open={!!editProductId} onOpenChange={(o) => { if (!o) { setEditProductId(null); setProductDraft(null); } }}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Edit Product</DialogTitle>
+            <DialogTitle>{catalog.some(p => p.id === editProductId) ? 'Edit Product' : 'New Product'}</DialogTitle>
             <DialogDescription>Changes apply across the catalog and all packages.</DialogDescription>
           </DialogHeader>
           {productDraft && (
@@ -882,6 +945,29 @@ export default function Packages() {
                 <Label>Supplier</Label>
                 <Input value={productDraft.supplierName} onChange={e => setProductDraft({ ...productDraft, supplierName: e.target.value })} />
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Discipline</Label>
+                  <select
+                    value={productDraft.discipline}
+                    onChange={e => setProductDraft({ ...productDraft, discipline: e.target.value })}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  >
+                    {DISCIPLINES.map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <Label>Area</Label>
+                  <select
+                    value={productDraft.area}
+                    onChange={e => setProductDraft({ ...productDraft, area: e.target.value as 'Indoor' | 'Outdoor' })}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  >
+                    <option value="Indoor">Indoor</option>
+                    <option value="Outdoor">Outdoor</option>
+                  </select>
+                </div>
+              </div>
             </div>
           )}
           <DialogFooter>
@@ -933,6 +1019,33 @@ export default function Packages() {
               }}
             >
               Merge
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete catalog product confirmation */}
+      <AlertDialog open={!!deleteCatalogId} onOpenChange={(o) => !o && setDeleteCatalogId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this product?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteCatalogId && (() => {
+                const p = catalog.find(x => x.id === deleteCatalogId);
+                return <>This will remove <strong>"{p?.name}"</strong> from the catalog and from all packages. This cannot be undone.</>;
+              })()}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deleteCatalogId) deleteCatalogProduct(deleteCatalogId);
+                setDeleteCatalogId(null);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
