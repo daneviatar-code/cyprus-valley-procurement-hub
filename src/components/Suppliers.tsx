@@ -778,6 +778,7 @@ export default function Suppliers() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ManageCategoriesDialog open={manageCatsOpen} onOpenChange={setManageCatsOpen} />
     </div>
   );
 }
