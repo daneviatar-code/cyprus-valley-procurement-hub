@@ -851,7 +851,7 @@ export default function Packages() {
       <Dialog open={!!editProductId} onOpenChange={(o) => { if (!o) { setEditProductId(null); setProductDraft(null); } }}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Edit Product</DialogTitle>
+            <DialogTitle>{catalog.some(p => p.id === editProductId) ? 'Edit Product' : 'New Product'}</DialogTitle>
             <DialogDescription>Changes apply across the catalog and all packages.</DialogDescription>
           </DialogHeader>
           {productDraft && (
