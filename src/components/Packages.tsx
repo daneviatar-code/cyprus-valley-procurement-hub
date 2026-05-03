@@ -21,10 +21,11 @@ import {
 } from '@/data/packagesData';
 import { ChevronRight } from 'lucide-react';
 import {
-  CatalogProduct, loadCatalog, subscribeCatalog,
+  CatalogProduct, loadCatalog, saveCatalog, subscribeCatalog, uploadCatalogImage,
 } from '@/data/catalogData';
 import { Concept } from '@/data/masterData';
 import { toast } from '@/hooks/use-toast';
+import { Upload } from 'lucide-react';
 
 const BLOCKS: { id: Concept; label: string }[] = [
   { id: 'A', label: 'Block A (HAPPINESS)' },
@@ -63,6 +64,9 @@ export default function Packages() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [rtSearch, setRtSearch] = useState('');
   const [expandedFloors, setExpandedFloors] = useState<Set<number>>(new Set());
+  const [editProductId, setEditProductId] = useState<string | null>(null);
+  const [productDraft, setProductDraft] = useState<CatalogProduct | null>(null);
+  const [uploadingProductImg, setUploadingProductImg] = useState(false);
 
   useEffect(() => subscribePackages(setPackages), []);
   useEffect(() => subscribeCatalog(setCatalog), []);
@@ -194,6 +198,40 @@ export default function Packages() {
     () => form.items.reduce((s, it) => s + priceOf(catalogById.get(it.productId)) * it.quantity, 0),
     [form.items, catalogById]
   );
+
+  const openProductEditor = (productId: string) => {
+    const p = catalogById.get(productId);
+    if (!p) {
+      toast({ title: 'Product not found in catalog', variant: 'destructive' });
+      return;
+    }
+    setEditProductId(productId);
+    setProductDraft({ ...p });
+  };
+
+  const handleProductImageUpload = async (file: File) => {
+    if (!productDraft) return;
+    setUploadingProductImg(true);
+    try {
+      const url = await uploadCatalogImage(file);
+      setProductDraft({ ...productDraft, imageUrl: url });
+      toast({ title: 'Image uploaded' });
+    } catch (e: any) {
+      toast({ title: 'Upload failed', description: e.message, variant: 'destructive' });
+    } finally {
+      setUploadingProductImg(false);
+    }
+  };
+
+  const saveProductDraft = () => {
+    if (!productDraft) return;
+    const next = catalog.map(p => p.id === productDraft.id ? productDraft : p);
+    setCatalog(next);
+    saveCatalog(next);
+    setEditProductId(null);
+    setProductDraft(null);
+    toast({ title: 'Product updated' });
+  };
 
   const filteredCatalog = useMemo(() => {
     const q = pickerSearch.trim().toLowerCase();
@@ -370,6 +408,9 @@ export default function Packages() {
                         <div className="w-20 text-right text-sm font-semibold whitespace-nowrap">
                           €{lineTotal.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
+                        <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground" onClick={() => openProductEditor(it.productId)} title="Edit product (image, price, supplier...)">
+                          <Pencil className="w-4 h-4" />
+                        </Button>
                         <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive" onClick={() => removeItem(it.productId)}>
                           <X className="w-4 h-4" />
                         </Button>
@@ -579,7 +620,86 @@ export default function Packages() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete confirm */}
+      {/* Product editor (edit catalog product inline from package) */}
+      <Dialog open={!!editProductId} onOpenChange={(o) => { if (!o) { setEditProductId(null); setProductDraft(null); } }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Product</DialogTitle>
+            <DialogDescription>Changes apply across the catalog and all packages.</DialogDescription>
+          </DialogHeader>
+          {productDraft && (
+            <div className="space-y-3 py-2">
+              <div>
+                <Label>Image</Label>
+                <div className="flex items-center gap-3 mt-1">
+                  <div className="w-20 h-20 bg-muted border rounded flex items-center justify-center overflow-hidden flex-shrink-0">
+                    {productDraft.imageUrl ? (
+                      <img src={productDraft.imageUrl} alt="preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <ImageIcon className="w-6 h-6 text-muted-foreground/40" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <label className="cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={e => {
+                          const f = e.target.files?.[0];
+                          if (f) handleProductImageUpload(f);
+                        }}
+                      />
+                      <div className="inline-flex items-center gap-2 px-3 py-2 border rounded-md text-sm hover:bg-accent">
+                        <Upload className="w-4 h-4" />
+                        {uploadingProductImg ? 'Uploading...' : (productDraft.imageUrl ? 'Replace image' : 'Upload image')}
+                      </div>
+                    </label>
+                    {productDraft.imageUrl && (
+                      <Button type="button" variant="ghost" size="sm" className="ml-2 text-destructive" onClick={() => setProductDraft({ ...productDraft, imageUrl: '' })}>
+                        Remove
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div>
+                <Label>Name</Label>
+                <Input value={productDraft.name} onChange={e => setProductDraft({ ...productDraft, name: e.target.value })} />
+              </div>
+              <div>
+                <Label>Description</Label>
+                <Textarea value={productDraft.description} onChange={e => setProductDraft({ ...productDraft, description: e.target.value })} rows={2} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Unit Price (EUR)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={productDraft.unitPriceEur ?? ''}
+                    onChange={e => setProductDraft({ ...productDraft, unitPriceEur: e.target.value === '' ? null : parseFloat(e.target.value) })}
+                  />
+                </div>
+                <div>
+                  <Label>SKU</Label>
+                  <Input value={productDraft.sku} onChange={e => setProductDraft({ ...productDraft, sku: e.target.value })} />
+                </div>
+              </div>
+              <div>
+                <Label>Supplier</Label>
+                <Input value={productDraft.supplierName} onChange={e => setProductDraft({ ...productDraft, supplierName: e.target.value })} />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setEditProductId(null); setProductDraft(null); }}>Cancel</Button>
+            <Button onClick={saveProductDraft}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
       <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
