@@ -657,7 +657,7 @@ export default function Packages() {
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>Pick a Catalog Product</DialogTitle>
-            <DialogDescription>Click a product to add it to the package.</DialogDescription>
+            <DialogDescription>Click to add. Drag one product onto another to merge duplicates (the dragged one will be removed and replaced by the target everywhere).</DialogDescription>
           </DialogHeader>
 
           <div className="relative">
