@@ -798,10 +798,28 @@ export default function Packages() {
                       setPickerDragOverId(null);
                     }}
                     onClick={() => addProductToForm(p.id)}
-                    className={`bg-card border rounded-md overflow-hidden flex flex-col cursor-pointer hover:border-accent hover:shadow-sm transition-all ${
+                    className={`group relative bg-card border rounded-md overflow-hidden flex flex-col cursor-pointer hover:border-accent hover:shadow-sm transition-all ${
                       pickerDragOverId === p.id ? 'ring-2 ring-accent border-accent' : ''
                     } ${pickerDragId === p.id ? 'opacity-50' : ''}`}
                   >
+                    <div className="absolute top-1 right-1 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); openProductEditor(p.id); }}
+                        className="bg-background/90 border rounded p-1 hover:bg-accent hover:text-accent-foreground"
+                        title="Edit product"
+                      >
+                        <Pencil className="w-3 h-3" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setDeleteCatalogId(p.id); }}
+                        className="bg-background/90 border rounded p-1 hover:bg-destructive hover:text-destructive-foreground"
+                        title="Delete product"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
                     <div className="aspect-[4/3] bg-muted flex items-center justify-center overflow-hidden">
                       {p.imageUrl ? (
                         <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
@@ -812,6 +830,7 @@ export default function Packages() {
                     <div className="p-1.5 flex-1 flex flex-col gap-0.5">
                       <div className="text-[11px] font-medium text-foreground line-clamp-2 leading-tight">{p.name}</div>
                       <div className="text-[10px] text-muted-foreground truncate">{p.supplierName || '—'}</div>
+                      <div className="text-[10px] text-muted-foreground truncate">{p.discipline || '—'}</div>
                       <div className="text-[11px] font-bold text-foreground mt-auto pt-0.5">
                         {p.unitPriceEur != null ? `€${p.unitPriceEur.toFixed(2)}` : '—'}
                       </div>
