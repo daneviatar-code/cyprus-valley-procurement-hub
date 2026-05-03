@@ -303,13 +303,53 @@ export default function Packages() {
 
   const saveProductDraft = () => {
     if (!productDraft) return;
-    const next = catalog.map(p => p.id === productDraft.id ? productDraft : p);
+    const exists = catalog.some(p => p.id === productDraft.id);
+    const next = exists
+      ? catalog.map(p => p.id === productDraft.id ? productDraft : p)
+      : [...catalog, productDraft];
     setCatalog(next);
     saveCatalog(next);
     setEditProductId(null);
     setProductDraft(null);
-    toast({ title: 'Product updated' });
+    toast({ title: exists ? 'Product updated' : 'Product added' });
   };
+
+  const createNewProduct = () => {
+    const draft: CatalogProduct = {
+      id: generateProductId(),
+      name: '',
+      description: '',
+      imageUrl: '',
+      unitPriceEur: null,
+      supplierId: null,
+      supplierName: '',
+      discipline: DISCIPLINES[0],
+      area: 'Indoor',
+      sku: '',
+    };
+    setEditProductId(draft.id);
+    setProductDraft(draft);
+  };
+
+  const deleteCatalogProduct = (productId: string) => {
+    // Remove from all packages
+    const updatedPackages = packages.map(pkg =>
+      pkg.items.some(it => it.productId === productId)
+        ? { ...pkg, items: pkg.items.filter(it => it.productId !== productId) }
+        : pkg
+    );
+    persist(updatedPackages);
+    if (form.items.some(it => it.productId === productId)) {
+      setForm(f => ({ ...f, items: f.items.filter(it => it.productId !== productId) }));
+    }
+    const nextCatalog = catalog.filter(p => p.id !== productId);
+    setCatalog(nextCatalog);
+    saveCatalog(nextCatalog);
+    toast({ title: 'Product deleted' });
+  };
+
+  const [deleteCatalogId, setDeleteCatalogId] = useState<string | null>(null);
+
 
   const filteredCatalog = useMemo(() => {
     const q = pickerSearch.trim().toLowerCase();
