@@ -418,7 +418,29 @@ export default function Packages() {
                     const price = priceOf(prod);
                     const lineTotal = price * it.quantity;
                     return (
-                      <div key={it.productId} className="flex items-center gap-3 p-2">
+                      <div
+                        key={it.productId}
+                        draggable
+                        onDragStart={(e) => { setDragProductId(it.productId); e.dataTransfer.effectAllowed = 'move'; }}
+                        onDragEnd={() => { setDragProductId(null); setDragOverProductId(null); }}
+                        onDragOver={(e) => {
+                          if (dragProductId && dragProductId !== it.productId) {
+                            e.preventDefault();
+                            e.dataTransfer.dropEffect = 'move';
+                            if (dragOverProductId !== it.productId) setDragOverProductId(it.productId);
+                          }
+                        }}
+                        onDragLeave={() => { if (dragOverProductId === it.productId) setDragOverProductId(null); }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          if (dragProductId) mergeItems(dragProductId, it.productId);
+                          setDragProductId(null);
+                          setDragOverProductId(null);
+                        }}
+                        className={`flex items-center gap-3 p-2 cursor-move transition-colors ${
+                          dragOverProductId === it.productId ? 'bg-accent/30 ring-2 ring-accent ring-inset' : ''
+                        } ${dragProductId === it.productId ? 'opacity-50' : ''}`}
+                      >
                         <div className="w-12 h-12 bg-muted rounded flex items-center justify-center overflow-hidden flex-shrink-0">
                           <ProductThumb src={prod?.imageUrl} alt={prod?.name || ''} />
                         </div>
