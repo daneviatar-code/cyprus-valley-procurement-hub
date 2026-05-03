@@ -748,6 +748,9 @@ export default function Packages() {
                 <TabsTrigger value="reorder" className="text-xs" disabled={pickerSort !== 'default' || !!pickerSearch.trim()}>Drag = Reorder</TabsTrigger>
               </TabsList>
             </Tabs>
+            <Button type="button" size="sm" onClick={createNewProduct} className="gap-1 h-10">
+              <Plus className="w-4 h-4" /> New Product
+            </Button>
           </div>
 
           <div className="overflow-y-auto flex-1 -mx-2 px-2">
