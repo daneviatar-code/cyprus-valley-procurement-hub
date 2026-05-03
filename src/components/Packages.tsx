@@ -852,6 +852,37 @@ export default function Packages() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Merge confirmation */}
+      <AlertDialog open={!!mergeConfirm} onOpenChange={(o) => !o && setMergeConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Merge these products?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {mergeConfirm && (() => {
+                const src = catalog.find(p => p.id === mergeConfirm.sourceId);
+                const tgt = catalog.find(p => p.id === mergeConfirm.targetId);
+                return (
+                  <>
+                    <strong>"{src?.name}"</strong> will be removed from the catalog and replaced everywhere by <strong>"{tgt?.name}"</strong>. Quantities in all packages will be summed. This cannot be undone.
+                  </>
+                );
+              })()}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (mergeConfirm) mergeCatalogProducts(mergeConfirm.sourceId, mergeConfirm.targetId);
+                setMergeConfirm(null);
+              }}
+            >
+              Merge
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
