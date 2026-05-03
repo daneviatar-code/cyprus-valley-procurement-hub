@@ -78,6 +78,8 @@ export default function Packages() {
   const [form, setForm] = useState<FormState>(emptyForm());
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerSearch, setPickerSearch] = useState('');
+  const [pickerSort, setPickerSort] = useState<'default' | 'name-asc' | 'name-desc' | 'price-asc' | 'price-desc' | 'supplier' | 'discipline'>('default');
+  const [pickerDragMode, setPickerDragMode] = useState<'merge' | 'reorder'>('merge');
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [rtSearch, setRtSearch] = useState('');
   const [expandedFloors, setExpandedFloors] = useState<Set<number>>(new Set());
