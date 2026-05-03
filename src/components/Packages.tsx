@@ -84,6 +84,25 @@ export default function Packages() {
   const [editProductId, setEditProductId] = useState<string | null>(null);
   const [productDraft, setProductDraft] = useState<CatalogProduct | null>(null);
   const [uploadingProductImg, setUploadingProductImg] = useState(false);
+  const [dragProductId, setDragProductId] = useState<string | null>(null);
+  const [dragOverProductId, setDragOverProductId] = useState<string | null>(null);
+
+  const mergeItems = (sourceId: string, targetId: string) => {
+    if (sourceId === targetId) return;
+    setForm(f => {
+      const src = f.items.find(it => it.productId === sourceId);
+      if (!src) return f;
+      return {
+        ...f,
+        items: f.items
+          .filter(it => it.productId !== sourceId)
+          .map(it => it.productId === targetId
+            ? { ...it, quantity: it.quantity + src.quantity }
+            : it),
+      };
+    });
+    toast({ title: 'Items merged' });
+  };
 
   useEffect(() => subscribePackages(setPackages), []);
   useEffect(() => subscribeCatalog(setCatalog), []);
