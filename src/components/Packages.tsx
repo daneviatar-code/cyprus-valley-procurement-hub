@@ -1023,6 +1023,33 @@ export default function Packages() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Delete catalog product confirmation */}
+      <AlertDialog open={!!deleteCatalogId} onOpenChange={(o) => !o && setDeleteCatalogId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this product?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteCatalogId && (() => {
+                const p = catalog.find(x => x.id === deleteCatalogId);
+                return <>This will remove <strong>"{p?.name}"</strong> from the catalog and from all packages. This cannot be undone.</>;
+              })()}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deleteCatalogId) deleteCatalogProduct(deleteCatalogId);
+                setDeleteCatalogId(null);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
