@@ -98,6 +98,39 @@ export type Database = {
         }
         Relationships: []
       }
+      categories: {
+        Row: {
+          archived: boolean
+          created_at: string
+          id: string
+          name_en: string
+          name_he: string
+          order: number
+          scope: string
+          updated_at: string
+        }
+        Insert: {
+          archived?: boolean
+          created_at?: string
+          id: string
+          name_en?: string
+          name_he?: string
+          order?: number
+          scope?: string
+          updated_at?: string
+        }
+        Update: {
+          archived?: boolean
+          created_at?: string
+          id?: string
+          name_en?: string
+          name_he?: string
+          order?: number
+          scope?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       packages: {
         Row: {
           block: string
