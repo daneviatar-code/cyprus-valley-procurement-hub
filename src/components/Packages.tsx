@@ -654,7 +654,7 @@ export default function Packages() {
 
       {/* Catalog product picker */}
       <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-none w-screen h-screen sm:rounded-none p-4 sm:p-6 overflow-hidden flex flex-col gap-3">
           <DialogHeader>
             <DialogTitle>Pick a Catalog Product</DialogTitle>
             <DialogDescription>Click to add. Drag one product onto another to merge duplicates (the dragged one will be removed and replaced by the target everywhere).</DialogDescription>
