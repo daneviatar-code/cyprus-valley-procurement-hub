@@ -14,6 +14,23 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+
+function ProductThumb({ src, alt }: { src?: string; alt: string }) {
+  if (!src) {
+    return <ImageIcon className="w-5 h-5 text-muted-foreground/40" />;
+  }
+  return (
+    <HoverCard openDelay={150} closeDelay={50}>
+      <HoverCardTrigger asChild>
+        <img src={src} alt={alt} className="w-full h-full object-cover cursor-zoom-in" />
+      </HoverCardTrigger>
+      <HoverCardContent side="right" className="p-1 w-auto bg-background border shadow-lg">
+        <img src={src} alt={alt} className="max-w-[320px] max-h-[320px] object-contain" />
+      </HoverCardContent>
+    </HoverCard>
+  );
+}
 import {
   Package, PackageLineItem, loadPackages, savePackages, subscribePackages,
   generatePackageId, getRoomTypesForBlock, BlockRoomType,
