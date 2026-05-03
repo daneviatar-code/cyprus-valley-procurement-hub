@@ -677,7 +677,7 @@ export default function Packages() {
                 {catalog.length === 0 ? 'Catalog is empty. Add products in the Catalog tab first.' : 'No products match.'}
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-2">
                 {filteredCatalog.map(p => (
                   <div
                     key={p.id}
@@ -701,21 +701,21 @@ export default function Packages() {
                       setPickerDragOverId(null);
                     }}
                     onClick={() => addProductToForm(p.id)}
-                    className={`bg-card border rounded-lg overflow-hidden flex flex-col cursor-pointer hover:border-accent hover:shadow-md transition-all ${
+                    className={`bg-card border rounded-md overflow-hidden flex flex-col cursor-pointer hover:border-accent hover:shadow-sm transition-all ${
                       pickerDragOverId === p.id ? 'ring-2 ring-accent border-accent' : ''
                     } ${pickerDragId === p.id ? 'opacity-50' : ''}`}
                   >
-                    <div className="aspect-square bg-muted flex items-center justify-center overflow-hidden">
+                    <div className="aspect-[4/3] bg-muted flex items-center justify-center overflow-hidden">
                       {p.imageUrl ? (
                         <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
                       ) : (
-                        <ImageIcon className="w-8 h-8 text-muted-foreground/40" />
+                        <ImageIcon className="w-6 h-6 text-muted-foreground/40" />
                       )}
                     </div>
-                    <div className="p-2 flex-1 flex flex-col gap-0.5">
-                      <div className="text-xs font-medium text-foreground line-clamp-2 leading-tight">{p.name}</div>
+                    <div className="p-1.5 flex-1 flex flex-col gap-0.5">
+                      <div className="text-[11px] font-medium text-foreground line-clamp-2 leading-tight">{p.name}</div>
                       <div className="text-[10px] text-muted-foreground truncate">{p.supplierName || '—'}</div>
-                      <div className="text-xs font-bold text-foreground mt-auto pt-1">
+                      <div className="text-[11px] font-bold text-foreground mt-auto pt-0.5">
                         {p.unitPriceEur != null ? `€${p.unitPriceEur.toFixed(2)}` : '—'}
                       </div>
                     </div>
