@@ -14,6 +14,23 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+
+function ProductThumb({ src, alt }: { src?: string; alt: string }) {
+  if (!src) {
+    return <ImageIcon className="w-5 h-5 text-muted-foreground/40" />;
+  }
+  return (
+    <HoverCard openDelay={150} closeDelay={50}>
+      <HoverCardTrigger asChild>
+        <img src={src} alt={alt} className="w-full h-full object-cover cursor-zoom-in" />
+      </HoverCardTrigger>
+      <HoverCardContent side="right" className="p-1 w-auto bg-background border shadow-lg">
+        <img src={src} alt={alt} className="max-w-[320px] max-h-[320px] object-contain" />
+      </HoverCardContent>
+    </HoverCard>
+  );
+}
 import {
   Package, PackageLineItem, loadPackages, savePackages, subscribePackages,
   generatePackageId, getRoomTypesForBlock, BlockRoomType,
@@ -384,11 +401,7 @@ export default function Packages() {
                     return (
                       <div key={it.productId} className="flex items-center gap-3 p-2">
                         <div className="w-12 h-12 bg-muted rounded flex items-center justify-center overflow-hidden flex-shrink-0">
-                          {prod?.imageUrl ? (
-                            <img src={prod.imageUrl} alt={prod.name} className="w-full h-full object-cover" />
-                          ) : (
-                            <ImageIcon className="w-5 h-5 text-muted-foreground/40" />
-                          )}
+                          <ProductThumb src={prod?.imageUrl} alt={prod?.name || ''} />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-medium text-foreground truncate">
@@ -592,11 +605,7 @@ export default function Packages() {
                     className="w-full flex items-center gap-3 p-2 hover:bg-muted/50 text-left transition-colors"
                   >
                     <div className="w-12 h-12 bg-muted rounded flex items-center justify-center overflow-hidden flex-shrink-0">
-                      {p.imageUrl ? (
-                        <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <ImageIcon className="w-5 h-5 text-muted-foreground/40" />
-                      )}
+                      <ProductThumb src={p.imageUrl} alt={p.name} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-foreground truncate">{p.name}</div>
