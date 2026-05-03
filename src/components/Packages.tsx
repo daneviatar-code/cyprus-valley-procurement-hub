@@ -679,10 +679,31 @@ export default function Packages() {
             ) : (
               <div className="divide-y border rounded-md">
                 {filteredCatalog.map(p => (
-                  <button
+                  <div
                     key={p.id}
+                    draggable
+                    onDragStart={(e) => { setPickerDragId(p.id); e.dataTransfer.effectAllowed = 'move'; }}
+                    onDragEnd={() => { setPickerDragId(null); setPickerDragOverId(null); }}
+                    onDragOver={(e) => {
+                      if (pickerDragId && pickerDragId !== p.id) {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                        if (pickerDragOverId !== p.id) setPickerDragOverId(p.id);
+                      }
+                    }}
+                    onDragLeave={() => { if (pickerDragOverId === p.id) setPickerDragOverId(null); }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      if (pickerDragId && pickerDragId !== p.id) {
+                        setMergeConfirm({ sourceId: pickerDragId, targetId: p.id });
+                      }
+                      setPickerDragId(null);
+                      setPickerDragOverId(null);
+                    }}
                     onClick={() => addProductToForm(p.id)}
-                    className="w-full flex items-center gap-3 p-2 hover:bg-muted/50 text-left transition-colors"
+                    className={`w-full flex items-center gap-3 p-2 hover:bg-muted/50 text-left transition-colors cursor-pointer ${
+                      pickerDragOverId === p.id ? 'bg-accent/30 ring-2 ring-accent ring-inset' : ''
+                    } ${pickerDragId === p.id ? 'opacity-50' : ''}`}
                   >
                     <div className="w-12 h-12 bg-muted rounded flex items-center justify-center overflow-hidden flex-shrink-0">
                       <ProductThumb src={p.imageUrl} alt={p.name} />
@@ -697,7 +718,7 @@ export default function Packages() {
                     <div className="text-sm font-semibold whitespace-nowrap">
                       {p.unitPriceEur != null ? `€${p.unitPriceEur.toFixed(2)}` : '—'}
                     </div>
-                  </button>
+                  </div>
                 ))}
               </div>
             )}
