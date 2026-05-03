@@ -141,6 +141,7 @@ export default function Packages() {
     setCatalog(nextCatalog);
     saveCatalog(nextCatalog);
     toast({ title: 'Products merged' });
+  };
 
   useEffect(() => subscribePackages(setPackages), []);
   useEffect(() => subscribeCatalog(setCatalog), []);
