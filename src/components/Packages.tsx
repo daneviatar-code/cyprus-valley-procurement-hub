@@ -310,13 +310,25 @@ export default function Packages() {
 
   const filteredCatalog = useMemo(() => {
     const q = pickerSearch.trim().toLowerCase();
-    if (!q) return catalog;
-    return catalog.filter(p =>
-      p.name.toLowerCase().includes(q) ||
-      p.sku.toLowerCase().includes(q) ||
-      p.supplierName.toLowerCase().includes(q)
-    );
-  }, [catalog, pickerSearch]);
+    const base = q
+      ? catalog.filter(p =>
+          p.name.toLowerCase().includes(q) ||
+          p.sku.toLowerCase().includes(q) ||
+          p.supplierName.toLowerCase().includes(q)
+        )
+      : [...catalog];
+    const sorted = [...base];
+    switch (pickerSort) {
+      case 'name-asc': sorted.sort((a, b) => a.name.localeCompare(b.name)); break;
+      case 'name-desc': sorted.sort((a, b) => b.name.localeCompare(a.name)); break;
+      case 'price-asc': sorted.sort((a, b) => (a.unitPriceEur ?? Infinity) - (b.unitPriceEur ?? Infinity)); break;
+      case 'price-desc': sorted.sort((a, b) => (b.unitPriceEur ?? -Infinity) - (a.unitPriceEur ?? -Infinity)); break;
+      case 'supplier': sorted.sort((a, b) => (a.supplierName || '').localeCompare(b.supplierName || '')); break;
+      case 'discipline': sorted.sort((a, b) => (a.discipline || '').localeCompare(b.discipline || '')); break;
+      case 'default': default: break;
+    }
+    return sorted;
+  }, [catalog, pickerSearch, pickerSort]);
 
   const computeCardTotal = (p: Package): number =>
     p.items.reduce((s, it) => s + priceOf(catalogById.get(it.productId)) * it.quantity, 0);
