@@ -104,6 +104,44 @@ export default function Packages() {
     toast({ title: 'Items merged' });
   };
 
+  const [pickerDragId, setPickerDragId] = useState<string | null>(null);
+  const [pickerDragOverId, setPickerDragOverId] = useState<string | null>(null);
+  const [mergeConfirm, setMergeConfirm] = useState<{ sourceId: string; targetId: string } | null>(null);
+
+  const mergeCatalogProducts = (sourceId: string, targetId: string) => {
+    if (sourceId === targetId) return;
+    // Update all packages: replace sourceId with targetId, summing quantities
+    const updatedPackages = packages.map(pkg => {
+      if (!pkg.items.some(it => it.productId === sourceId)) return pkg;
+      const merged: PackageLineItem[] = [];
+      const qtyMap = new Map<string, number>();
+      pkg.items.forEach(it => {
+        const id = it.productId === sourceId ? targetId : it.productId;
+        qtyMap.set(id, (qtyMap.get(id) || 0) + it.quantity);
+      });
+      qtyMap.forEach((quantity, productId) => merged.push({ productId, quantity }));
+      return { ...pkg, items: merged };
+    });
+    persist(updatedPackages);
+
+    // Update current form draft too
+    if (form.items.some(it => it.productId === sourceId)) {
+      const qtyMap = new Map<string, number>();
+      form.items.forEach(it => {
+        const id = it.productId === sourceId ? targetId : it.productId;
+        qtyMap.set(id, (qtyMap.get(id) || 0) + it.quantity);
+      });
+      const merged: PackageLineItem[] = [];
+      qtyMap.forEach((quantity, productId) => merged.push({ productId, quantity }));
+      setForm(f => ({ ...f, items: merged }));
+    }
+
+    // Remove source from catalog
+    const nextCatalog = catalog.filter(p => p.id !== sourceId);
+    setCatalog(nextCatalog);
+    saveCatalog(nextCatalog);
+    toast({ title: 'Products merged' });
+
   useEffect(() => subscribePackages(setPackages), []);
   useEffect(() => subscribeCatalog(setCatalog), []);
 
