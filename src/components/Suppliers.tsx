@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Pencil, Trash2, ExternalLink, Package, Search, ChevronDown, ChevronRight, FileText, CalendarIcon } from 'lucide-react';
+import { Plus, Pencil, Trash2, ExternalLink, Package, Search, ChevronDown, ChevronRight, FileText, CalendarIcon, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -27,9 +27,13 @@ import {
   PurchaseOrder, POLineItem, loadPurchaseOrders, savePurchaseOrders, generatePONumber, generatePOId,
 } from '@/data/purchaseOrderData';
 import { loadAllSelections } from '@/data/selectionData';
+import {
+  Category, loadCategoriesShared, saveCategoriesShared,
+  subscribeCategories, genCategoryIdShared,
+} from '@/data/categoriesData';
+import ManageCategoriesDialog from './ManageCategoriesDialog';
 import { toast } from '@/hooks/use-toast';
 
-const CATEGORIES = ['Furniture', 'Lighting', 'Textiles', 'Appliances', 'Bathroom', 'Kitchen', 'Outdoor', 'Accessories', 'Other'];
 const STATUS_OPTIONS: SupplierItem['status'][] = ['quoted', 'ordered', 'delivered', 'cancelled'];
 
 const statusColors: Record<SupplierItem['status'], string> = {
@@ -59,6 +63,31 @@ export default function Suppliers() {
   const [editItemIdx, setEditItemIdx] = useState<number | null>(null);
   const [itemForm, setItemForm] = useState<SupplierItem>(emptyItem());
   const [itemSupplierId, setItemSupplierId] = useState<string | null>(null);
+
+  // Shared categories
+  const [categories, setCategories] = useState<Category[]>(loadCategoriesShared);
+  const [manageCatsOpen, setManageCatsOpen] = useState(false);
+  const [addingCatInline, setAddingCatInline] = useState(false);
+  const [newCatName, setNewCatName] = useState('');
+  useEffect(() => subscribeCategories(setCategories), []);
+
+  const sortedCategories = useMemo(() =>
+    [...categories].sort((a, b) => (a.order || 0) - (b.order || 0) || a.nameEn.localeCompare(b.nameEn))
+  , [categories]);
+
+  const inlineAddCategory = () => {
+    const name = newCatName.trim();
+    if (!name) return;
+    if (categories.some(c => c.nameEn.toLowerCase() === name.toLowerCase())) {
+      toast({ title: 'Category already exists' });
+      return;
+    }
+    const order = (categories.reduce((m, c) => Math.max(m, c.order || 0), 0) || 0) + 1;
+    const cat: Category = { id: genCategoryIdShared(), nameEn: name, nameHe: '', scope: 'both', order };
+    saveCategoriesShared([...categories, cat]);
+    setForm(f => ({ ...f, category: name }));
+    setNewCatName(''); setAddingCatInline(false);
+  };
 
   // Sync with cloud after hydration
   useEffect(() => subscribeSuppliers(setSuppliers), []);
@@ -320,9 +349,12 @@ export default function Suppliers() {
           <SelectTrigger className="w-44"><SelectValue placeholder="Category" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
-            {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            {sortedCategories.map(c => <SelectItem key={c.id} value={c.nameEn}>{c.nameEn}</SelectItem>)}
           </SelectContent>
         </Select>
+        <Button variant="outline" size="sm" onClick={() => setManageCatsOpen(true)} title="Manage Categories">
+          <Settings className="h-4 w-4 mr-1" /> Manage Categories
+        </Button>
         <Button onClick={openNew} size="sm"><Plus className="h-4 w-4 mr-1" /> Add Supplier</Button>
       </div>
 
@@ -525,10 +557,29 @@ export default function Suppliers() {
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground">Category</label>
-                <Select value={form.category} onValueChange={v => setForm(f => ({ ...f, category: v }))}>
+                <Select
+                  value={form.category}
+                  onValueChange={v => {
+                    if (v === '__add_new__') { setAddingCatInline(true); return; }
+                    setForm(f => ({ ...f, category: v }));
+                  }}
+                >
                   <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                  <SelectContent>
+                    {sortedCategories.map(c => <SelectItem key={c.id} value={c.nameEn}>{c.nameEn}</SelectItem>)}
+                    <SelectItem value="__add_new__" className="text-primary">+ Add new category…</SelectItem>
+                  </SelectContent>
                 </Select>
+                {addingCatInline && (
+                  <div className="flex items-center gap-1 mt-1">
+                    <Input className="h-7 text-xs" placeholder="New category" value={newCatName}
+                      onChange={e => setNewCatName(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') inlineAddCategory(); if (e.key === 'Escape') { setAddingCatInline(false); setNewCatName(''); } }}
+                      autoFocus />
+                    <Button size="sm" className="h-7 px-2 text-xs" onClick={inlineAddCategory}>Save</Button>
+                    <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => { setAddingCatInline(false); setNewCatName(''); }}>Cancel</Button>
+                  </div>
+                )}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -727,6 +778,7 @@ export default function Suppliers() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ManageCategoriesDialog open={manageCatsOpen} onOpenChange={setManageCatsOpen} />
     </div>
   );
 }
