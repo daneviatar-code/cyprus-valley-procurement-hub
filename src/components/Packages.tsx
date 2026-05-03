@@ -945,6 +945,29 @@ export default function Packages() {
                 <Label>Supplier</Label>
                 <Input value={productDraft.supplierName} onChange={e => setProductDraft({ ...productDraft, supplierName: e.target.value })} />
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Discipline</Label>
+                  <select
+                    value={productDraft.discipline}
+                    onChange={e => setProductDraft({ ...productDraft, discipline: e.target.value })}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  >
+                    {DISCIPLINES.map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <Label>Area</Label>
+                  <select
+                    value={productDraft.area}
+                    onChange={e => setProductDraft({ ...productDraft, area: e.target.value as 'Indoor' | 'Outdoor' })}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  >
+                    <option value="Indoor">Indoor</option>
+                    <option value="Outdoor">Outdoor</option>
+                  </select>
+                </div>
+              </div>
             </div>
           )}
           <DialogFooter>
