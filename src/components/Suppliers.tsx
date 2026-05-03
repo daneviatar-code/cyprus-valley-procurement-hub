@@ -349,9 +349,12 @@ export default function Suppliers() {
           <SelectTrigger className="w-44"><SelectValue placeholder="Category" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
-            {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            {sortedCategories.map(c => <SelectItem key={c.id} value={c.nameEn}>{c.nameEn}</SelectItem>)}
           </SelectContent>
         </Select>
+        <Button variant="outline" size="sm" onClick={() => setManageCatsOpen(true)} title="Manage Categories">
+          <Settings className="h-4 w-4 mr-1" /> Manage Categories
+        </Button>
         <Button onClick={openNew} size="sm"><Plus className="h-4 w-4 mr-1" /> Add Supplier</Button>
       </div>
 
