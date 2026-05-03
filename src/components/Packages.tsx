@@ -21,10 +21,11 @@ import {
 } from '@/data/packagesData';
 import { ChevronRight } from 'lucide-react';
 import {
-  CatalogProduct, loadCatalog, subscribeCatalog,
+  CatalogProduct, loadCatalog, saveCatalog, subscribeCatalog, uploadCatalogImage,
 } from '@/data/catalogData';
 import { Concept } from '@/data/masterData';
 import { toast } from '@/hooks/use-toast';
+import { Upload } from 'lucide-react';
 
 const BLOCKS: { id: Concept; label: string }[] = [
   { id: 'A', label: 'Block A (HAPPINESS)' },
