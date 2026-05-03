@@ -104,6 +104,45 @@ export default function Packages() {
     toast({ title: 'Items merged' });
   };
 
+  const [pickerDragId, setPickerDragId] = useState<string | null>(null);
+  const [pickerDragOverId, setPickerDragOverId] = useState<string | null>(null);
+  const [mergeConfirm, setMergeConfirm] = useState<{ sourceId: string; targetId: string } | null>(null);
+
+  const mergeCatalogProducts = (sourceId: string, targetId: string) => {
+    if (sourceId === targetId) return;
+    // Update all packages: replace sourceId with targetId, summing quantities
+    const updatedPackages = packages.map(pkg => {
+      if (!pkg.items.some(it => it.productId === sourceId)) return pkg;
+      const merged: PackageLineItem[] = [];
+      const qtyMap = new Map<string, number>();
+      pkg.items.forEach(it => {
+        const id = it.productId === sourceId ? targetId : it.productId;
+        qtyMap.set(id, (qtyMap.get(id) || 0) + it.quantity);
+      });
+      qtyMap.forEach((quantity, productId) => merged.push({ productId, quantity }));
+      return { ...pkg, items: merged };
+    });
+    persist(updatedPackages);
+
+    // Update current form draft too
+    if (form.items.some(it => it.productId === sourceId)) {
+      const qtyMap = new Map<string, number>();
+      form.items.forEach(it => {
+        const id = it.productId === sourceId ? targetId : it.productId;
+        qtyMap.set(id, (qtyMap.get(id) || 0) + it.quantity);
+      });
+      const merged: PackageLineItem[] = [];
+      qtyMap.forEach((quantity, productId) => merged.push({ productId, quantity }));
+      setForm(f => ({ ...f, items: merged }));
+    }
+
+    // Remove source from catalog
+    const nextCatalog = catalog.filter(p => p.id !== sourceId);
+    setCatalog(nextCatalog);
+    saveCatalog(nextCatalog);
+    toast({ title: 'Products merged' });
+  };
+
   useEffect(() => subscribePackages(setPackages), []);
   useEffect(() => subscribeCatalog(setCatalog), []);
 
@@ -618,7 +657,7 @@ export default function Packages() {
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>Pick a Catalog Product</DialogTitle>
-            <DialogDescription>Click a product to add it to the package.</DialogDescription>
+            <DialogDescription>Click to add. Drag one product onto another to merge duplicates (the dragged one will be removed and replaced by the target everywhere).</DialogDescription>
           </DialogHeader>
 
           <div className="relative">
@@ -640,10 +679,31 @@ export default function Packages() {
             ) : (
               <div className="divide-y border rounded-md">
                 {filteredCatalog.map(p => (
-                  <button
+                  <div
                     key={p.id}
+                    draggable
+                    onDragStart={(e) => { setPickerDragId(p.id); e.dataTransfer.effectAllowed = 'move'; }}
+                    onDragEnd={() => { setPickerDragId(null); setPickerDragOverId(null); }}
+                    onDragOver={(e) => {
+                      if (pickerDragId && pickerDragId !== p.id) {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                        if (pickerDragOverId !== p.id) setPickerDragOverId(p.id);
+                      }
+                    }}
+                    onDragLeave={() => { if (pickerDragOverId === p.id) setPickerDragOverId(null); }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      if (pickerDragId && pickerDragId !== p.id) {
+                        setMergeConfirm({ sourceId: pickerDragId, targetId: p.id });
+                      }
+                      setPickerDragId(null);
+                      setPickerDragOverId(null);
+                    }}
                     onClick={() => addProductToForm(p.id)}
-                    className="w-full flex items-center gap-3 p-2 hover:bg-muted/50 text-left transition-colors"
+                    className={`w-full flex items-center gap-3 p-2 hover:bg-muted/50 text-left transition-colors cursor-pointer ${
+                      pickerDragOverId === p.id ? 'bg-accent/30 ring-2 ring-accent ring-inset' : ''
+                    } ${pickerDragId === p.id ? 'opacity-50' : ''}`}
                   >
                     <div className="w-12 h-12 bg-muted rounded flex items-center justify-center overflow-hidden flex-shrink-0">
                       <ProductThumb src={p.imageUrl} alt={p.name} />
@@ -658,7 +718,7 @@ export default function Packages() {
                     <div className="text-sm font-semibold whitespace-nowrap">
                       {p.unitPriceEur != null ? `€${p.unitPriceEur.toFixed(2)}` : '—'}
                     </div>
-                  </button>
+                  </div>
                 ))}
               </div>
             )}
@@ -788,6 +848,37 @@ export default function Packages() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Merge confirmation */}
+      <AlertDialog open={!!mergeConfirm} onOpenChange={(o) => !o && setMergeConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Merge these products?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {mergeConfirm && (() => {
+                const src = catalog.find(p => p.id === mergeConfirm.sourceId);
+                const tgt = catalog.find(p => p.id === mergeConfirm.targetId);
+                return (
+                  <>
+                    <strong>"{src?.name}"</strong> will be removed from the catalog and replaced everywhere by <strong>"{tgt?.name}"</strong>. Quantities in all packages will be summed. This cannot be undone.
+                  </>
+                );
+              })()}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (mergeConfirm) mergeCatalogProducts(mergeConfirm.sourceId, mergeConfirm.targetId);
+                setMergeConfirm(null);
+              }}
+            >
+              Merge
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
