@@ -64,6 +64,9 @@ export default function Packages() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [rtSearch, setRtSearch] = useState('');
   const [expandedFloors, setExpandedFloors] = useState<Set<number>>(new Set());
+  const [editProductId, setEditProductId] = useState<string | null>(null);
+  const [productDraft, setProductDraft] = useState<CatalogProduct | null>(null);
+  const [uploadingProductImg, setUploadingProductImg] = useState(false);
 
   useEffect(() => subscribePackages(setPackages), []);
   useEffect(() => subscribeCatalog(setCatalog), []);
