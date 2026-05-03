@@ -557,10 +557,29 @@ export default function Suppliers() {
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground">Category</label>
-                <Select value={form.category} onValueChange={v => setForm(f => ({ ...f, category: v }))}>
+                <Select
+                  value={form.category}
+                  onValueChange={v => {
+                    if (v === '__add_new__') { setAddingCatInline(true); return; }
+                    setForm(f => ({ ...f, category: v }));
+                  }}
+                >
                   <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                  <SelectContent>
+                    {sortedCategories.map(c => <SelectItem key={c.id} value={c.nameEn}>{c.nameEn}</SelectItem>)}
+                    <SelectItem value="__add_new__" className="text-primary">+ Add new category…</SelectItem>
+                  </SelectContent>
                 </Select>
+                {addingCatInline && (
+                  <div className="flex items-center gap-1 mt-1">
+                    <Input className="h-7 text-xs" placeholder="New category" value={newCatName}
+                      onChange={e => setNewCatName(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') inlineAddCategory(); if (e.key === 'Escape') { setAddingCatInline(false); setNewCatName(''); } }}
+                      autoFocus />
+                    <Button size="sm" className="h-7 px-2 text-xs" onClick={inlineAddCategory}>Save</Button>
+                    <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => { setAddingCatInline(false); setNewCatName(''); }}>Cancel</Button>
+                  </div>
+                )}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
