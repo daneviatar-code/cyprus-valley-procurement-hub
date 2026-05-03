@@ -64,6 +64,31 @@ export default function Suppliers() {
   const [itemForm, setItemForm] = useState<SupplierItem>(emptyItem());
   const [itemSupplierId, setItemSupplierId] = useState<string | null>(null);
 
+  // Shared categories
+  const [categories, setCategories] = useState<Category[]>(loadCategoriesShared);
+  const [manageCatsOpen, setManageCatsOpen] = useState(false);
+  const [addingCatInline, setAddingCatInline] = useState(false);
+  const [newCatName, setNewCatName] = useState('');
+  useEffect(() => subscribeCategories(setCategories), []);
+
+  const sortedCategories = useMemo(() =>
+    [...categories].sort((a, b) => (a.order || 0) - (b.order || 0) || a.nameEn.localeCompare(b.nameEn))
+  , [categories]);
+
+  const inlineAddCategory = () => {
+    const name = newCatName.trim();
+    if (!name) return;
+    if (categories.some(c => c.nameEn.toLowerCase() === name.toLowerCase())) {
+      toast({ title: 'Category already exists' });
+      return;
+    }
+    const order = (categories.reduce((m, c) => Math.max(m, c.order || 0), 0) || 0) + 1;
+    const cat: Category = { id: genCategoryIdShared(), nameEn: name, nameHe: '', scope: 'both', order };
+    saveCategoriesShared([...categories, cat]);
+    setForm(f => ({ ...f, category: name }));
+    setNewCatName(''); setAddingCatInline(false);
+  };
+
   // Sync with cloud after hydration
   useEffect(() => subscribeSuppliers(setSuppliers), []);
 
