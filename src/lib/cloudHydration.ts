@@ -8,6 +8,7 @@ import { hydratePublicAreasFromCloud } from '@/data/publicAreasData';
 import { hydratePublicAreaPlansFromCloud } from '@/data/publicAreaPlansData';
 import { hydrateCatalogFromCloud } from '@/data/catalogData';
 import { hydratePackagesFromCloud } from '@/data/packagesData';
+import { hydrateCategoriesFromCloud } from '@/data/categoriesData';
 
 let started = false;
 
