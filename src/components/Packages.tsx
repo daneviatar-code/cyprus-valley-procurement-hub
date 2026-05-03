@@ -39,6 +39,7 @@ import {
 import { ChevronRight } from 'lucide-react';
 import {
   CatalogProduct, loadCatalog, saveCatalog, subscribeCatalog, uploadCatalogImage,
+  generateProductId, DISCIPLINES,
 } from '@/data/catalogData';
 import { Concept } from '@/data/masterData';
 import { toast } from '@/hooks/use-toast';
