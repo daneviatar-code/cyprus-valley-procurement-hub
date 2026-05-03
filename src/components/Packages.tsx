@@ -199,6 +199,40 @@ export default function Packages() {
     [form.items, catalogById]
   );
 
+  const openProductEditor = (productId: string) => {
+    const p = catalogById.get(productId);
+    if (!p) {
+      toast({ title: 'Product not found in catalog', variant: 'destructive' });
+      return;
+    }
+    setEditProductId(productId);
+    setProductDraft({ ...p });
+  };
+
+  const handleProductImageUpload = async (file: File) => {
+    if (!productDraft) return;
+    setUploadingProductImg(true);
+    try {
+      const url = await uploadCatalogImage(file);
+      setProductDraft({ ...productDraft, imageUrl: url });
+      toast({ title: 'Image uploaded' });
+    } catch (e: any) {
+      toast({ title: 'Upload failed', description: e.message, variant: 'destructive' });
+    } finally {
+      setUploadingProductImg(false);
+    }
+  };
+
+  const saveProductDraft = () => {
+    if (!productDraft) return;
+    const next = catalog.map(p => p.id === productDraft.id ? productDraft : p);
+    setCatalog(next);
+    saveCatalog(next);
+    setEditProductId(null);
+    setProductDraft(null);
+    toast({ title: 'Product updated' });
+  };
+
   const filteredCatalog = useMemo(() => {
     const q = pickerSearch.trim().toLowerCase();
     if (!q) return catalog;
