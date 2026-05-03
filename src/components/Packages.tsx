@@ -78,6 +78,8 @@ export default function Packages() {
   const [form, setForm] = useState<FormState>(emptyForm());
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerSearch, setPickerSearch] = useState('');
+  const [pickerSort, setPickerSort] = useState<'default' | 'name-asc' | 'name-desc' | 'price-asc' | 'price-desc' | 'supplier' | 'discipline'>('default');
+  const [pickerDragMode, setPickerDragMode] = useState<'merge' | 'reorder'>('merge');
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [rtSearch, setRtSearch] = useState('');
   const [expandedFloors, setExpandedFloors] = useState<Set<number>>(new Set());
@@ -310,13 +312,25 @@ export default function Packages() {
 
   const filteredCatalog = useMemo(() => {
     const q = pickerSearch.trim().toLowerCase();
-    if (!q) return catalog;
-    return catalog.filter(p =>
-      p.name.toLowerCase().includes(q) ||
-      p.sku.toLowerCase().includes(q) ||
-      p.supplierName.toLowerCase().includes(q)
-    );
-  }, [catalog, pickerSearch]);
+    const base = q
+      ? catalog.filter(p =>
+          p.name.toLowerCase().includes(q) ||
+          p.sku.toLowerCase().includes(q) ||
+          p.supplierName.toLowerCase().includes(q)
+        )
+      : [...catalog];
+    const sorted = [...base];
+    switch (pickerSort) {
+      case 'name-asc': sorted.sort((a, b) => a.name.localeCompare(b.name)); break;
+      case 'name-desc': sorted.sort((a, b) => b.name.localeCompare(a.name)); break;
+      case 'price-asc': sorted.sort((a, b) => (a.unitPriceEur ?? Infinity) - (b.unitPriceEur ?? Infinity)); break;
+      case 'price-desc': sorted.sort((a, b) => (b.unitPriceEur ?? -Infinity) - (a.unitPriceEur ?? -Infinity)); break;
+      case 'supplier': sorted.sort((a, b) => (a.supplierName || '').localeCompare(b.supplierName || '')); break;
+      case 'discipline': sorted.sort((a, b) => (a.discipline || '').localeCompare(b.discipline || '')); break;
+      case 'default': default: break;
+    }
+    return sorted;
+  }, [catalog, pickerSearch, pickerSort]);
 
   const computeCardTotal = (p: Package): number =>
     p.items.reduce((s, it) => s + priceOf(catalogById.get(it.productId)) * it.quantity, 0);
@@ -657,18 +671,42 @@ export default function Packages() {
         <DialogContent className="max-w-none w-screen h-screen sm:rounded-none p-4 sm:p-6 overflow-hidden flex flex-col gap-3">
           <DialogHeader>
             <DialogTitle>Pick a Catalog Product</DialogTitle>
-            <DialogDescription>Click to add. Drag one product onto another to merge duplicates (the dragged one will be removed and replaced by the target everywhere).</DialogDescription>
+            <DialogDescription>
+              Click to add. Use the drag mode toggle to either <strong>merge</strong> duplicates or <strong>reorder</strong> products manually.
+            </DialogDescription>
           </DialogHeader>
 
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              value={pickerSearch}
-              onChange={e => setPickerSearch(e.target.value)}
-              placeholder="Search by name, SKU, or supplier"
-              className="pl-9"
-              autoFocus
-            />
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative flex-1 min-w-[240px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                value={pickerSearch}
+                onChange={e => setPickerSearch(e.target.value)}
+                placeholder="Search by name, SKU, or supplier"
+                className="pl-9"
+                autoFocus
+              />
+            </div>
+            <select
+              value={pickerSort}
+              onChange={e => setPickerSort(e.target.value as typeof pickerSort)}
+              className="h-10 rounded-md border border-input bg-background px-2 text-sm"
+              title="Sort"
+            >
+              <option value="default">Manual order</option>
+              <option value="name-asc">Name (A→Z)</option>
+              <option value="name-desc">Name (Z→A)</option>
+              <option value="price-asc">Price (low→high)</option>
+              <option value="price-desc">Price (high→low)</option>
+              <option value="supplier">Supplier</option>
+              <option value="discipline">Discipline</option>
+            </select>
+            <Tabs value={pickerDragMode} onValueChange={(v) => setPickerDragMode(v as 'merge' | 'reorder')}>
+              <TabsList className="h-10">
+                <TabsTrigger value="merge" className="text-xs">Drag = Merge</TabsTrigger>
+                <TabsTrigger value="reorder" className="text-xs" disabled={pickerSort !== 'default' || !!pickerSearch.trim()}>Drag = Reorder</TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
 
           <div className="overflow-y-auto flex-1 -mx-2 px-2">
@@ -695,7 +733,22 @@ export default function Packages() {
                     onDrop={(e) => {
                       e.preventDefault();
                       if (pickerDragId && pickerDragId !== p.id) {
-                        setMergeConfirm({ sourceId: pickerDragId, targetId: p.id });
+                        if (pickerDragMode === 'reorder' && pickerSort === 'default' && !pickerSearch.trim()) {
+                          // Reorder: move source before target in the catalog
+                          const next = [...catalog];
+                          const fromIdx = next.findIndex(x => x.id === pickerDragId);
+                          const toIdx = next.findIndex(x => x.id === p.id);
+                          if (fromIdx !== -1 && toIdx !== -1) {
+                            const [moved] = next.splice(fromIdx, 1);
+                            const insertAt = next.findIndex(x => x.id === p.id);
+                            next.splice(insertAt, 0, moved);
+                            setCatalog(next);
+                            saveCatalog(next);
+                            toast({ title: 'Order updated' });
+                          }
+                        } else {
+                          setMergeConfirm({ sourceId: pickerDragId, targetId: p.id });
+                        }
                       }
                       setPickerDragId(null);
                       setPickerDragOverId(null);
