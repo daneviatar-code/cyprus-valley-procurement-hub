@@ -401,11 +401,7 @@ export default function Packages() {
                     return (
                       <div key={it.productId} className="flex items-center gap-3 p-2">
                         <div className="w-12 h-12 bg-muted rounded flex items-center justify-center overflow-hidden flex-shrink-0">
-                          {prod?.imageUrl ? (
-                            <img src={prod.imageUrl} alt={prod.name} className="w-full h-full object-cover" />
-                          ) : (
-                            <ImageIcon className="w-5 h-5 text-muted-foreground/40" />
-                          )}
+                          <ProductThumb src={prod?.imageUrl} alt={prod?.name || ''} />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-medium text-foreground truncate">
