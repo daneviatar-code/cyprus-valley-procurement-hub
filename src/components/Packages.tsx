@@ -385,6 +385,15 @@ export default function Packages() {
 
   return (
     <div className="space-y-4">
+      <Tabs value={view} onValueChange={(v) => setView(v as 'packages' | 'comparison')}>
+        <TabsList>
+          <TabsTrigger value="packages" className="gap-1.5"><PackageIcon className="w-4 h-4" /> Packages</TabsTrigger>
+          <TabsTrigger value="comparison" className="gap-1.5"><GitCompare className="w-4 h-4" /> Item Comparison</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      {view === 'comparison' ? <PackagesComparison /> : (
+      <>
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <PackageIcon className="h-5 w-5 text-accent" />
