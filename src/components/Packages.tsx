@@ -74,6 +74,7 @@ export default function Packages() {
   const [packages, setPackages] = useState<Package[]>(loadPackages);
   const [catalog, setCatalog] = useState<CatalogProduct[]>(loadCatalog);
   const [activeBlock, setActiveBlock] = useState<Concept>('A');
+  const [view, setView] = useState<'packages' | 'comparison'>('packages');
 
   const [editorOpen, setEditorOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
