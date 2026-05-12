@@ -172,6 +172,41 @@ export default function PackagesComparison() {
     setPickerFor(null);
   };
 
+  const openEditProduct = (productId: string) => {
+    const p = productMap.get(productId);
+    if (!p) return;
+    setEditProductDraft({ ...p });
+    setEditProductOpen(true);
+  };
+
+  const handleEditImageUpload = async (file: File) => {
+    if (!editProductDraft) return;
+    setEditUploadingImg(true);
+    try {
+      const url = await uploadCatalogImage(file);
+      setEditProductDraft({ ...editProductDraft, imageUrl: url });
+      toast({ title: 'Image uploaded' });
+    } catch (e: any) {
+      toast({ title: 'Upload failed', description: e.message, variant: 'destructive' });
+    } finally {
+      setEditUploadingImg(false);
+    }
+  };
+
+  const saveEditProduct = () => {
+    if (!editProductDraft) return;
+    if (!editProductDraft.name.trim()) {
+      toast({ title: 'Name is required', variant: 'destructive' });
+      return;
+    }
+    const next = catalog.map(p => p.id === editProductDraft.id ? editProductDraft : p);
+    setCatalog(next);
+    saveCatalog(next);
+    toast({ title: 'Product updated' });
+    setEditProductOpen(false);
+    setEditProductDraft(null);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
