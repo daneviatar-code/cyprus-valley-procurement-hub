@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Plus, Trash2, Search, X, ImageIcon, GitCompare, ArrowRight, Upload } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, X, ImageIcon, GitCompare, ArrowRight, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -64,6 +64,11 @@ export default function PackagesComparison() {
   const [newProductOpen, setNewProductOpen] = useState(false);
   const [productDraft, setProductDraft] = useState<CatalogProduct | null>(null);
   const [uploadingProductImg, setUploadingProductImg] = useState(false);
+
+  // Edit product state
+  const [editProductOpen, setEditProductOpen] = useState(false);
+  const [editProductDraft, setEditProductDraft] = useState<CatalogProduct | null>(null);
+  const [editUploadingImg, setEditUploadingImg] = useState(false);
 
   useEffect(() => subscribeCatalog(setCatalog), []);
   useEffect(() => subscribePackages(setPackages), []);
@@ -167,6 +172,41 @@ export default function PackagesComparison() {
     setPickerFor(null);
   };
 
+  const openEditProduct = (productId: string) => {
+    const p = productMap.get(productId);
+    if (!p) return;
+    setEditProductDraft({ ...p });
+    setEditProductOpen(true);
+  };
+
+  const handleEditImageUpload = async (file: File) => {
+    if (!editProductDraft) return;
+    setEditUploadingImg(true);
+    try {
+      const url = await uploadCatalogImage(file);
+      setEditProductDraft({ ...editProductDraft, imageUrl: url });
+      toast({ title: 'Image uploaded' });
+    } catch (e: any) {
+      toast({ title: 'Upload failed', description: e.message, variant: 'destructive' });
+    } finally {
+      setEditUploadingImg(false);
+    }
+  };
+
+  const saveEditProduct = () => {
+    if (!editProductDraft) return;
+    if (!editProductDraft.name.trim()) {
+      toast({ title: 'Name is required', variant: 'destructive' });
+      return;
+    }
+    const next = catalog.map(p => p.id === editProductDraft.id ? editProductDraft : p);
+    setCatalog(next);
+    saveCatalog(next);
+    toast({ title: 'Product updated' });
+    setEditProductOpen(false);
+    setEditProductDraft(null);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -228,9 +268,19 @@ export default function PackagesComparison() {
                           <span>Used: {totalQty}× in {packageNames.length} pkg</span>
                         </div>
                       </div>
-                      <div className="text-right shrink-0">
-                        <div className="text-base font-bold text-foreground">{fmtEur(product!.unitPriceEur)}</div>
-                        <div className="text-[10px] text-muted-foreground">unit price</div>
+                      <div className="text-right shrink-0 flex items-start gap-1">
+                        <div>
+                          <div className="text-base font-bold text-foreground">{fmtEur(product!.unitPriceEur)}</div>
+                          <div className="text-[10px] text-muted-foreground">unit price</div>
+                        </div>
+                        <Button
+                          variant="ghost" size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                          onClick={() => openEditProduct(productId)}
+                          title="Edit product"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </Button>
                       </div>
                     </div>
                     {packageNames.length > 0 && (
@@ -282,6 +332,14 @@ export default function PackagesComparison() {
                                     </div>
                                   )}
                                 </div>
+                                <Button
+                                  variant="ghost" size="icon"
+                                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                                  onClick={() => openEditProduct(altId)}
+                                  title="Edit product"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </Button>
                                 <Button
                                   variant="ghost" size="icon"
                                   className="h-7 w-7 text-destructive hover:text-destructive"
@@ -529,6 +587,138 @@ export default function PackagesComparison() {
           <DialogFooter>
             <Button variant="outline" onClick={() => { setNewProductOpen(false); setProductDraft(null); }}>Cancel</Button>
             <Button onClick={saveNewProduct}>Save & Add Alternative</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Product dialog */}
+      <Dialog open={editProductOpen} onOpenChange={(o) => !o && setEditProductOpen(false)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Product</DialogTitle>
+            <DialogDescription>
+              Update catalog product details. Changes apply everywhere this product is used.
+            </DialogDescription>
+          </DialogHeader>
+          {editProductDraft && (
+            <div
+              className="space-y-3"
+              onPaste={(e) => {
+                const items = e.clipboardData?.items;
+                if (!items) return;
+                for (let i = 0; i < items.length; i++) {
+                  const it = items[i];
+                  if (it.type.startsWith('image/')) {
+                    const file = it.getAsFile();
+                    if (file) {
+                      e.preventDefault();
+                      handleEditImageUpload(file);
+                      break;
+                    }
+                  }
+                }
+              }}
+            >
+              <div>
+                <Label>Image</Label>
+                <div
+                  className="flex items-center gap-3 mt-1 border-2 border-dashed border-transparent hover:border-muted-foreground/30 rounded-md p-2 transition-colors"
+                  onDragOver={(e) => { e.preventDefault(); }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const file = e.dataTransfer.files?.[0];
+                    if (file && file.type.startsWith('image/')) handleEditImageUpload(file);
+                  }}
+                >
+                  <div className="w-16 h-16 border rounded flex items-center justify-center bg-muted overflow-hidden">
+                    {editProductDraft.imageUrl ? (
+                      <img src={editProductDraft.imageUrl} alt="preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <ImageIcon className="w-6 h-6 text-muted-foreground/40" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <label className="cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={e => {
+                          const f = e.target.files?.[0];
+                          if (f) handleEditImageUpload(f);
+                        }}
+                      />
+                      <div className="inline-flex items-center gap-2 px-3 py-2 border rounded-md text-sm hover:bg-accent">
+                        <Upload className="w-4 h-4" />
+                        {editUploadingImg ? 'Uploading...' : (editProductDraft.imageUrl ? 'Replace image' : 'Upload image')}
+                      </div>
+                    </label>
+                    {editProductDraft.imageUrl && (
+                      <Button type="button" variant="ghost" size="sm" className="ml-2 text-destructive" onClick={() => setEditProductDraft({ ...editProductDraft, imageUrl: '' })}>
+                        Remove
+                      </Button>
+                    )}
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      Tip: paste an image with Ctrl/Cmd+V or drag & drop here
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <Label>Name</Label>
+                <Input value={editProductDraft.name} onChange={e => setEditProductDraft({ ...editProductDraft, name: e.target.value })} />
+              </div>
+              <div>
+                <Label>Description</Label>
+                <Textarea value={editProductDraft.description} onChange={e => setEditProductDraft({ ...editProductDraft, description: e.target.value })} rows={2} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Unit Price (EUR)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={editProductDraft.unitPriceEur ?? ''}
+                    onChange={e => setEditProductDraft({ ...editProductDraft, unitPriceEur: e.target.value === '' ? null : parseFloat(e.target.value) })}
+                  />
+                </div>
+                <div>
+                  <Label>SKU</Label>
+                  <Input value={editProductDraft.sku} onChange={e => setEditProductDraft({ ...editProductDraft, sku: e.target.value })} />
+                </div>
+              </div>
+              <div>
+                <Label>Supplier</Label>
+                <Input value={editProductDraft.supplierName} onChange={e => setEditProductDraft({ ...editProductDraft, supplierName: e.target.value })} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Discipline</Label>
+                  <select
+                    value={editProductDraft.discipline}
+                    onChange={e => setEditProductDraft({ ...editProductDraft, discipline: e.target.value })}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  >
+                    {DISCIPLINES.map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <Label>Area</Label>
+                  <select
+                    value={editProductDraft.area}
+                    onChange={e => setEditProductDraft({ ...editProductDraft, area: e.target.value as 'Indoor' | 'Outdoor' })}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  >
+                    <option value="Indoor">Indoor</option>
+                    <option value="Outdoor">Outdoor</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setEditProductOpen(false); setEditProductDraft(null); }}>Cancel</Button>
+            <Button onClick={saveEditProduct}>Save Changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
