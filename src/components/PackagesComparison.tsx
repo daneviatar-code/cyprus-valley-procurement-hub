@@ -65,6 +65,11 @@ export default function PackagesComparison() {
   const [productDraft, setProductDraft] = useState<CatalogProduct | null>(null);
   const [uploadingProductImg, setUploadingProductImg] = useState(false);
 
+  // Edit product state
+  const [editProductOpen, setEditProductOpen] = useState(false);
+  const [editProductDraft, setEditProductDraft] = useState<CatalogProduct | null>(null);
+  const [editUploadingImg, setEditUploadingImg] = useState(false);
+
   useEffect(() => subscribeCatalog(setCatalog), []);
   useEffect(() => subscribePackages(setPackages), []);
   useEffect(() => subscribeAlternatives(setAlts), []);
