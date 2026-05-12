@@ -1,13 +1,18 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Plus, Trash2, Search, X, ImageIcon, GitCompare, ArrowRight } from 'lucide-react';
+import { Plus, Trash2, Search, X, ImageIcon, GitCompare, ArrowRight, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
-import { CatalogProduct, loadCatalog, subscribeCatalog } from '@/data/catalogData';
+import {
+  CatalogProduct, loadCatalog, saveCatalog, subscribeCatalog,
+  generateProductId, DISCIPLINES, uploadCatalogImage,
+} from '@/data/catalogData';
 import { Package, loadPackages, subscribePackages } from '@/data/packagesData';
 import { Concept } from '@/data/masterData';
 import {
@@ -37,6 +42,15 @@ function Thumb({ src, alt }: { src?: string; alt: string }) {
   return <img src={src} alt={alt} className="w-16 h-16 object-cover rounded border shrink-0" />;
 }
 
+function SmallThumb({ src, alt }: { src?: string; alt: string }) {
+  if (!src) return (
+    <div className="w-10 h-10 bg-muted rounded flex items-center justify-center shrink-0">
+      <ImageIcon className="w-4 h-4 text-muted-foreground/40" />
+    </div>
+  );
+  return <img src={src} alt={alt} className="w-10 h-10 object-cover rounded border shrink-0" />;
+}
+
 export default function PackagesComparison() {
   const [catalog, setCatalog] = useState<CatalogProduct[]>(loadCatalog);
   const [packages, setPackages] = useState<Package[]>(loadPackages);
@@ -45,6 +59,11 @@ export default function PackagesComparison() {
   const [search, setSearch] = useState('');
   const [pickerFor, setPickerFor] = useState<string | null>(null);
   const [pickerSearch, setPickerSearch] = useState('');
+
+  // New product creation state
+  const [newProductOpen, setNewProductOpen] = useState(false);
+  const [productDraft, setProductDraft] = useState<CatalogProduct | null>(null);
+  const [uploadingProductImg, setUploadingProductImg] = useState(false);
 
   useEffect(() => subscribeCatalog(setCatalog), []);
   useEffect(() => subscribePackages(setPackages), []);
@@ -98,6 +117,55 @@ export default function PackagesComparison() {
         p.discipline.toLowerCase().includes(term))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [pickerFor, pickerSearch, catalog, alts, productMap]);
+
+  const openNewProduct = () => {
+    const base = pickerFor ? productMap.get(pickerFor) : null;
+    const draft: CatalogProduct = {
+      id: generateProductId(),
+      name: '',
+      description: '',
+      imageUrl: '',
+      unitPriceEur: null,
+      supplierId: null,
+      supplierName: '',
+      discipline: base?.discipline ?? DISCIPLINES[0],
+      area: 'Indoor',
+      sku: '',
+    };
+    setProductDraft(draft);
+    setNewProductOpen(true);
+  };
+
+  const handleProductImageUpload = async (file: File) => {
+    if (!productDraft) return;
+    setUploadingProductImg(true);
+    try {
+      const url = await uploadCatalogImage(file);
+      setProductDraft({ ...productDraft, imageUrl: url });
+      toast({ title: 'Image uploaded' });
+    } catch (e: any) {
+      toast({ title: 'Upload failed', description: e.message, variant: 'destructive' });
+    } finally {
+      setUploadingProductImg(false);
+    }
+  };
+
+  const saveNewProduct = () => {
+    if (!productDraft || !pickerFor) return;
+    if (!productDraft.name.trim()) {
+      toast({ title: 'Name is required', variant: 'destructive' });
+      return;
+    }
+    const nextCatalog = [...catalog, productDraft];
+    setCatalog(nextCatalog);
+    saveCatalog(nextCatalog);
+
+    addAlternative(pickerFor, productDraft.id);
+    toast({ title: 'New product created and added as alternative' });
+    setNewProductOpen(false);
+    setProductDraft(null);
+    setPickerFor(null);
+  };
 
   return (
     <div className="space-y-4">
@@ -253,13 +321,20 @@ export default function PackagesComparison() {
       <Dialog open={!!pickerFor} onOpenChange={(o) => !o && setPickerFor(null)}>
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle>Select alternative product</DialogTitle>
-            <DialogDescription>
-              Pick a catalog product to compare against{' '}
-              <span className="font-medium text-foreground">
-                {pickerFor ? productMap.get(pickerFor)?.name : ''}
-              </span>
-            </DialogDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle>Select alternative product</DialogTitle>
+                <DialogDescription>
+                  Pick a catalog product to compare against{' '}
+                  <span className="font-medium text-foreground">
+                    {pickerFor ? productMap.get(pickerFor)?.name : ''}
+                  </span>
+                </DialogDescription>
+              </div>
+              <Button variant="outline" size="sm" className="gap-1" onClick={openNewProduct}>
+                <Plus className="w-3.5 h-3.5" /> New Product
+              </Button>
+            </div>
           </DialogHeader>
           <div className="relative">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -302,7 +377,7 @@ export default function PackagesComparison() {
                       }}
                       className="flex items-start gap-2 p-2 border rounded-md hover:border-accent hover:bg-accent/5 text-left"
                     >
-                      <Thumb src={p.imageUrl} alt={p.name} />
+                      <SmallThumb src={p.imageUrl} alt={p.name} />
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium text-foreground truncate">{p.name}</div>
                         <div className="text-[11px] text-muted-foreground truncate">
@@ -323,6 +398,110 @@ export default function PackagesComparison() {
               </div>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* New Product dialog */}
+      <Dialog open={newProductOpen} onOpenChange={(o) => !o && setNewProductOpen(false)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>New Product</DialogTitle>
+            <DialogDescription>
+              Create a new catalog product. It will be added to the catalog and set as an alternative.
+            </DialogDescription>
+          </DialogHeader>
+          {productDraft && (
+            <div className="space-y-3">
+              <div>
+                <Label>Image</Label>
+                <div className="flex items-center gap-3 mt-1">
+                  <div className="w-16 h-16 border rounded flex items-center justify-center bg-muted overflow-hidden">
+                    {productDraft.imageUrl ? (
+                      <img src={productDraft.imageUrl} alt="preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <ImageIcon className="w-6 h-6 text-muted-foreground/40" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <label className="cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={e => {
+                          const f = e.target.files?.[0];
+                          if (f) handleProductImageUpload(f);
+                        }}
+                      />
+                      <div className="inline-flex items-center gap-2 px-3 py-2 border rounded-md text-sm hover:bg-accent">
+                        <Upload className="w-4 h-4" />
+                        {uploadingProductImg ? 'Uploading...' : (productDraft.imageUrl ? 'Replace image' : 'Upload image')}
+                      </div>
+                    </label>
+                    {productDraft.imageUrl && (
+                      <Button type="button" variant="ghost" size="sm" className="ml-2 text-destructive" onClick={() => setProductDraft({ ...productDraft, imageUrl: '' })}>
+                        Remove
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div>
+                <Label>Name</Label>
+                <Input value={productDraft.name} onChange={e => setProductDraft({ ...productDraft, name: e.target.value })} />
+              </div>
+              <div>
+                <Label>Description</Label>
+                <Textarea value={productDraft.description} onChange={e => setProductDraft({ ...productDraft, description: e.target.value })} rows={2} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Unit Price (EUR)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={productDraft.unitPriceEur ?? ''}
+                    onChange={e => setProductDraft({ ...productDraft, unitPriceEur: e.target.value === '' ? null : parseFloat(e.target.value) })}
+                  />
+                </div>
+                <div>
+                  <Label>SKU</Label>
+                  <Input value={productDraft.sku} onChange={e => setProductDraft({ ...productDraft, sku: e.target.value })} />
+                </div>
+              </div>
+              <div>
+                <Label>Supplier</Label>
+                <Input value={productDraft.supplierName} onChange={e => setProductDraft({ ...productDraft, supplierName: e.target.value })} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Discipline</Label>
+                  <select
+                    value={productDraft.discipline}
+                    onChange={e => setProductDraft({ ...productDraft, discipline: e.target.value })}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  >
+                    {DISCIPLINES.map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <Label>Area</Label>
+                  <select
+                    value={productDraft.area}
+                    onChange={e => setProductDraft({ ...productDraft, area: e.target.value as 'Indoor' | 'Outdoor' })}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  >
+                    <option value="Indoor">Indoor</option>
+                    <option value="Outdoor">Outdoor</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setNewProductOpen(false); setProductDraft(null); }}>Cancel</Button>
+            <Button onClick={saveNewProduct}>Save & Add Alternative</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
