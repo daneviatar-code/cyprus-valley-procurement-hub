@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Plus, Pencil, Trash2, Search, X, ImageIcon, GitCompare, ArrowRight, Upload } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, X, ImageIcon, GitCompare, ArrowRight, Upload, FileDown } from 'lucide-react';
+import jsPDF from 'jspdf';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -219,6 +220,153 @@ export default function PackagesComparison() {
     setEditProductDraft(null);
   };
 
+  const loadImageAsDataUrl = async (url: string): Promise<{ data: string; w: number; h: number } | null> => {
+    if (!url) return null;
+    try {
+      const res = await fetch(url, { mode: 'cors' });
+      const blob = await res.blob();
+      const dataUrl: string = await new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(r.result as string);
+        r.onerror = reject;
+        r.readAsDataURL(blob);
+      });
+      const dims: { w: number; h: number } = await new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+        img.onerror = () => resolve({ w: 1, h: 1 });
+        img.src = dataUrl;
+      });
+      return { data: dataUrl, w: dims.w, h: dims.h };
+    } catch {
+      return null;
+    }
+  };
+
+  const exportAlternativesPdf = async () => {
+    const baseProducts = usedItems
+      .map(u => u.product!)
+      .filter(p => (alts[p.id] ?? []).length > 0);
+
+    if (baseProducts.length === 0) {
+      toast({ title: 'No products with alternatives found' });
+      return;
+    }
+
+    toast({ title: 'Generating PDF...', description: 'Loading images, please wait' });
+
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const margin = 12;
+    let y = margin;
+
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Items with Alternatives', margin, y);
+    y += 7;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(120);
+    doc.text(`${baseProducts.length} item(s) — generated ${new Date().toLocaleDateString()}`, margin, y);
+    doc.setTextColor(0);
+    y += 8;
+
+    const drawImg = async (url: string, x: number, yy: number, maxW: number, maxH: number) => {
+      const img = await loadImageAsDataUrl(url);
+      if (!img) {
+        doc.setDrawColor(200);
+        doc.rect(x, yy, maxW, maxH);
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text('No image', x + maxW / 2, yy + maxH / 2 + 1, { align: 'center' });
+        doc.setTextColor(0);
+        return;
+      }
+      const ratio = img.w / img.h;
+      let w = maxW, h = maxW / ratio;
+      if (h > maxH) { h = maxH; w = maxH * ratio; }
+      const fmt = img.data.includes('image/png') ? 'PNG' : 'JPEG';
+      try { doc.addImage(img.data, fmt, x + (maxW - w) / 2, yy + (maxH - h) / 2, w, h); }
+      catch { /* ignore */ }
+    };
+
+    for (let i = 0; i < baseProducts.length; i++) {
+      const base = baseProducts[i];
+      const altIds = alts[base.id] ?? [];
+      const altProducts = altIds.map(id => productMap.get(id)).filter(Boolean) as CatalogProduct[];
+
+      const blockH = 60 + Math.ceil(altProducts.length / 2) * 32;
+      if (y + blockH > pageH - margin) { doc.addPage(); y = margin; }
+
+      doc.setFillColor(30, 41, 59);
+      doc.rect(margin, y, pageW - margin * 2, 8, 'F');
+      doc.setTextColor(255);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`${i + 1}. ${base.name}`, margin + 2, y + 5.6);
+      doc.setTextColor(0);
+      y += 10;
+
+      const imgW = 45, imgH = 35;
+      await drawImg(base.imageUrl, margin, y, imgW, imgH);
+
+      const tx = margin + imgW + 4;
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      const metaLines = [
+        `Discipline: ${base.discipline}`,
+        `Supplier: ${base.supplierName || '—'}`,
+        `SKU: ${base.sku || '—'}`,
+        `Unit Price: ${fmtEur(base.unitPriceEur)}`,
+      ];
+      metaLines.forEach((l, idx) => doc.text(l, tx, y + 5 + idx * 5));
+
+      y += imgH + 4;
+
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(80);
+      doc.text(`Alternatives (${altProducts.length}):`, margin, y + 3);
+      doc.setTextColor(0);
+      y += 6;
+
+      const colW = (pageW - margin * 2 - 4) / 2;
+      const altImgW = 28, altImgH = 28;
+      for (let j = 0; j < altProducts.length; j++) {
+        const a = altProducts[j];
+        const col = j % 2;
+        const ry = y + Math.floor(j / 2) * 32;
+        const x = margin + col * (colW + 4);
+        doc.setDrawColor(220);
+        doc.rect(x, ry, colW, 30);
+        await drawImg(a.imageUrl, x + 1, ry + 1, altImgW, altImgH);
+        const ax = x + altImgW + 3;
+        doc.setFontSize(8.5);
+        doc.setFont('helvetica', 'bold');
+        const nm = doc.splitTextToSize(a.name, colW - altImgW - 5);
+        doc.text(nm.slice(0, 2), ax, ry + 4);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(90);
+        doc.text(a.supplierName || '—', ax, ry + 14);
+        if (a.sku) doc.text(`SKU: ${a.sku}`, ax, ry + 18);
+        doc.setTextColor(0);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        doc.text(fmtEur(a.unitPriceEur), ax, ry + 26);
+      }
+      y += Math.ceil(altProducts.length / 2) * 32 + 4;
+
+      doc.setDrawColor(230);
+      doc.line(margin, y, pageW - margin, y);
+      y += 4;
+    }
+
+    doc.save(`alternatives-${new Date().toISOString().slice(0, 10)}.pdf`);
+    toast({ title: 'PDF ready' });
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -229,14 +377,19 @@ export default function PackagesComparison() {
             All items used in packages, with optional alternatives for price comparison
           </span>
         </div>
-        <div className="relative w-64">
-          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search items, suppliers..."
-            className="pl-8 h-9"
-          />
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={exportAlternativesPdf} className="h-9">
+            <FileDown className="w-4 h-4 mr-1" /> Export Alternatives PDF
+          </Button>
+          <div className="relative w-64">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search items, suppliers..."
+              className="pl-8 h-9"
+            />
+          </div>
         </div>
       </div>
 
