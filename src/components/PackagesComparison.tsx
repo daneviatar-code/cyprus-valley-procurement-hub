@@ -268,9 +268,19 @@ export default function PackagesComparison() {
                           <span>Used: {totalQty}× in {packageNames.length} pkg</span>
                         </div>
                       </div>
-                      <div className="text-right shrink-0">
-                        <div className="text-base font-bold text-foreground">{fmtEur(product!.unitPriceEur)}</div>
-                        <div className="text-[10px] text-muted-foreground">unit price</div>
+                      <div className="text-right shrink-0 flex items-start gap-1">
+                        <div>
+                          <div className="text-base font-bold text-foreground">{fmtEur(product!.unitPriceEur)}</div>
+                          <div className="text-[10px] text-muted-foreground">unit price</div>
+                        </div>
+                        <Button
+                          variant="ghost" size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                          onClick={() => openEditProduct(productId)}
+                          title="Edit product"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </Button>
                       </div>
                     </div>
                     {packageNames.length > 0 && (
