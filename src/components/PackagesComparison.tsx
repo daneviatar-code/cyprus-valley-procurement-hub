@@ -42,7 +42,16 @@ function Thumb({ src, alt }: { src?: string; alt: string }) {
       <ImageIcon className="w-5 h-5 text-muted-foreground/40" />
     </div>
   );
-  return <img src={src} alt={alt} className="w-16 h-16 object-cover rounded border shrink-0" />;
+  return (
+    <HoverCard openDelay={200} closeDelay={150}>
+      <HoverCardTrigger asChild>
+        <img src={src} alt={alt} className="w-16 h-16 object-cover rounded border shrink-0 cursor-zoom-in" />
+      </HoverCardTrigger>
+      <HoverCardContent side="right" align="start" className="w-auto p-1 border bg-card shadow-xl">
+        <img src={src} alt={alt} className="max-w-[300px] max-h-[300px] object-contain rounded" />
+      </HoverCardContent>
+    </HoverCard>
+  );
 }
 
 function SmallThumb({ src, alt }: { src?: string; alt: string }) {
