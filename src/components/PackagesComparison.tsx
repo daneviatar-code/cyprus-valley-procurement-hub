@@ -411,10 +411,35 @@ export default function PackagesComparison() {
             </DialogDescription>
           </DialogHeader>
           {productDraft && (
-            <div className="space-y-3">
+            <div
+              className="space-y-3"
+              onPaste={(e) => {
+                const items = e.clipboardData?.items;
+                if (!items) return;
+                for (let i = 0; i < items.length; i++) {
+                  const it = items[i];
+                  if (it.type.startsWith('image/')) {
+                    const file = it.getAsFile();
+                    if (file) {
+                      e.preventDefault();
+                      handleProductImageUpload(file);
+                      break;
+                    }
+                  }
+                }
+              }}
+            >
               <div>
                 <Label>Image</Label>
-                <div className="flex items-center gap-3 mt-1">
+                <div
+                  className="flex items-center gap-3 mt-1 border-2 border-dashed border-transparent hover:border-muted-foreground/30 rounded-md p-2 transition-colors"
+                  onDragOver={(e) => { e.preventDefault(); }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const file = e.dataTransfer.files?.[0];
+                    if (file && file.type.startsWith('image/')) handleProductImageUpload(file);
+                  }}
+                >
                   <div className="w-16 h-16 border rounded flex items-center justify-center bg-muted overflow-hidden">
                     {productDraft.imageUrl ? (
                       <img src={productDraft.imageUrl} alt="preview" className="w-full h-full object-cover" />
@@ -443,6 +468,9 @@ export default function PackagesComparison() {
                         Remove
                       </Button>
                     )}
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      Tip: paste an image with Ctrl/Cmd+V or drag & drop here
+                    </p>
                   </div>
                 </div>
               </div>
