@@ -256,7 +256,24 @@ export default function Catalog() {
             <DialogDescription>Catalog product details</DialogDescription>
           </DialogHeader>
 
-          <div className="grid grid-cols-2 gap-4 py-2">
+          <div
+            className="grid grid-cols-2 gap-4 py-2"
+            onPaste={(e) => {
+              const items = e.clipboardData?.items;
+              if (!items) return;
+              for (let i = 0; i < items.length; i++) {
+                const it = items[i];
+                if (it.type.startsWith('image/')) {
+                  const file = it.getAsFile();
+                  if (file) {
+                    e.preventDefault();
+                    handleImageUpload(file);
+                    break;
+                  }
+                }
+              }
+            }}
+          >
             <div className="col-span-2">
               <Label>Name *</Label>
               <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="DOUBLE BED" />
@@ -269,7 +286,15 @@ export default function Catalog() {
 
             <div className="col-span-2">
               <Label>Image</Label>
-              <div className="flex items-center gap-3">
+              <div
+                className="flex items-center gap-3 border-2 border-dashed border-transparent hover:border-muted-foreground/30 rounded-md p-2 transition-colors"
+                onDragOver={(e) => { e.preventDefault(); }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const file = e.dataTransfer.files?.[0];
+                  if (file && file.type.startsWith('image/')) handleImageUpload(file);
+                }}
+              >
                 <div className="w-20 h-20 bg-muted border rounded flex items-center justify-center overflow-hidden flex-shrink-0">
                   {form.imageUrl ? (
                     <img src={form.imageUrl} alt="preview" className="w-full h-full object-cover" />
@@ -298,6 +323,9 @@ export default function Catalog() {
                       Remove
                     </Button>
                   )}
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Tip: paste an image with Ctrl/Cmd+V or drag & drop here
+                  </p>
                 </div>
               </div>
             </div>
