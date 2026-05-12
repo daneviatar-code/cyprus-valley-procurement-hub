@@ -334,6 +334,14 @@ export default function PackagesComparison() {
                                 </div>
                                 <Button
                                   variant="ghost" size="icon"
+                                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                                  onClick={() => openEditProduct(altId)}
+                                  title="Edit product"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost" size="icon"
                                   className="h-7 w-7 text-destructive hover:text-destructive"
                                   onClick={() => {
                                     removeAlternative(productId, altId);
