@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { Plus, Pencil, Trash2, Search, X, ImageIcon, Package as PackageIcon } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, X, ImageIcon, Package as PackageIcon, GitCompare } from 'lucide-react';
+import PackagesComparison from './PackagesComparison';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -73,6 +74,7 @@ export default function Packages() {
   const [packages, setPackages] = useState<Package[]>(loadPackages);
   const [catalog, setCatalog] = useState<CatalogProduct[]>(loadCatalog);
   const [activeBlock, setActiveBlock] = useState<Concept>('A');
+  const [view, setView] = useState<'packages' | 'comparison'>('packages');
 
   const [editorOpen, setEditorOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -383,6 +385,15 @@ export default function Packages() {
 
   return (
     <div className="space-y-4">
+      <Tabs value={view} onValueChange={(v) => setView(v as 'packages' | 'comparison')}>
+        <TabsList>
+          <TabsTrigger value="packages" className="gap-1.5"><PackageIcon className="w-4 h-4" /> Packages</TabsTrigger>
+          <TabsTrigger value="comparison" className="gap-1.5"><GitCompare className="w-4 h-4" /> Item Comparison</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      {view === 'comparison' ? <PackagesComparison /> : (
+      <>
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <PackageIcon className="h-5 w-5 text-accent" />
@@ -1050,6 +1061,8 @@ export default function Packages() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      </>
+      )}
     </div>
   );
 }
