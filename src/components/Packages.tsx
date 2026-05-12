@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { Plus, Pencil, Trash2, Search, X, ImageIcon, Package as PackageIcon } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, X, ImageIcon, Package as PackageIcon, GitCompare } from 'lucide-react';
+import PackagesComparison from './PackagesComparison';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
