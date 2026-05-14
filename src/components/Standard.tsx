@@ -425,6 +425,13 @@ export default function Standard() {
               suppliers={suppliers}
               unitCountsPerBuilding={unitCountsPerBuilding}
             />
+            <RfqExcelExportButton
+              items={items}
+              qtysByItem={qtysByItem}
+              categories={visibleCategories}
+              suppliers={suppliers}
+              unitCountsPerBuilding={unitCountsPerBuilding}
+            />
             <Button
               size="sm"
               variant="outline"
