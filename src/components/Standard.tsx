@@ -47,6 +47,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import BuildingDetailDialog from '@/components/BuildingDetailDialog';
 import RfqExportButton from '@/components/RfqExportButton';
+import RfqExcelExportButton from '@/components/RfqExcelExportButton';
 
 const FragmentRow = Fragment;
 
@@ -418,6 +419,13 @@ export default function Standard() {
               </span>
             )}
             <RfqExportButton
+              items={items}
+              qtysByItem={qtysByItem}
+              categories={visibleCategories}
+              suppliers={suppliers}
+              unitCountsPerBuilding={unitCountsPerBuilding}
+            />
+            <RfqExcelExportButton
               items={items}
               qtysByItem={qtysByItem}
               categories={visibleCategories}
