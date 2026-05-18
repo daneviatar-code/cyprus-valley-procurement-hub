@@ -173,6 +173,7 @@ export async function saveItemOffer(offer: ItemOffer): Promise<void> {
   }
   next.push(o);
   setAllInMemory(next);
+  if (o.isSelected) syncSelectedToStandardItem(o);
 
   await enqueue(`item_offers:${o.standardItemId}`, async () => {
     try {
