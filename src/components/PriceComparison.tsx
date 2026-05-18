@@ -105,6 +105,7 @@ export default function PriceComparison() {
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
     return analysis.filter(a => {
+      if (selectedCats.size > 0 && !selectedCats.has(a.item.categoryId)) return false;
       if (filter === 'no-selection' && a.selected) return false;
       if (filter === 'expired' && a.expiredCount === 0) return false;
       if (term) {
@@ -113,7 +114,19 @@ export default function PriceComparison() {
       }
       return true;
     });
-  }, [analysis, search, filter]);
+  }, [analysis, search, filter, selectedCats]);
+
+  const toggleCat = (id: string) => {
+    setSelectedCats(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+  const visibleCategories = useMemo(
+    () => categories.filter(c => !c.archived).sort((a, b) => a.order - b.order),
+    [categories],
+  );
 
   const toggleExpand = (id: string) => {
     setExpanded(prev => {
