@@ -125,6 +125,8 @@ export default function Index() {
 
         {activeTab === 'standard' && <Standard />}
 
+        {activeTab === 'priceComparison' && <PriceComparison />}
+
         {activeTab === 'rooms' && <RoomExplorer masterData={masterData} />}
 
         {activeTab === 'packages' && <PackageEditor />}
