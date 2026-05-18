@@ -101,7 +101,7 @@ export default function Index() {
 
       {/* Main */}
       <main className="max-w-[1440px] mx-auto px-6 py-6 space-y-8">
-        {activeTab !== 'projectData' && activeTab !== 'packages' && activeTab !== 'pricing' && activeTab !== 'publicAreas' && activeTab !== 'standard' && activeTab !== 'catalog' && activeTab !== 'packagesV2' && (
+        {activeTab !== 'projectData' && activeTab !== 'packages' && activeTab !== 'pricing' && activeTab !== 'publicAreas' && activeTab !== 'standard' && activeTab !== 'priceComparison' && activeTab !== 'catalog' && activeTab !== 'packagesV2' && (
           <Dashboard
             onConceptClick={(id) => setDrillDownConcept(id)}
             masterData={masterData}
