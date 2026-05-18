@@ -305,7 +305,7 @@ export default function PriceComparison() {
               <th className="px-2 py-2">Item</th>
               <th className="px-2 py-2 text-right"># Offers</th>
               <th className="px-2 py-2">Selected</th>
-              <th className="px-2 py-2">Cheapest</th>
+              <th className="px-2 py-2">All offers</th>
               <th className="px-2 py-2 text-right">Potential savings</th>
               <th className="px-2 py-2 text-right">Expired</th>
               <th className="px-2 py-2 w-20"></th>
