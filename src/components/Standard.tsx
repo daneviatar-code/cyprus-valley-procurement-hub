@@ -92,10 +92,19 @@ export default function Standard() {
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [justSaved, setJustSaved] = useState(false);
   const [openBuilding, setOpenBuilding] = useState<string | null>(null);
+  const [offersDialogItem, setOffersDialogItem] = useState<StandardItem | null>(null);
+  const [allOffers, setAllOffers] = useState<ItemOffer[]>(loadItemOffers);
 
   // Sync with cloud after hydration
   useEffect(() => subscribeStandardItems(setItems), []);
   useEffect(() => subscribeApartmentTypeQuantities(setQtys), []);
+  useEffect(() => subscribeItemOffers(setAllOffers), []);
+
+  const offersCountByItem = useMemo(() => {
+    const m = new Map<string, number>();
+    allOffers.forEach(o => m.set(o.standardItemId, (m.get(o.standardItemId) || 0) + 1));
+    return m;
+  }, [allOffers]);
 
   const handleManualSave = useCallback(() => {
     saveCategories(categories);
