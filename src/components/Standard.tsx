@@ -19,6 +19,10 @@ import {
   computeQuantity, subscribeStandardItems, subscribeApartmentTypeQuantities,
 } from '@/data/standardItemsData';
 import { Supplier, loadSuppliers } from '@/data/supplierData';
+import {
+  ItemOffer, loadItemOffers, subscribeItemOffers,
+} from '@/data/itemOffersData';
+import ItemOffersDialog from '@/components/ItemOffersDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import SpecCell from '@/components/SpecCell';
@@ -88,10 +92,19 @@ export default function Standard() {
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [justSaved, setJustSaved] = useState(false);
   const [openBuilding, setOpenBuilding] = useState<string | null>(null);
+  const [offersDialogItem, setOffersDialogItem] = useState<StandardItem | null>(null);
+  const [allOffers, setAllOffers] = useState<ItemOffer[]>(loadItemOffers);
 
   // Sync with cloud after hydration
   useEffect(() => subscribeStandardItems(setItems), []);
   useEffect(() => subscribeApartmentTypeQuantities(setQtys), []);
+  useEffect(() => subscribeItemOffers(setAllOffers), []);
+
+  const offersCountByItem = useMemo(() => {
+    const m = new Map<string, number>();
+    allOffers.forEach(o => m.set(o.standardItemId, (m.get(o.standardItemId) || 0) + 1));
+    return m;
+  }, [allOffers]);
 
   const handleManualSave = useCallback(() => {
     saveCategories(categories);
@@ -612,6 +625,8 @@ export default function Standard() {
                     onMoveItem={moveMasterItem}
                     onReorder={(ids) => reorderMasterItems(selectedCategoryId, ids)}
                     unitCounts={unitCounts}
+                    offersCountByItem={offersCountByItem}
+                    onOpenOffers={setOffersDialogItem}
                   />
                 ) : (
                   <TypeEditor
@@ -650,6 +665,12 @@ export default function Standard() {
           categories={categories}
           suppliers={suppliers}
           buildingCounts={openBuilding ? unitCountsPerBuilding[openBuilding] : { studio: 0, '1br': 0, '2br': 0, '3br': 0, '4br': 0, public: 0 }}
+        />
+
+        <ItemOffersDialog
+          open={!!offersDialogItem}
+          onOpenChange={(v) => { if (!v) setOffersDialogItem(null); }}
+          item={offersDialogItem}
         />
       </div>
     </TooltipProvider>
@@ -727,6 +748,7 @@ function SummaryBar({ s, typeLabel, isMaster, perBuilding, onBuildingClick }: {
 // ───────────────────────────── Master Editor ─────────────────────────────
 function MasterEditor({
   items, qtysByItem, suppliers, onUpdateItem, onDeleteItem, onUpdateQty, onMoveItem, onReorder, unitCounts,
+  offersCountByItem, onOpenOffers,
 }: {
   items: StandardItem[];
   qtysByItem: Map<string, Record<ApartmentType, ApartmentTypeQuantity | undefined>>;
@@ -737,6 +759,8 @@ function MasterEditor({
   onMoveItem: (id: string, direction: -1 | 1) => void;
   onReorder: (orderedIds: string[]) => void;
   unitCounts: Record<RoomSize, number>;
+  offersCountByItem: Map<string, number>;
+  onOpenOffers: (item: StandardItem) => void;
 }) {
   const th = 'text-left text-[10px] font-medium uppercase tracking-wider text-muted-foreground px-2 py-1.5 whitespace-nowrap';
 
@@ -769,6 +793,7 @@ function MasterEditor({
               <th className={th}>Dimensions</th>
               <th className={`${th} text-right`}>Unit Price €</th>
               <th className={th}>Supplier</th>
+              <th className={th}>Offers</th>
               <th className={th}>Per-Type Quantities</th>
               <th className={th}></th>
             </tr>
@@ -787,6 +812,8 @@ function MasterEditor({
                   onDeleteItem={onDeleteItem}
                   onUpdateQty={onUpdateQty}
                   onMoveItem={onMoveItem}
+                  offersCount={offersCountByItem.get(it.id) || 0}
+                  onOpenOffers={onOpenOffers}
                 />
               ))}
             </tbody>
@@ -800,6 +827,7 @@ function MasterEditor({
 // One sortable row inside MasterEditor
 function SortableItemRow({
   it, idx, isLast, qtysByItem, suppliers, onUpdateItem, onDeleteItem, onUpdateQty, onMoveItem,
+  offersCount, onOpenOffers,
 }: {
   it: StandardItem;
   idx: number;
@@ -810,6 +838,8 @@ function SortableItemRow({
   onDeleteItem: (id: string) => void;
   onUpdateQty: (id: string, patch: Partial<ApartmentTypeQuantity>) => void;
   onMoveItem: (id: string, direction: -1 | 1) => void;
+  offersCount: number;
+  onOpenOffers: (item: StandardItem) => void;
 }) {
   const inputCls = 'w-full h-7 px-2 text-xs border rounded bg-background focus:outline-none focus:ring-1 focus:ring-primary';
   const td = 'px-2 py-1.5 align-middle';
@@ -893,6 +923,19 @@ function SortableItemRow({
           <option value="">—</option>
           {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
         </select>
+      </td>
+      <td className={td}>
+        <button
+          onClick={() => onOpenOffers(it)}
+          className={`text-[11px] px-2 py-1 rounded whitespace-nowrap transition-colors ${
+            offersCount > 0
+              ? 'bg-accent/20 hover:bg-accent/30 text-accent-foreground font-semibold'
+              : 'bg-muted hover:bg-muted/80 text-muted-foreground'
+          }`}
+          title="Compare supplier offers"
+        >
+          Offers ({offersCount})
+        </button>
       </td>
       <td className={td}>
         <Popover>

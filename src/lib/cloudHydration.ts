@@ -9,6 +9,8 @@ import { hydratePublicAreaPlansFromCloud } from '@/data/publicAreaPlansData';
 import { hydrateCatalogFromCloud } from '@/data/catalogData';
 import { hydratePackagesFromCloud } from '@/data/packagesData';
 import { hydrateCategoriesFromCloud } from '@/data/categoriesData';
+import { hydrateItemOffersFromCloud } from '@/data/itemOffersData';
+import { refreshRatesIfNeeded } from '@/lib/fxRates';
 
 let started = false;
 
@@ -23,4 +25,6 @@ export function startCloudHydration() {
   void hydrateCatalogFromCloud();
   void hydratePackagesFromCloud();
   void hydrateCategoriesFromCloud();
+  void hydrateItemOffersFromCloud();
+  void refreshRatesIfNeeded();
 }
