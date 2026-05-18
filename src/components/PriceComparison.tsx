@@ -239,15 +239,21 @@ export default function PriceComparison() {
                 <FragmentRow key={a.item.id}>
                   <tr className="border-b hover:bg-muted/30">
                     <td className="px-2 py-1.5">
-                      <button onClick={() => toggleExpand(a.item.id)} className="text-muted-foreground hover:text-foreground">
-                        {isOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-                      </button>
+                      {a.list.length > 0 ? (
+                        <button onClick={() => toggleExpand(a.item.id)} className="text-muted-foreground hover:text-foreground">
+                          {isOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                        </button>
+                      ) : null}
                     </td>
                     <td className="px-2 py-1.5">
                       <div className="font-medium">{a.item.itemName || '(unnamed)'}</div>
                       {a.item.spec && <div className="text-[10px] text-muted-foreground truncate max-w-xs">{a.item.spec}</div>}
                     </td>
-                    <td className="px-2 py-1.5 text-right font-mono">{a.list.length}</td>
+                    <td className="px-2 py-1.5 text-right font-mono">
+                      {a.list.length === 0
+                        ? <span className="text-muted-foreground">0</span>
+                        : a.list.length}
+                    </td>
                     <td className="px-2 py-1.5">
                       {a.selected ? (
                         <div>
@@ -256,7 +262,9 @@ export default function PriceComparison() {
                             {formatMoney(a.selected.priceEur, 'EUR')}
                           </div>
                         </div>
-                      ) : <span className="text-orange-600 text-[11px]">no selection</span>}
+                      ) : a.list.length === 0
+                        ? <span className="text-muted-foreground text-[11px]">—</span>
+                        : <span className="text-orange-600 text-[11px]">no selection</span>}
                     </td>
                     <td className="px-2 py-1.5">
                       {a.cheapest ? (
@@ -279,12 +287,18 @@ export default function PriceComparison() {
                       {a.expiredCount > 0 ? <span className="text-destructive">{a.expiredCount}</span> : '—'}
                     </td>
                     <td className="px-2 py-1.5 text-right">
-                      <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => setDialogItem(a.item)}>
-                        <ExternalLink className="w-3 h-3" /> Open
+                      <Button
+                        size="sm"
+                        variant={a.list.length === 0 ? 'default' : 'outline'}
+                        className="h-7 text-xs gap-1"
+                        onClick={() => setDialogItem(a.item)}
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        {a.list.length === 0 ? 'Add offer' : 'Open'}
                       </Button>
                     </td>
                   </tr>
-                  {isOpen && (
+                  {isOpen && a.list.length > 0 && (
                     <tr className="bg-muted/20">
                       <td></td>
                       <td colSpan={7} className="px-2 py-3">
