@@ -454,6 +454,7 @@ function CompareGrid({
               <th key={o.id} className={`px-2 py-1 text-left text-[10px] uppercase border-r last:border-r-0 ${o.isSelected ? 'bg-accent/10' : ''}`}>
                 <div className="flex items-center gap-1">
                   <span className="text-foreground normal-case font-semibold">{supplierName(o.supplierId)}</span>
+                  {o.id.startsWith('base:') && <span className="text-[9px] px-1 rounded bg-primary/15 text-primary">baseline</span>}
                   {o.isSelected && <span className="text-[9px] px-1 rounded bg-accent/30">selected</span>}
                   {cheapestId === o.id && <span className="text-[9px] px-1 rounded bg-green-100 text-green-800">cheapest</span>}
                   {fastestId === o.id && <span className="text-[9px] px-1 rounded bg-blue-100 text-blue-800">fastest</span>}
