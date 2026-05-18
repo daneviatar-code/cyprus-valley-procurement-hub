@@ -58,13 +58,13 @@ export default function PriceComparison() {
   const supplierName = (id?: string | null) =>
     suppliers.find(s => s.id === id)?.name || '—';
 
-  // Aggregate per-item analysis
+  // Aggregate per-item analysis — include ALL standard items so users can
+  // add offers directly from the comparison view.
   const analysis = useMemo(() => {
-    const rows = items
+    return items
       .filter(i => !i.archived)
       .map(item => {
         const list = getOffersForItem(offers, item.id);
-        if (list.length === 0) return null;
         const selected = list.find(o => o.isSelected);
         const cheapest = getCheapestOffer(list);
         const fastest = getFastestOffer(list);
@@ -75,25 +75,17 @@ export default function PriceComparison() {
             ? (selected.priceEur ?? 0) - (cheapest.priceEur ?? 0)
             : 0;
         return { item, list, selected, cheapest, fastest, expiredCount, savings };
-      })
-      .filter(Boolean) as Array<{
-        item: StandardItem;
-        list: ItemOffer[];
-        selected?: ItemOffer;
-        cheapest?: ItemOffer;
-        fastest?: ItemOffer;
-        expiredCount: number;
-        savings: number;
-      }>;
-    return rows;
+      });
   }, [items, offers]);
 
   const kpis = useMemo(() => {
     let potentialSavings = 0;
     let noSelection = 0;
     let withExpired = 0;
+    let itemsWithOffers = 0;
     for (const a of analysis) {
       potentialSavings += a.savings;
+      if (a.list.length > 0) itemsWithOffers++;
       if (!a.selected) noSelection++;
       if (a.expiredCount > 0) withExpired++;
     }
@@ -101,7 +93,8 @@ export default function PriceComparison() {
       potentialSavings,
       noSelection,
       withExpired,
-      itemsWithOffers: analysis.length,
+      itemsWithOffers,
+      totalItems: analysis.length,
     };
   }, [analysis]);
 
@@ -194,7 +187,7 @@ export default function PriceComparison() {
         <Kpi
           icon={<Package className="w-4 h-4" />}
           label="Items with offers"
-          value={kpis.itemsWithOffers.toString()}
+          value={`${kpis.itemsWithOffers} / ${kpis.totalItems}`}
           accent="text-primary"
         />
       </div>
@@ -246,15 +239,21 @@ export default function PriceComparison() {
                 <FragmentRow key={a.item.id}>
                   <tr className="border-b hover:bg-muted/30">
                     <td className="px-2 py-1.5">
-                      <button onClick={() => toggleExpand(a.item.id)} className="text-muted-foreground hover:text-foreground">
-                        {isOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-                      </button>
+                      {a.list.length > 0 ? (
+                        <button onClick={() => toggleExpand(a.item.id)} className="text-muted-foreground hover:text-foreground">
+                          {isOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                        </button>
+                      ) : null}
                     </td>
                     <td className="px-2 py-1.5">
                       <div className="font-medium">{a.item.itemName || '(unnamed)'}</div>
                       {a.item.spec && <div className="text-[10px] text-muted-foreground truncate max-w-xs">{a.item.spec}</div>}
                     </td>
-                    <td className="px-2 py-1.5 text-right font-mono">{a.list.length}</td>
+                    <td className="px-2 py-1.5 text-right font-mono">
+                      {a.list.length === 0
+                        ? <span className="text-muted-foreground">0</span>
+                        : a.list.length}
+                    </td>
                     <td className="px-2 py-1.5">
                       {a.selected ? (
                         <div>
@@ -263,7 +262,9 @@ export default function PriceComparison() {
                             {formatMoney(a.selected.priceEur, 'EUR')}
                           </div>
                         </div>
-                      ) : <span className="text-orange-600 text-[11px]">no selection</span>}
+                      ) : a.list.length === 0
+                        ? <span className="text-muted-foreground text-[11px]">—</span>
+                        : <span className="text-orange-600 text-[11px]">no selection</span>}
                     </td>
                     <td className="px-2 py-1.5">
                       {a.cheapest ? (
@@ -286,12 +287,18 @@ export default function PriceComparison() {
                       {a.expiredCount > 0 ? <span className="text-destructive">{a.expiredCount}</span> : '—'}
                     </td>
                     <td className="px-2 py-1.5 text-right">
-                      <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => setDialogItem(a.item)}>
-                        <ExternalLink className="w-3 h-3" /> Open
+                      <Button
+                        size="sm"
+                        variant={a.list.length === 0 ? 'default' : 'outline'}
+                        className="h-7 text-xs gap-1"
+                        onClick={() => setDialogItem(a.item)}
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        {a.list.length === 0 ? 'Add offer' : 'Open'}
                       </Button>
                     </td>
                   </tr>
-                  {isOpen && (
+                  {isOpen && a.list.length > 0 && (
                     <tr className="bg-muted/20">
                       <td></td>
                       <td colSpan={7} className="px-2 py-3">
