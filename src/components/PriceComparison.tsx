@@ -61,14 +61,48 @@ export default function PriceComparison() {
   const supplierName = (id?: string | null) =>
     suppliers.find(s => s.id === id)?.name || '—';
 
-  // Aggregate per-item analysis — include ALL standard items so users can
-  // add offers directly from the comparison view.
+  // Build a synthetic "base" offer from the Standard Item itself so existing
+  // specs/prices appear as the first offer and stay linked to the item.
+  const buildBaseOffer = (item: StandardItem): ItemOffer | null => {
+    const hasData = (item.unitPriceEur != null && item.unitPriceEur > 0)
+      || !!item.spec || !!item.dimensions || !!item.supplierId;
+    if (!hasData) return null;
+    const price = item.unitPriceEur ?? 0;
+    return {
+      id: `base:${item.id}`,
+      standardItemId: item.id,
+      supplierId: item.supplierId ?? null,
+      productName: item.itemName || '(standard)',
+      productSku: null,
+      spec: item.spec ?? null,
+      dimensions: item.dimensions ?? null,
+      imageUrl: null,
+      price,
+      currency: 'EUR',
+      priceEur: price,
+      leadTimeDays: null,
+      moq: null,
+      validUntil: null,
+      notes: 'Baseline from Standard item',
+      isSelected: false, // overridden below if no real selection exists
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
+    };
+  };
+
   const analysis = useMemo(() => {
     return items
       .filter(i => !i.archived)
       .sort((a, b) => (a.itemName || '').localeCompare(b.itemName || '', 'en', { sensitivity: 'base' }))
       .map(item => {
-        const list = getOffersForItem(offers, item.id);
+        const real = getOffersForItem(offers, item.id);
+        const base = buildBaseOffer(item);
+        const realSelected = real.find(o => o.isSelected);
+        // Synthetic base is "selected" only when no real offer is selected.
+        const baseWithSel = base
+          ? { ...base, isSelected: !realSelected }
+          : null;
+        const list: ItemOffer[] = baseWithSel ? [baseWithSel, ...real] : real;
         const selected = list.find(o => o.isSelected);
         const cheapest = getCheapestOffer(list);
         const fastest = getFastestOffer(list);
@@ -420,6 +454,7 @@ function CompareGrid({
               <th key={o.id} className={`px-2 py-1 text-left text-[10px] uppercase border-r last:border-r-0 ${o.isSelected ? 'bg-accent/10' : ''}`}>
                 <div className="flex items-center gap-1">
                   <span className="text-foreground normal-case font-semibold">{supplierName(o.supplierId)}</span>
+                  {o.id.startsWith('base:') && <span className="text-[9px] px-1 rounded bg-primary/15 text-primary">baseline</span>}
                   {o.isSelected && <span className="text-[9px] px-1 rounded bg-accent/30">selected</span>}
                   {cheapestId === o.id && <span className="text-[9px] px-1 rounded bg-green-100 text-green-800">cheapest</span>}
                   {fastestId === o.id && <span className="text-[9px] px-1 rounded bg-blue-100 text-blue-800">fastest</span>}
