@@ -925,6 +925,19 @@ function SortableItemRow({
         </select>
       </td>
       <td className={td}>
+        <button
+          onClick={() => onOpenOffers(it)}
+          className={`text-[11px] px-2 py-1 rounded whitespace-nowrap transition-colors ${
+            offersCount > 0
+              ? 'bg-accent/20 hover:bg-accent/30 text-accent-foreground font-semibold'
+              : 'bg-muted hover:bg-muted/80 text-muted-foreground'
+          }`}
+          title="Compare supplier offers"
+        >
+          Offers ({offersCount})
+        </button>
+      </td>
+      <td className={td}>
         <Popover>
           <PopoverTrigger asChild>
             <button className="font-mono text-[11px] px-2 py-1 rounded bg-muted hover:bg-accent/30 transition-colors whitespace-nowrap">
