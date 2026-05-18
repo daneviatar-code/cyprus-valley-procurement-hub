@@ -328,8 +328,21 @@ export default function PriceComparison() {
                       ) : null}
                     </td>
                     <td className="px-2 py-1.5">
-                      <div className="font-medium">{a.item.itemName || '(unnamed)'}</div>
-                      {a.item.spec && <div className="text-[10px] text-muted-foreground truncate max-w-xs">{a.item.spec}</div>}
+                      <div className="flex items-center gap-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium truncate">{a.item.itemName || '(unnamed)'}</div>
+                          {a.item.spec && <div className="text-[10px] text-muted-foreground truncate max-w-xs">{a.item.spec}</div>}
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 px-2 text-[10px] gap-1 text-primary hover:bg-primary/10 shrink-0"
+                          onClick={() => setDialogItem(a.item)}
+                          title="Add competitor offer"
+                        >
+                          <span className="text-sm leading-none">+</span> Add offer
+                        </Button>
+                      </div>
                     </td>
                     <td className="px-2 py-1.5 text-right font-mono">
                       {a.list.length === 0
