@@ -748,6 +748,7 @@ function SummaryBar({ s, typeLabel, isMaster, perBuilding, onBuildingClick }: {
 // ───────────────────────────── Master Editor ─────────────────────────────
 function MasterEditor({
   items, qtysByItem, suppliers, onUpdateItem, onDeleteItem, onUpdateQty, onMoveItem, onReorder, unitCounts,
+  offersCountByItem, onOpenOffers,
 }: {
   items: StandardItem[];
   qtysByItem: Map<string, Record<ApartmentType, ApartmentTypeQuantity | undefined>>;
@@ -758,6 +759,8 @@ function MasterEditor({
   onMoveItem: (id: string, direction: -1 | 1) => void;
   onReorder: (orderedIds: string[]) => void;
   unitCounts: Record<RoomSize, number>;
+  offersCountByItem: Map<string, number>;
+  onOpenOffers: (item: StandardItem) => void;
 }) {
   const th = 'text-left text-[10px] font-medium uppercase tracking-wider text-muted-foreground px-2 py-1.5 whitespace-nowrap';
 
@@ -790,6 +793,7 @@ function MasterEditor({
               <th className={th}>Dimensions</th>
               <th className={`${th} text-right`}>Unit Price €</th>
               <th className={th}>Supplier</th>
+              <th className={th}>Offers</th>
               <th className={th}>Per-Type Quantities</th>
               <th className={th}></th>
             </tr>
@@ -808,6 +812,8 @@ function MasterEditor({
                   onDeleteItem={onDeleteItem}
                   onUpdateQty={onUpdateQty}
                   onMoveItem={onMoveItem}
+                  offersCount={offersCountByItem.get(it.id) || 0}
+                  onOpenOffers={onOpenOffers}
                 />
               ))}
             </tbody>
