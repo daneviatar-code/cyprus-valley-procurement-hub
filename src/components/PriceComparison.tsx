@@ -243,8 +243,8 @@ export default function PriceComparison() {
             {filtered.map(a => {
               const isOpen = expanded.has(a.item.id);
               return (
-                <>
-                  <tr key={a.item.id} className="border-b hover:bg-muted/30">
+                <FragmentRow key={a.item.id}>
+                  <tr className="border-b hover:bg-muted/30">
                     <td className="px-2 py-1.5">
                       <button onClick={() => toggleExpand(a.item.id)} className="text-muted-foreground hover:text-foreground">
                         {isOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
