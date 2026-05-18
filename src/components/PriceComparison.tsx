@@ -82,8 +82,10 @@ export default function PriceComparison() {
     let potentialSavings = 0;
     let noSelection = 0;
     let withExpired = 0;
+    let itemsWithOffers = 0;
     for (const a of analysis) {
       potentialSavings += a.savings;
+      if (a.list.length > 0) itemsWithOffers++;
       if (!a.selected) noSelection++;
       if (a.expiredCount > 0) withExpired++;
     }
@@ -91,7 +93,8 @@ export default function PriceComparison() {
       potentialSavings,
       noSelection,
       withExpired,
-      itemsWithOffers: analysis.length,
+      itemsWithOffers,
+      totalItems: analysis.length,
     };
   }, [analysis]);
 
