@@ -666,6 +666,12 @@ export default function Standard() {
           suppliers={suppliers}
           buildingCounts={openBuilding ? unitCountsPerBuilding[openBuilding] : { studio: 0, '1br': 0, '2br': 0, '3br': 0, '4br': 0, public: 0 }}
         />
+
+        <ItemOffersDialog
+          open={!!offersDialogItem}
+          onOpenChange={(v) => { if (!v) setOffersDialogItem(null); }}
+          item={offersDialogItem}
+        />
       </div>
     </TooltipProvider>
   );
