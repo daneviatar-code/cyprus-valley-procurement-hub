@@ -58,13 +58,13 @@ export default function PriceComparison() {
   const supplierName = (id?: string | null) =>
     suppliers.find(s => s.id === id)?.name || '—';
 
-  // Aggregate per-item analysis
+  // Aggregate per-item analysis — include ALL standard items so users can
+  // add offers directly from the comparison view.
   const analysis = useMemo(() => {
-    const rows = items
+    return items
       .filter(i => !i.archived)
       .map(item => {
         const list = getOffersForItem(offers, item.id);
-        if (list.length === 0) return null;
         const selected = list.find(o => o.isSelected);
         const cheapest = getCheapestOffer(list);
         const fastest = getFastestOffer(list);
@@ -75,17 +75,7 @@ export default function PriceComparison() {
             ? (selected.priceEur ?? 0) - (cheapest.priceEur ?? 0)
             : 0;
         return { item, list, selected, cheapest, fastest, expiredCount, savings };
-      })
-      .filter(Boolean) as Array<{
-        item: StandardItem;
-        list: ItemOffer[];
-        selected?: ItemOffer;
-        cheapest?: ItemOffer;
-        fastest?: ItemOffer;
-        expiredCount: number;
-        savings: number;
-      }>;
-    return rows;
+      });
   }, [items, offers]);
 
   const kpis = useMemo(() => {
