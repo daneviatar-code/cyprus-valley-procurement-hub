@@ -131,6 +131,132 @@ export type Database = {
         }
         Relationships: []
       }
+      fx_rates: {
+        Row: {
+          base_currency: string
+          fetched_at: string
+          quote_currency: string
+          rate: number
+        }
+        Insert: {
+          base_currency: string
+          fetched_at?: string
+          quote_currency?: string
+          rate: number
+        }
+        Update: {
+          base_currency?: string
+          fetched_at?: string
+          quote_currency?: string
+          rate?: number
+        }
+        Relationships: []
+      }
+      item_offer_history: {
+        Row: {
+          action: string
+          changed_at: string
+          history_id: number
+          offer_id: string
+          snapshot: Json
+          standard_item_id: string
+        }
+        Insert: {
+          action: string
+          changed_at?: string
+          history_id?: number
+          offer_id: string
+          snapshot: Json
+          standard_item_id: string
+        }
+        Update: {
+          action?: string
+          changed_at?: string
+          history_id?: number
+          offer_id?: string
+          snapshot?: Json
+          standard_item_id?: string
+        }
+        Relationships: []
+      }
+      item_offers: {
+        Row: {
+          created_at: string
+          currency: string
+          dimensions: string | null
+          id: string
+          image_url: string | null
+          is_selected: boolean
+          lead_time_days: number | null
+          moq: number | null
+          notes: string | null
+          price: number
+          price_eur: number | null
+          product_name: string
+          product_sku: string | null
+          spec: string | null
+          standard_item_id: string
+          supplier_id: string | null
+          updated_at: string
+          valid_until: string | null
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          dimensions?: string | null
+          id: string
+          image_url?: string | null
+          is_selected?: boolean
+          lead_time_days?: number | null
+          moq?: number | null
+          notes?: string | null
+          price?: number
+          price_eur?: number | null
+          product_name?: string
+          product_sku?: string | null
+          spec?: string | null
+          standard_item_id: string
+          supplier_id?: string | null
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          dimensions?: string | null
+          id?: string
+          image_url?: string | null
+          is_selected?: boolean
+          lead_time_days?: number | null
+          moq?: number | null
+          notes?: string | null
+          price?: number
+          price_eur?: number | null
+          product_name?: string
+          product_sku?: string | null
+          spec?: string | null
+          standard_item_id?: string
+          supplier_id?: string | null
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_offers_standard_item_id_fkey"
+            columns: ["standard_item_id"]
+            isOneToOne: false
+            referencedRelation: "standard_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_offers_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       packages: {
         Row: {
           block: string
