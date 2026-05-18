@@ -19,6 +19,10 @@ import {
   computeQuantity, subscribeStandardItems, subscribeApartmentTypeQuantities,
 } from '@/data/standardItemsData';
 import { Supplier, loadSuppliers } from '@/data/supplierData';
+import {
+  ItemOffer, loadItemOffers, subscribeItemOffers,
+} from '@/data/itemOffersData';
+import ItemOffersDialog from '@/components/ItemOffersDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import SpecCell from '@/components/SpecCell';
