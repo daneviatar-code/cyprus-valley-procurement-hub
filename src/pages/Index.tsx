@@ -50,6 +50,7 @@ export default function Index() {
   const tabs: { key: Tab; label: string }[] = [
     { key: 'procurement', label: 'Procurement' },
     { key: 'standard', label: 'Standard' },
+    { key: 'priceComparison', label: 'Price Comparison' },
     { key: 'rooms', label: 'Room Explorer' },
     { key: 'packages', label: 'Package Editor' },
     { key: 'pricing', label: 'Pricing Sheet' },
