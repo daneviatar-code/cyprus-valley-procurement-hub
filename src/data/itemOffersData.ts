@@ -7,6 +7,28 @@
 import { supabase } from '@/integrations/supabase/client';
 import { enqueue } from '@/lib/cloudWriteQueue';
 import { toEur } from '@/lib/fxRates';
+import { loadStandardItems, saveStandardItems } from '@/data/standardItemsData';
+
+// Mirror a selected offer's product info onto its Standard item so the
+// Standard tab shows exactly what the user picked.
+function syncSelectedToStandardItem(offer: ItemOffer): void {
+  const items = loadStandardItems();
+  const idx = items.findIndex(i => i.id === offer.standardItemId);
+  if (idx < 0) return;
+  const cur = items[idx];
+  const next = {
+    ...cur,
+    itemName: offer.productName?.trim() || cur.itemName,
+    spec: offer.spec ?? cur.spec,
+    dimensions: offer.dimensions ?? cur.dimensions,
+    supplierId: offer.supplierId ?? cur.supplierId,
+    unitPriceEur: offer.priceEur ?? cur.unitPriceEur,
+    updatedAt: new Date().toISOString(),
+  };
+  const copy = items.slice();
+  copy[idx] = next;
+  saveStandardItems(copy);
+}
 
 export interface ItemOffer {
   id: string;
