@@ -231,6 +231,37 @@ export default function PriceComparison() {
         </div>
       </div>
 
+      {/* Category chips */}
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground mr-1">Categories:</span>
+        <button
+          onClick={() => setSelectedCats(new Set())}
+          className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${
+            selectedCats.size === 0
+              ? 'bg-primary text-primary-foreground border-primary'
+              : 'bg-background text-muted-foreground hover:text-foreground border-border'
+          }`}
+        >
+          All
+        </button>
+        {visibleCategories.map(c => {
+          const active = selectedCats.has(c.id);
+          return (
+            <button
+              key={c.id}
+              onClick={() => toggleCat(c.id)}
+              className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${
+                active
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'bg-background text-foreground hover:bg-muted border-border'
+              }`}
+            >
+              {c.nameHe} <span className="opacity-60">· {c.nameEn}</span>
+            </button>
+          );
+        })}
+      </div>
+
       {/* Table */}
       <div className="bg-card border rounded-lg overflow-x-auto">
         <table className="w-full text-xs">
