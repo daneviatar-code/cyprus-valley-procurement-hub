@@ -18,6 +18,7 @@ import {
   ItemOffer, loadItemOffers, subscribeItemOffers,
   getOffersForItem, getCheapestOffer, getFastestOffer,
 } from '@/data/itemOffersData';
+import { ProcurementCategory, loadCategories } from '@/data/roomStandardsData';
 import { formatMoney, refreshRatesIfNeeded } from '@/lib/fxRates';
 import ItemOffersDialog from '@/components/ItemOffersDialog';
 
@@ -45,8 +46,10 @@ export default function PriceComparison() {
   const [items, setItems] = useState<StandardItem[]>(loadStandardItems);
   const [suppliers, setSuppliers] = useState<Supplier[]>(loadSuppliers);
   const [offers, setOffers] = useState<ItemOffer[]>(loadItemOffers);
+  const [categories] = useState<ProcurementCategory[]>(loadCategories);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
+  const [selectedCats, setSelectedCats] = useState<Set<string>>(new Set());
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [dialogItem, setDialogItem] = useState<StandardItem | null>(null);
 
@@ -102,6 +105,7 @@ export default function PriceComparison() {
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
     return analysis.filter(a => {
+      if (selectedCats.size > 0 && !selectedCats.has(a.item.categoryId)) return false;
       if (filter === 'no-selection' && a.selected) return false;
       if (filter === 'expired' && a.expiredCount === 0) return false;
       if (term) {
@@ -110,7 +114,19 @@ export default function PriceComparison() {
       }
       return true;
     });
-  }, [analysis, search, filter]);
+  }, [analysis, search, filter, selectedCats]);
+
+  const toggleCat = (id: string) => {
+    setSelectedCats(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+  const visibleCategories = useMemo(
+    () => categories.filter(c => !c.archived).sort((a, b) => a.order - b.order),
+    [categories],
+  );
 
   const toggleExpand = (id: string) => {
     setExpanded(prev => {
@@ -213,6 +229,37 @@ export default function PriceComparison() {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Category chips */}
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground mr-1">Categories:</span>
+        <button
+          onClick={() => setSelectedCats(new Set())}
+          className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${
+            selectedCats.size === 0
+              ? 'bg-primary text-primary-foreground border-primary'
+              : 'bg-background text-muted-foreground hover:text-foreground border-border'
+          }`}
+        >
+          All
+        </button>
+        {visibleCategories.map(c => {
+          const active = selectedCats.has(c.id);
+          return (
+            <button
+              key={c.id}
+              onClick={() => toggleCat(c.id)}
+              className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${
+                active
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'bg-background text-foreground hover:bg-muted border-border'
+              }`}
+            >
+              {c.nameHe} <span className="opacity-60">· {c.nameEn}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Table */}
