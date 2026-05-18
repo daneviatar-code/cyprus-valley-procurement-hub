@@ -46,8 +46,10 @@ export default function PriceComparison() {
   const [items, setItems] = useState<StandardItem[]>(loadStandardItems);
   const [suppliers, setSuppliers] = useState<Supplier[]>(loadSuppliers);
   const [offers, setOffers] = useState<ItemOffer[]>(loadItemOffers);
+  const [categories] = useState<ProcurementCategory[]>(loadCategories);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
+  const [selectedCats, setSelectedCats] = useState<Set<string>>(new Set());
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [dialogItem, setDialogItem] = useState<StandardItem | null>(null);
 
