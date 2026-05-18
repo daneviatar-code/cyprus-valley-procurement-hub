@@ -83,7 +83,7 @@ export default function PriceComparison() {
       leadTimeDays: null,
       moq: null,
       validUntil: null,
-      notes: 'Baseline from Standard item',
+      notes: 'הצעת מחיר ראשונה (מהסטנדרט)',
       isSelected: false, // overridden below if no real selection exists
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
