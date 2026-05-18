@@ -63,6 +63,7 @@ export default function PriceComparison() {
   const analysis = useMemo(() => {
     return items
       .filter(i => !i.archived)
+      .sort((a, b) => (a.itemName || '').localeCompare(b.itemName || '', 'en', { sensitivity: 'base' }))
       .map(item => {
         const list = getOffersForItem(offers, item.id);
         const selected = list.find(o => o.isSelected);
