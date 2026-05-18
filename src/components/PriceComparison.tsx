@@ -18,6 +18,7 @@ import {
   ItemOffer, loadItemOffers, subscribeItemOffers,
   getOffersForItem, getCheapestOffer, getFastestOffer,
 } from '@/data/itemOffersData';
+import { ProcurementCategory, loadCategories } from '@/data/roomStandardsData';
 import { formatMoney, refreshRatesIfNeeded } from '@/lib/fxRates';
 import ItemOffersDialog from '@/components/ItemOffersDialog';
 
