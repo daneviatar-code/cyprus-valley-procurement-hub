@@ -625,6 +625,8 @@ export default function Standard() {
                     onMoveItem={moveMasterItem}
                     onReorder={(ids) => reorderMasterItems(selectedCategoryId, ids)}
                     unitCounts={unitCounts}
+                    offersCountByItem={offersCountByItem}
+                    onOpenOffers={setOffersDialogItem}
                   />
                 ) : (
                   <TypeEditor
