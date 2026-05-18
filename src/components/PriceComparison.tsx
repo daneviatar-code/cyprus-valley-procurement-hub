@@ -187,7 +187,7 @@ export default function PriceComparison() {
         <Kpi
           icon={<Package className="w-4 h-4" />}
           label="Items with offers"
-          value={kpis.itemsWithOffers.toString()}
+          value={`${kpis.itemsWithOffers} / ${kpis.totalItems}`}
           accent="text-primary"
         />
       </div>
