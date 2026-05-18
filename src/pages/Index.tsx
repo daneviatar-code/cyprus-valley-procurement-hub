@@ -23,7 +23,7 @@ import {
   computeTotalItemsCount,
 } from '@/data/masterData';
 
-type Tab = 'procurement' | 'standard' | 'rooms' | 'packages' | 'pricing' | 'projectData' | 'itemAssignment' | 'suppliers' | 'catalog' | 'packagesV2' | 'selections' | 'publicAreas';
+type Tab = 'procurement' | 'standard' | 'priceComparison' | 'rooms' | 'packages' | 'pricing' | 'projectData' | 'itemAssignment' | 'suppliers' | 'catalog' | 'packagesV2' | 'selections' | 'publicAreas';
 
 export default function Index() {
   const [userData, setUserData] = useState<Record<number, UserItemData>>(loadUserData);
