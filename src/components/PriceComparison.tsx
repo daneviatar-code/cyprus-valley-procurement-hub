@@ -2,7 +2,7 @@
  * Price Comparison tab — cross-item view of all supplier offers,
  * surfaces savings opportunities and items missing a selection.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment as FragmentRow, useEffect, useMemo, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
