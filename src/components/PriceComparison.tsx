@@ -362,14 +362,26 @@ export default function PriceComparison() {
                         : <span className="text-orange-600 text-[11px]">no selection</span>}
                     </td>
                     <td className="px-2 py-1.5">
-                      {a.cheapest ? (
-                        <div>
-                          <div>{supplierName(a.cheapest.supplierId)}</div>
-                          <div className="text-[10px] text-muted-foreground font-mono">
-                            {formatMoney(a.cheapest.priceEur, 'EUR')}
-                          </div>
+                      {a.list.length === 0 ? (
+                        <span className="text-muted-foreground">—</span>
+                      ) : (
+                        <div className="flex flex-col gap-0.5">
+                          {a.list.map(o => {
+                            const isCheapest = a.cheapest?.id === o.id;
+                            const isSelected = a.selected?.id === o.id;
+                            return (
+                              <div key={o.id} className="flex items-center justify-between gap-2 text-[11px]">
+                                <span className={`truncate ${isSelected ? 'font-semibold' : ''}`}>
+                                  {supplierName(o.supplierId)}
+                                </span>
+                                <span className={`font-mono ${isCheapest ? 'text-green-600 font-semibold' : 'text-muted-foreground'}`}>
+                                  {formatMoney(o.priceEur, 'EUR')}
+                                </span>
+                              </div>
+                            );
+                          })}
                         </div>
-                      ) : '—'}
+                      )}
                     </td>
                     <td className="px-2 py-1.5 text-right font-mono">
                       {a.savings > 0 ? (
