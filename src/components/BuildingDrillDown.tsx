@@ -11,6 +11,7 @@ import {
   computeFurnitureForConcept,
   ALL_BUILDINGS,
   conceptForBuilding,
+  isUnitCodeInBuilding,
 } from '@/data/masterData';
 
 interface BuildingDrillDownProps {
@@ -39,19 +40,23 @@ export default function BuildingDrillDown({ conceptId, onClose, masterData }: Bu
 
   const concept = concepts.find(c => c.id === conceptId)!;
   const { units } = getBuildingData(conceptId);
+  const activeUnits = useMemo(
+    () => units.filter(u => isUnitCodeInBuilding(conceptId, u.code, selectedBuilding)),
+    [units, conceptId, selectedBuilding]
+  );
   const furniture = useMemo(() => computeFurnitureForConcept(masterData, conceptId, selectedBuilding), [masterData, conceptId, selectedBuilding]);
   const floors = getFloors(conceptId);
 
   // Instances per unit in ONE building (no multiplier)
   const unitTotalInstances = useMemo(() => {
     const map: Record<string, number> = {};
-    units.forEach(u => {
+    activeUnits.forEach(u => {
       let total = 0;
       u.floors.forEach(f => { total += u.unitsPerFloor[f] || 0; });
       map[u.code] = total;
     });
     return map;
-  }, [units]);
+  }, [activeUnits]);
 
   // Apartment-type counts for the selected building (excludes zones/public areas)
   const unitTypeBreakdown = useMemo(() => {
