@@ -257,7 +257,7 @@ export function getUnitCodesForConcept(masterData: MasterRow[], concept: Concept
 export function computeTotalItemsCount(masterData: MasterRow[]): number {
   let total = 0;
   masterData.forEach(row => {
-    total += row.qtyPerUnit * getUnitInstancesInBuilding(row.concept, row.unitCode);
+    total += row.qtyPerUnit * getUnitInstancesInBuilding(row.concept, row.unitCode, row.building);
   });
   return total;
 }
@@ -353,13 +353,7 @@ export function computeProcurementByRoomSize(masterData: MasterRow[]): ComputedP
     const size: RoomSize = overrides[overrideKey] || deriveRoomSizeFromDescription(lookupDesc(row.concept, row.unitCode), row.unitCode);
     if (size === 'public') return;
 
-    const instances = (() => {
-      const u = getUnitsForConcept(row.concept).find(x => x.code === row.unitCode);
-      if (!u) return 0;
-      let t = 0;
-      u.floors.forEach(f => { t += u.unitsPerFloor[f] || 0; });
-      return t;
-    })();
+    const instances = getUnitInstancesInBuilding(row.concept, row.unitCode, row.building);
     const total = row.qtyPerUnit * instances;
 
     let entry = map.get(row.itemName);
