@@ -61,7 +61,7 @@ export default function BuildingDrillDown({ conceptId, onClose, masterData }: Bu
   // Apartment-type counts for the selected building (excludes zones/public areas)
   const unitTypeBreakdown = useMemo(() => {
     const counts: Record<string, number> = {};
-    units.forEach(u => {
+    activeUnits.forEach(u => {
       if ((u as any).isZone) return;
       const desc = u.description || '';
       counts[desc] = (counts[desc] || 0) + (unitTotalInstances[u.code] || 0);
@@ -98,11 +98,11 @@ export default function BuildingDrillDown({ conceptId, onClose, masterData }: Bu
     });
     parts.push(`Total: ${total} units`);
     return parts.join(' · ');
-  }, [units, unitTotalInstances]);
+  }, [activeUnits, unitTotalInstances]);
 
   const floorData = useMemo(() => {
     return floors.map(floor => {
-      const floorUnits = units.filter(u => u.floors.includes(floor));
+      const floorUnits = activeUnits.filter(u => u.floors.includes(floor));
       const itemTotals: Record<string, number> = {};
 
       floorUnits.forEach(u => {
@@ -123,11 +123,11 @@ export default function BuildingDrillDown({ conceptId, onClose, masterData }: Bu
         items: itemTotals,
       };
     });
-  }, [floors, units, furniture]);
+  }, [floors, activeUnits, furniture]);
 
   const unitTypeData = useMemo(() => {
     const descMap: Record<string, UnitType[]> = {};
-    units.forEach(u => {
+    activeUnits.forEach(u => {
       if (!descMap[u.description]) descMap[u.description] = [];
       descMap[u.description].push(u);
     });
@@ -155,7 +155,7 @@ export default function BuildingDrillDown({ conceptId, onClose, masterData }: Bu
         items: itemTotals,
       };
     });
-  }, [units, unitTotalInstances, furniture]);
+  }, [activeUnits, unitTotalInstances, furniture]);
 
   const categoryData = useMemo(() => {
     const categories: Category[] = ['Dining', 'Living Room', 'Bedroom', 'Outdoor', 'Bathroom', 'Kitchen', 'Sauna & Wellness', 'Accessories & Decor', 'Mirrors', 'Electrical & Appliances', 'In-Room Safes', 'Cutlery & Dining Sets', 'Curtains & Window Treatments'];
