@@ -129,8 +129,20 @@ function getUnitsForConcept(concept: Concept): UnitType[] {
   }
 }
 
-/** Returns unit instances in ONE building (no building count multiplier) */
-function getUnitInstancesInBuilding(concept: Concept, unitCode: string): number {
+function isMirroredBUnitCode(unitCode: string): boolean {
+  return /m\d*$/i.test(unitCode);
+}
+
+export function isUnitCodeInBuilding(concept: Concept, unitCode: string, building?: string): boolean {
+  if (!building || concept !== 'B' || isZoneCode(unitCode)) return true;
+  if (building === 'B1') return !isMirroredBUnitCode(unitCode);
+  if (building === 'B2') return isMirroredBUnitCode(unitCode);
+  return true;
+}
+
+/** Returns unit instances for a specific building. For B, codes are split between B1+B2. */
+export function getUnitInstancesInBuilding(concept: Concept, unitCode: string, building?: string): number {
+  if (!isUnitCodeInBuilding(concept, unitCode, building)) return 0;
   const units = getUnitsForConcept(concept);
   const unit = units.find(u => u.code === unitCode);
   if (!unit) return 0;
