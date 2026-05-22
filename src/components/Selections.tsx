@@ -39,7 +39,7 @@ import { Check, Clock, ExternalLink, Image, Pencil, Search, ShoppingCart, Trash2
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Concept, ALL_BUILDINGS } from '@/data/masterData';
+import { Concept, ALL_BUILDINGS, getUnitInstancesInBuilding } from '@/data/masterData';
 import { loadPackage, PackageItem } from '@/data/packageData';
 import { Selection, SelectionMap, loadSelections, saveSelections } from '@/data/selectionData';
 import { buildingAUnits, buildingBUnits, buildingCUnits, UnitType } from '@/data/unitFurnitureData';
@@ -229,10 +229,12 @@ export default function Selections() {
         const units = getUnitsForConcept(e.concept);
         const unitType = units.find(u => u.code === e.unitCode);
         if (!unitType) return;
-        // Count total instances of this unit type across all buildings of the concept
-        const buildingsOfConcept = ALL_BUILDINGS[e.concept];
-        const instancesPerBuilding = Object.values(unitType.unitsPerFloor).reduce((s, n) => s + n, 0);
-        totalQty += e.qtyPerUnit * instancesPerBuilding * buildingsOfConcept.length;
+        // Count actual instances of this unit type across all buildings of the concept.
+        // B is already split between B1+B2, so mirrored codes are not doubled.
+        totalQty += ALL_BUILDINGS[e.concept].reduce(
+          (sum, building) => sum + e.qtyPerUnit * getUnitInstancesInBuilding(e.concept, e.unitCode, building),
+          0
+        );
       });
       return {
         productName: p.productName,
