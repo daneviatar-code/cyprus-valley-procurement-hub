@@ -167,7 +167,7 @@ export function computeProcurementItems(masterData: MasterRow[]): ComputedProcur
   const map = new Map<string, { category: RoomType; qtyA: number; qtyB: number; qtyC: number; qtyByBuilding: Record<string, number> }>();
 
   masterData.forEach(row => {
-    const instances = getUnitInstancesInBuilding(row.concept, row.unitCode);
+    const instances = getUnitInstancesInBuilding(row.concept, row.unitCode, row.building);
     const totalForRow = row.qtyPerUnit * instances;
 
     let entry = map.get(row.itemName);
@@ -212,7 +212,7 @@ export function computeProcurementItems(masterData: MasterRow[]): ComputedProcur
 export function computeFurnitureForConcept(masterData: MasterRow[], concept: Concept, building?: string): FurniturePerUnit[] {
   // Use specific building to get per-unit quantities; default to first building
   const targetBuilding = building || ALL_BUILDINGS[concept][0];
-  const filtered = masterData.filter(r => r.concept === concept && r.building === targetBuilding);
+  const filtered = masterData.filter(r => r.concept === concept && r.building === targetBuilding && isUnitCodeInBuilding(concept, r.unitCode, targetBuilding));
 
   const map = new Map<string, { category: RoomType; quantities: Record<string, number> }>();
 
@@ -235,7 +235,7 @@ export function computeFurnitureForConcept(masterData: MasterRow[], concept: Con
 export function computeFurnitureForUnit(masterData: MasterRow[], concept: Concept, unitCode: string, building?: string): { itemName: string; category: string; qty: number }[] {
   const targetBuilding = building || ALL_BUILDINGS[concept][0];
   return masterData
-    .filter(r => r.concept === concept && r.unitCode === unitCode && r.qtyPerUnit > 0 && r.building === targetBuilding)
+    .filter(r => r.concept === concept && r.unitCode === unitCode && r.qtyPerUnit > 0 && r.building === targetBuilding && isUnitCodeInBuilding(concept, r.unitCode, targetBuilding))
     .map(r => ({ itemName: r.itemName, category: r.roomType, qty: r.qtyPerUnit }));
 }
 
