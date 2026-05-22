@@ -17,6 +17,7 @@ import {
   ALL_BUILDINGS,
   ALL_BUILDING_LIST,
   conceptForBuilding,
+  isUnitCodeInBuilding,
   Concept,
 } from '@/data/masterData';
 import ZoomableImage from './ZoomableImage';
@@ -45,6 +46,7 @@ export default function RoomExplorer({ masterData }: RoomExplorerProps) {
   const unitCodes = useMemo(() => {
     const { units } = getBuildingData(concept);
     return units
+      .filter(u => isUnitCodeInBuilding(concept, u.code, selectedBuilding))
       .filter(u => (selectedFloor === '' || u.floors.includes(selectedFloor as number)))
       .filter(u => (!selectedRoomType || u.description === selectedRoomType));
   }, [concept, selectedFloor, selectedRoomType]);
