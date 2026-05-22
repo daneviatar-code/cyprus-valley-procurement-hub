@@ -390,6 +390,7 @@ export function countUnitsByRoomSizePerBuilding(): Record<string, Record<RoomSiz
       const r: Record<RoomSize, number> = { studio: 0, '1br': 0, '2br': 0, '3br': 0, '4br': 0, public: 0 };
       getUnitsForConcept(concept).forEach(u => {
         if (u.isZone) return;
+        if (!isUnitCodeInBuilding(concept, u.code, building)) return;
         const k = roomSizeOverrideKey(concept, u.code);
         const size = overrides[k] || deriveRoomSizeFromDescription(u.description, u.code);
         if (size === 'public') return;
@@ -407,14 +408,16 @@ export function countUnitsByRoomSize(): Record<RoomSize, number> {
   const overrides = loadRoomSizeOverrides();
   const result: Record<RoomSize, number> = { studio: 0, '1br': 0, '2br': 0, '3br': 0, '4br': 0, public: 0 };
   (['A', 'B', 'C'] as Concept[]).forEach(concept => {
-    const buildingsCount = ALL_BUILDINGS[concept].length;
-    getUnitsForConcept(concept).forEach(u => {
-      if (u.isZone) return;
-      const k = roomSizeOverrideKey(concept, u.code);
-      const size = overrides[k] || deriveRoomSizeFromDescription(u.description, u.code);
-      if (size === 'public') return;
-      const instances = u.floors.reduce((s, f) => s + (u.unitsPerFloor[f] || 0), 0);
-      result[size] += instances * buildingsCount;
+    ALL_BUILDINGS[concept].forEach(building => {
+      getUnitsForConcept(concept).forEach(u => {
+        if (u.isZone) return;
+        if (!isUnitCodeInBuilding(concept, u.code, building)) return;
+        const k = roomSizeOverrideKey(concept, u.code);
+        const size = overrides[k] || deriveRoomSizeFromDescription(u.description, u.code);
+        if (size === 'public') return;
+        const instances = u.floors.reduce((s, f) => s + (u.unitsPerFloor[f] || 0), 0);
+        result[size] += instances;
+      });
     });
   });
   return result;
