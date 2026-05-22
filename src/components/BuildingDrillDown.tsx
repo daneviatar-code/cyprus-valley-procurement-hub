@@ -165,7 +165,7 @@ export default function BuildingDrillDown({ conceptId, onClose, masterData }: Bu
       const items: Record<string, number> = {};
 
       catFurniture.forEach(f => {
-        units.forEach(u => {
+        activeUnits.forEach(u => {
           const perUnit = f.quantities[u.code] || 0;
           const instances = unitTotalInstances[u.code] || 0;
           if (perUnit > 0) {
@@ -178,7 +178,7 @@ export default function BuildingDrillDown({ conceptId, onClose, masterData }: Bu
 
       return { category: cat, emoji: categoryEmojis[cat], totalQty, items };
     });
-  }, [furniture, units, unitTotalInstances]);
+  }, [furniture, activeUnits, unitTotalInstances]);
 
   const thClass = 'px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground text-left whitespace-nowrap';
   const tdClass = 'px-3 py-2 text-sm';
