@@ -129,8 +129,20 @@ function getUnitsForConcept(concept: Concept): UnitType[] {
   }
 }
 
-/** Returns unit instances in ONE building (no building count multiplier) */
-function getUnitInstancesInBuilding(concept: Concept, unitCode: string): number {
+function isMirroredBUnitCode(unitCode: string): boolean {
+  return /m\d*$/i.test(unitCode);
+}
+
+export function isUnitCodeInBuilding(concept: Concept, unitCode: string, building?: string): boolean {
+  if (!building || concept !== 'B' || isZoneCode(unitCode)) return true;
+  if (building === 'B1') return !isMirroredBUnitCode(unitCode);
+  if (building === 'B2') return isMirroredBUnitCode(unitCode);
+  return true;
+}
+
+/** Returns unit instances for a specific building. For B, codes are split between B1+B2. */
+export function getUnitInstancesInBuilding(concept: Concept, unitCode: string, building?: string): number {
+  if (!isUnitCodeInBuilding(concept, unitCode, building)) return 0;
   const units = getUnitsForConcept(concept);
   const unit = units.find(u => u.code === unitCode);
   if (!unit) return 0;
@@ -155,7 +167,7 @@ export function computeProcurementItems(masterData: MasterRow[]): ComputedProcur
   const map = new Map<string, { category: RoomType; qtyA: number; qtyB: number; qtyC: number; qtyByBuilding: Record<string, number> }>();
 
   masterData.forEach(row => {
-    const instances = getUnitInstancesInBuilding(row.concept, row.unitCode);
+    const instances = getUnitInstancesInBuilding(row.concept, row.unitCode, row.building);
     const totalForRow = row.qtyPerUnit * instances;
 
     let entry = map.get(row.itemName);
@@ -200,7 +212,7 @@ export function computeProcurementItems(masterData: MasterRow[]): ComputedProcur
 export function computeFurnitureForConcept(masterData: MasterRow[], concept: Concept, building?: string): FurniturePerUnit[] {
   // Use specific building to get per-unit quantities; default to first building
   const targetBuilding = building || ALL_BUILDINGS[concept][0];
-  const filtered = masterData.filter(r => r.concept === concept && r.building === targetBuilding);
+  const filtered = masterData.filter(r => r.concept === concept && r.building === targetBuilding && isUnitCodeInBuilding(concept, r.unitCode, targetBuilding));
 
   const map = new Map<string, { category: RoomType; quantities: Record<string, number> }>();
 
@@ -223,7 +235,7 @@ export function computeFurnitureForConcept(masterData: MasterRow[], concept: Con
 export function computeFurnitureForUnit(masterData: MasterRow[], concept: Concept, unitCode: string, building?: string): { itemName: string; category: string; qty: number }[] {
   const targetBuilding = building || ALL_BUILDINGS[concept][0];
   return masterData
-    .filter(r => r.concept === concept && r.unitCode === unitCode && r.qtyPerUnit > 0 && r.building === targetBuilding)
+    .filter(r => r.concept === concept && r.unitCode === unitCode && r.qtyPerUnit > 0 && r.building === targetBuilding && isUnitCodeInBuilding(concept, r.unitCode, targetBuilding))
     .map(r => ({ itemName: r.itemName, category: r.roomType, qty: r.qtyPerUnit }));
 }
 
@@ -245,7 +257,7 @@ export function getUnitCodesForConcept(masterData: MasterRow[], concept: Concept
 export function computeTotalItemsCount(masterData: MasterRow[]): number {
   let total = 0;
   masterData.forEach(row => {
-    total += row.qtyPerUnit * getUnitInstancesInBuilding(row.concept, row.unitCode);
+    total += row.qtyPerUnit * getUnitInstancesInBuilding(row.concept, row.unitCode, row.building);
   });
   return total;
 }
@@ -341,13 +353,7 @@ export function computeProcurementByRoomSize(masterData: MasterRow[]): ComputedP
     const size: RoomSize = overrides[overrideKey] || deriveRoomSizeFromDescription(lookupDesc(row.concept, row.unitCode), row.unitCode);
     if (size === 'public') return;
 
-    const instances = (() => {
-      const u = getUnitsForConcept(row.concept).find(x => x.code === row.unitCode);
-      if (!u) return 0;
-      let t = 0;
-      u.floors.forEach(f => { t += u.unitsPerFloor[f] || 0; });
-      return t;
-    })();
+    const instances = getUnitInstancesInBuilding(row.concept, row.unitCode, row.building);
     const total = row.qtyPerUnit * instances;
 
     let entry = map.get(row.itemName);
@@ -384,6 +390,7 @@ export function countUnitsByRoomSizePerBuilding(): Record<string, Record<RoomSiz
       const r: Record<RoomSize, number> = { studio: 0, '1br': 0, '2br': 0, '3br': 0, '4br': 0, public: 0 };
       getUnitsForConcept(concept).forEach(u => {
         if (u.isZone) return;
+        if (!isUnitCodeInBuilding(concept, u.code, building)) return;
         const k = roomSizeOverrideKey(concept, u.code);
         const size = overrides[k] || deriveRoomSizeFromDescription(u.description, u.code);
         if (size === 'public') return;
@@ -401,14 +408,16 @@ export function countUnitsByRoomSize(): Record<RoomSize, number> {
   const overrides = loadRoomSizeOverrides();
   const result: Record<RoomSize, number> = { studio: 0, '1br': 0, '2br': 0, '3br': 0, '4br': 0, public: 0 };
   (['A', 'B', 'C'] as Concept[]).forEach(concept => {
-    const buildingsCount = ALL_BUILDINGS[concept].length;
-    getUnitsForConcept(concept).forEach(u => {
-      if (u.isZone) return;
-      const k = roomSizeOverrideKey(concept, u.code);
-      const size = overrides[k] || deriveRoomSizeFromDescription(u.description, u.code);
-      if (size === 'public') return;
-      const instances = u.floors.reduce((s, f) => s + (u.unitsPerFloor[f] || 0), 0);
-      result[size] += instances * buildingsCount;
+    ALL_BUILDINGS[concept].forEach(building => {
+      getUnitsForConcept(concept).forEach(u => {
+        if (u.isZone) return;
+        if (!isUnitCodeInBuilding(concept, u.code, building)) return;
+        const k = roomSizeOverrideKey(concept, u.code);
+        const size = overrides[k] || deriveRoomSizeFromDescription(u.description, u.code);
+        if (size === 'public') return;
+        const instances = u.floors.reduce((s, f) => s + (u.unitsPerFloor[f] || 0), 0);
+        result[size] += instances;
+      });
     });
   });
   return result;
