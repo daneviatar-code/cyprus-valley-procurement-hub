@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { Concept } from '@/data/masterData';
+import { Concept, ALL_BUILDINGS, isUnitCodeInBuilding } from '@/data/masterData';
 import { loadSelections } from '@/data/selectionData';
 import {
   buildingAUnits,
@@ -42,11 +42,15 @@ function getUnitInstanceCount(unit: UnitType): number {
 }
 
 function getBuildingCount(concept: Concept): number {
-  switch (concept) {
-    case 'A': return 6;
-    case 'B': return 2;
-    case 'C': return 1;
-  }
+  return ALL_BUILDINGS[concept].length;
+}
+
+// How many buildings in the concept actually contain this unit code.
+// For A: all 6 buildings share the same unit codes → 6.
+// For B: B1 holds non-mirrored codes, B2 holds mirrored codes → 1 each.
+// For C: 1.
+function getBuildingsForUnitCode(concept: Concept, code: string): number {
+  return ALL_BUILDINGS[concept].filter(b => isUnitCodeInBuilding(concept, code, b)).length || 1;
 }
 
 export default function PackageEditor() {
@@ -397,20 +401,27 @@ function UnitTypeCounts({ concept, units, zones }: { concept: Concept; units: Un
 
   const rows = units.map(u => {
     const perBuilding = getUnitInstanceCount(u);
+    const bCount = getBuildingsForUnitCode(concept, u.code);
     return {
       code: u.code,
       description: u.description,
       perBuilding,
-      total: perBuilding * buildingCount,
+      buildings: bCount,
+      total: perBuilding * bCount,
     };
   });
 
-  const zoneRows = zones.map(u => ({
-    code: u.code,
-    description: u.description,
-    perBuilding: getUnitInstanceCount(u) || 1,
-    total: (getUnitInstanceCount(u) || 1) * buildingCount,
-  }));
+  const zoneRows = zones.map(u => {
+    const perBuilding = getUnitInstanceCount(u) || 1;
+    const bCount = getBuildingsForUnitCode(concept, u.code);
+    return {
+      code: u.code,
+      description: u.description,
+      perBuilding,
+      buildings: bCount,
+      total: perBuilding * bCount,
+    };
+  });
 
   const grandTotal = rows.reduce((s, r) => s + r.total, 0);
 
@@ -444,7 +455,7 @@ function UnitTypeCounts({ concept, units, zones }: { concept: Concept; units: Un
                 <td className="px-4 py-1.5 font-medium text-foreground">{r.code}</td>
                 <td className="px-4 py-1.5 text-muted-foreground">{r.description}</td>
                 <td className="px-4 py-1.5 text-right text-foreground">{r.perBuilding}</td>
-                <td className="px-4 py-1.5 text-right text-muted-foreground">{buildingCount}</td>
+                <td className="px-4 py-1.5 text-right text-muted-foreground">{r.buildings}</td>
                 <td className="px-4 py-1.5 text-right font-semibold text-foreground">{r.total}</td>
               </tr>
             ))}
@@ -460,7 +471,7 @@ function UnitTypeCounts({ concept, units, zones }: { concept: Concept; units: Un
                     <td className="px-4 py-1.5 font-medium text-foreground">{r.code}</td>
                     <td className="px-4 py-1.5 text-muted-foreground">{r.description}</td>
                     <td className="px-4 py-1.5 text-right text-foreground">{r.perBuilding}</td>
-                    <td className="px-4 py-1.5 text-right text-muted-foreground">{buildingCount}</td>
+                    <td className="px-4 py-1.5 text-right text-muted-foreground">{r.buildings}</td>
                     <td className="px-4 py-1.5 text-right font-semibold text-foreground">{r.total}</td>
                   </tr>
                 ))}
@@ -493,13 +504,14 @@ function BuildingSummary({ concept, units }: { concept: Concept; units: UnitType
         return s + it.quantity * price;
       }, 0);
       const instancesPerBuilding = getUnitInstanceCount(u);
+      const bCount = getBuildingsForUnitCode(concept, u.code);
       return {
         code: u.code,
         description: u.description,
         pkgTotal,
         instancesPerBuilding,
         extendedPerBuilding: pkgTotal * instancesPerBuilding,
-        extendedTotal: pkgTotal * instancesPerBuilding * buildingCount,
+        extendedTotal: pkgTotal * instancesPerBuilding * bCount,
       };
     });
   }, [concept, units, buildingCount]);
