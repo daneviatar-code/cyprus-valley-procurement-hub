@@ -471,7 +471,7 @@ function UnitTypeCounts({ concept, units, zones }: { concept: Concept; units: Un
                     <td className="px-4 py-1.5 font-medium text-foreground">{r.code}</td>
                     <td className="px-4 py-1.5 text-muted-foreground">{r.description}</td>
                     <td className="px-4 py-1.5 text-right text-foreground">{r.perBuilding}</td>
-                    <td className="px-4 py-1.5 text-right text-muted-foreground">{buildingCount}</td>
+                    <td className="px-4 py-1.5 text-right text-muted-foreground">{r.buildings}</td>
                     <td className="px-4 py-1.5 text-right font-semibold text-foreground">{r.total}</td>
                   </tr>
                 ))}
