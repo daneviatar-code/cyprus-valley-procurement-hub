@@ -17,7 +17,8 @@ import {
   createNewItem,
 } from '@/data/packageData';
 import ZoomableImage from './ZoomableImage';
-import { Plus, Trash2, Package } from 'lucide-react';
+import { Plus, Trash2, Package, Download } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 const CONCEPTS: { id: Concept; label: string; color: string }[] = [
   { id: 'A', label: 'Happiness (A)', color: 'bg-[hsl(var(--happiness))] text-[hsl(var(--happiness-foreground))]' },
@@ -425,18 +426,49 @@ function UnitTypeCounts({ concept, units, zones }: { concept: Concept; units: Un
 
   const grandTotal = rows.reduce((s, r) => s + r.total, 0);
 
+  const handleExport = () => {
+    const header = ['Unit Code', 'Type', 'Units / Building', 'Buildings', 'Total Units'];
+    const body = rows.map(r => [r.code, r.description, r.perBuilding, r.buildings, r.total]);
+    const zoneSection = zoneRows.length
+      ? [[], ['Common Areas / Zones'], header, ...zoneRows.map(r => [r.code, r.description, r.perBuilding, r.buildings, r.total])]
+      : [];
+    const data = [
+      [`Unit Types in Concept ${concept}`],
+      [`Buildings: ${buildingLabels.join(', ')} (${buildingCount})`],
+      [],
+      header,
+      ...body,
+      ['', '', '', 'Total Units', grandTotal],
+      ...zoneSection,
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    ws['!cols'] = [{ wch: 14 }, { wch: 28 }, { wch: 18 }, { wch: 12 }, { wch: 14 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, `Concept ${concept}`);
+    XLSX.writeFile(wb, `package-editor-concept-${concept}-unit-types.xlsx`);
+  };
+
   return (
     <div className="border rounded-lg bg-card overflow-hidden">
-      <div className="px-4 py-3 border-b bg-muted/30 flex items-center justify-between">
+      <div className="px-4 py-3 border-b bg-muted/30 flex items-center justify-between gap-3">
         <h3 className="text-sm font-semibold text-foreground">
           Unit Types in Concept {concept}
           <span className="ml-2 text-xs font-normal text-muted-foreground">
             ({buildingLabels.join(', ')} — {buildingCount} building{buildingCount > 1 ? 's' : ''})
           </span>
         </h3>
-        <span className="text-xs text-muted-foreground">
-          Total units: <span className="font-semibold text-foreground">{grandTotal}</span>
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-muted-foreground">
+            Total units: <span className="font-semibold text-foreground">{grandTotal}</span>
+          </span>
+          <button
+            onClick={handleExport}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border bg-card text-xs font-medium text-foreground hover:bg-muted transition-colors"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Export Excel
+          </button>
+        </div>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
