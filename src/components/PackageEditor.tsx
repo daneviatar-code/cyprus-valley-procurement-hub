@@ -42,11 +42,15 @@ function getUnitInstanceCount(unit: UnitType): number {
 }
 
 function getBuildingCount(concept: Concept): number {
-  switch (concept) {
-    case 'A': return 6;
-    case 'B': return 2;
-    case 'C': return 1;
-  }
+  return ALL_BUILDINGS[concept].length;
+}
+
+// How many buildings in the concept actually contain this unit code.
+// For A: all 6 buildings share the same unit codes → 6.
+// For B: B1 holds non-mirrored codes, B2 holds mirrored codes → 1 each.
+// For C: 1.
+function getBuildingsForUnitCode(concept: Concept, code: string): number {
+  return ALL_BUILDINGS[concept].filter(b => isUnitCodeInBuilding(concept, code, b)).length || 1;
 }
 
 export default function PackageEditor() {
