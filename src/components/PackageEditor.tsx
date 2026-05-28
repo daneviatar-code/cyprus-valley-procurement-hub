@@ -504,13 +504,14 @@ function BuildingSummary({ concept, units }: { concept: Concept; units: UnitType
         return s + it.quantity * price;
       }, 0);
       const instancesPerBuilding = getUnitInstanceCount(u);
+      const bCount = getBuildingsForUnitCode(concept, u.code);
       return {
         code: u.code,
         description: u.description,
         pkgTotal,
         instancesPerBuilding,
         extendedPerBuilding: pkgTotal * instancesPerBuilding,
-        extendedTotal: pkgTotal * instancesPerBuilding * buildingCount,
+        extendedTotal: pkgTotal * instancesPerBuilding * bCount,
       };
     });
   }, [concept, units, buildingCount]);
