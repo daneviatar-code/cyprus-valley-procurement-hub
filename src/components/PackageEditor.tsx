@@ -386,7 +386,100 @@ function UnitPackageEditor({
   );
 }
 
-// ── Building-level Summary ──
+// ── Unit Type Counts ──
+function UnitTypeCounts({ concept, units, zones }: { concept: Concept; units: UnitType[]; zones: UnitType[] }) {
+  const buildingCount = getBuildingCount(concept);
+  const buildingLabels = concept === 'A'
+    ? ['A1', 'A2', 'A3', 'A4', 'A5', 'A6']
+    : concept === 'B'
+    ? ['B1', 'B2']
+    : ['C1'];
+
+  const rows = units.map(u => {
+    const perBuilding = getUnitInstanceCount(u);
+    return {
+      code: u.code,
+      description: u.description,
+      perBuilding,
+      total: perBuilding * buildingCount,
+    };
+  });
+
+  const zoneRows = zones.map(u => ({
+    code: u.code,
+    description: u.description,
+    perBuilding: getUnitInstanceCount(u) || 1,
+    total: (getUnitInstanceCount(u) || 1) * buildingCount,
+  }));
+
+  const grandTotal = rows.reduce((s, r) => s + r.total, 0);
+
+  return (
+    <div className="border rounded-lg bg-card overflow-hidden">
+      <div className="px-4 py-3 border-b bg-muted/30 flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-foreground">
+          Unit Types in Concept {concept}
+          <span className="ml-2 text-xs font-normal text-muted-foreground">
+            ({buildingLabels.join(', ')} — {buildingCount} building{buildingCount > 1 ? 's' : ''})
+          </span>
+        </h3>
+        <span className="text-xs text-muted-foreground">
+          Total units: <span className="font-semibold text-foreground">{grandTotal}</span>
+        </span>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="bg-muted/20 border-b">
+              <th className="text-left px-4 py-2 font-medium text-muted-foreground">Unit Code</th>
+              <th className="text-left px-4 py-2 font-medium text-muted-foreground">Type</th>
+              <th className="text-right px-4 py-2 font-medium text-muted-foreground">Units / Building</th>
+              <th className="text-right px-4 py-2 font-medium text-muted-foreground">Buildings</th>
+              <th className="text-right px-4 py-2 font-medium text-muted-foreground">Total Units</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y">
+            {rows.map(r => (
+              <tr key={r.code} className="hover:bg-muted/30">
+                <td className="px-4 py-1.5 font-medium text-foreground">{r.code}</td>
+                <td className="px-4 py-1.5 text-muted-foreground">{r.description}</td>
+                <td className="px-4 py-1.5 text-right text-foreground">{r.perBuilding}</td>
+                <td className="px-4 py-1.5 text-right text-muted-foreground">{buildingCount}</td>
+                <td className="px-4 py-1.5 text-right font-semibold text-foreground">{r.total}</td>
+              </tr>
+            ))}
+            {zoneRows.length > 0 && (
+              <>
+                <tr className="bg-muted/20">
+                  <td colSpan={5} className="px-4 py-1 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                    Common Areas / Zones
+                  </td>
+                </tr>
+                {zoneRows.map(r => (
+                  <tr key={r.code} className="hover:bg-muted/30">
+                    <td className="px-4 py-1.5 font-medium text-foreground">{r.code}</td>
+                    <td className="px-4 py-1.5 text-muted-foreground">{r.description}</td>
+                    <td className="px-4 py-1.5 text-right text-foreground">{r.perBuilding}</td>
+                    <td className="px-4 py-1.5 text-right text-muted-foreground">{buildingCount}</td>
+                    <td className="px-4 py-1.5 text-right font-semibold text-foreground">{r.total}</td>
+                  </tr>
+                ))}
+              </>
+            )}
+          </tbody>
+          <tfoot>
+            <tr className="bg-muted/30 border-t">
+              <td colSpan={4} className="px-4 py-2 text-right font-semibold text-foreground">Total Units</td>
+              <td className="px-4 py-2 text-right font-bold text-foreground">{grandTotal}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+
 function BuildingSummary({ concept, units }: { concept: Concept; units: UnitType[] }) {
   const buildingCount = getBuildingCount(concept);
 
