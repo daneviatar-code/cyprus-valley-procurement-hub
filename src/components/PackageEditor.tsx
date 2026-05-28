@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { Concept } from '@/data/masterData';
+import { Concept, ALL_BUILDINGS, isUnitCodeInBuilding } from '@/data/masterData';
 import { loadSelections } from '@/data/selectionData';
 import {
   buildingAUnits,
