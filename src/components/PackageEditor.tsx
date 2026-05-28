@@ -401,20 +401,27 @@ function UnitTypeCounts({ concept, units, zones }: { concept: Concept; units: Un
 
   const rows = units.map(u => {
     const perBuilding = getUnitInstanceCount(u);
+    const bCount = getBuildingsForUnitCode(concept, u.code);
     return {
       code: u.code,
       description: u.description,
       perBuilding,
-      total: perBuilding * buildingCount,
+      buildings: bCount,
+      total: perBuilding * bCount,
     };
   });
 
-  const zoneRows = zones.map(u => ({
-    code: u.code,
-    description: u.description,
-    perBuilding: getUnitInstanceCount(u) || 1,
-    total: (getUnitInstanceCount(u) || 1) * buildingCount,
-  }));
+  const zoneRows = zones.map(u => {
+    const perBuilding = getUnitInstanceCount(u) || 1;
+    const bCount = getBuildingsForUnitCode(concept, u.code);
+    return {
+      code: u.code,
+      description: u.description,
+      perBuilding,
+      buildings: bCount,
+      total: perBuilding * bCount,
+    };
+  });
 
   const grandTotal = rows.reduce((s, r) => s + r.total, 0);
 
