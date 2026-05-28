@@ -17,7 +17,8 @@ import {
   createNewItem,
 } from '@/data/packageData';
 import ZoomableImage from './ZoomableImage';
-import { Plus, Trash2, Package } from 'lucide-react';
+import { Plus, Trash2, Package, Download } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 const CONCEPTS: { id: Concept; label: string; color: string }[] = [
   { id: 'A', label: 'Happiness (A)', color: 'bg-[hsl(var(--happiness))] text-[hsl(var(--happiness-foreground))]' },
