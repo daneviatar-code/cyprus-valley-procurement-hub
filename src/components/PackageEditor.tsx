@@ -101,6 +101,11 @@ export default function PackageEditor() {
         ))}
       </div>
 
+      {/* Unit Type Counts Table */}
+      <UnitTypeCounts concept={concept} units={regularUnits} zones={zoneUnits} />
+
+
+
       {/* Unit code tabs */}
       <div className="bg-card border rounded-lg p-1.5 space-y-2">
         <div className="flex flex-wrap gap-1">
