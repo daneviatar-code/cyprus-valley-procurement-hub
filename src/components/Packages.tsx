@@ -1265,7 +1265,72 @@ function CoveragePanel({
       </button>
 
       {open && (
-        <div className="border-t p-3 space-y-3">
+        <div className="border-t p-3 space-y-5">
+          {/* === High-level summary: Building × Room-size category === */}
+          <div>
+            <div className="text-xs font-semibold text-foreground mb-2 uppercase tracking-wide text-muted-foreground">
+              Summary by Building &amp; Room Size
+            </div>
+            <div className="overflow-x-auto border rounded-md">
+              <table className="w-full text-xs">
+                <thead className="bg-muted/40 text-muted-foreground">
+                  <tr>
+                    <th className="text-left px-2 py-1.5 font-medium">Building</th>
+                    <th className="text-left px-2 py-1.5 font-medium">Room Size</th>
+                    <th className="text-right px-2 py-1.5 font-medium">Total Units</th>
+                    <th className="text-right px-2 py-1.5 font-medium">Covered</th>
+                    <th className="text-right px-2 py-1.5 font-medium">Missing</th>
+                    <th className="text-left px-2 py-1.5 font-medium">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {byBuilding.flatMap(([building, rows]) => {
+                    // Group rows by description (room size category)
+                    const sizeMap = new Map<string, { total: number; covered: number }>();
+                    rows.forEach(r => {
+                      const size = r.description;
+                      const { covered } = coverageFor(r.building, r.unitCode);
+                      const cur = sizeMap.get(size) ?? { total: 0, covered: 0 };
+                      cur.total += r.totalUnits;
+                      cur.covered += Math.min(r.totalUnits, covered);
+                      sizeMap.set(size, cur);
+                    });
+                    const sorted = [...sizeMap.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+                    return sorted.map(([size, agg], idx) => {
+                      const missing = agg.total - agg.covered;
+                      let badge: JSX.Element;
+                      if (missing === 0) {
+                        badge = <Badge className="bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/15 border-emerald-500/30 text-[10px]">Covered</Badge>;
+                      } else if (agg.covered === 0) {
+                        badge = <Badge variant="destructive" className="text-[10px]">Missing</Badge>;
+                      } else {
+                        badge = <Badge className="bg-amber-500/15 text-amber-700 hover:bg-amber-500/15 border-amber-500/30 text-[10px]">Partial</Badge>;
+                      }
+                      return (
+                        <tr key={`${building}-${size}`} className="border-t">
+                          <td className="px-2 py-1.5 font-medium text-foreground">
+                            {idx === 0 ? `Building ${building}` : ''}
+                          </td>
+                          <td className="px-2 py-1.5 text-foreground">{size}</td>
+                          <td className="px-2 py-1.5 text-right text-muted-foreground">{agg.total}</td>
+                          <td className="px-2 py-1.5 text-right text-foreground">{agg.covered}</td>
+                          <td className={`px-2 py-1.5 text-right ${missing > 0 ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>{missing}</td>
+                          <td className="px-2 py-1.5">{badge}</td>
+                        </tr>
+                      );
+                    });
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* === Detailed table: per Unit Type === */}
+          <div>
+            <div className="text-xs font-semibold text-foreground mb-2 uppercase tracking-wide text-muted-foreground">
+              Detailed Coverage by Unit Type
+            </div>
+            <div className="space-y-3">
           {byBuilding.map(([building, rows]) => {
             const bTotal = rows.reduce((s, r) => s + r.totalUnits, 0);
             const bCovered = rows.reduce((s, r) => s + Math.min(r.totalUnits, coverageFor(r.building, r.unitCode).covered), 0);
@@ -1335,8 +1400,11 @@ function CoveragePanel({
               </div>
             );
           })}
+            </div>
+          </div>
         </div>
       )}
+
     </div>
   );
 }
