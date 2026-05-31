@@ -458,6 +458,21 @@ export default function Packages() {
                   {p.items.length} item{p.items.length === 1 ? '' : 's'}
                 </div>
 
+                {p.buildings && p.buildings.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {p.buildings.map(b => {
+                      const units = Object.entries(p.unitCoverage ?? {})
+                        .filter(([k, v]) => k.startsWith(`${b}::`) && (v as number) > 0)
+                        .reduce((s, [, v]) => s + (v as number), 0);
+                      return (
+                        <Badge key={b} className="text-[10px] font-medium bg-accent/15 text-accent border-accent/30 hover:bg-accent/15">
+                          {b} · {units}u
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                )}
+
                 {p.roomTypes.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-1">
                     {p.roomTypes.map(rt => (
@@ -467,6 +482,7 @@ export default function Packages() {
                     ))}
                   </div>
                 )}
+
 
                 <div className="flex gap-1 mt-2 pt-2 border-t opacity-0 group-hover:opacity-100 transition-opacity">
                   <Button variant="outline" size="sm" className="flex-1 h-7 text-xs gap-1" onClick={() => openEdit(p)}>
