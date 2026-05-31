@@ -41,6 +41,39 @@ export function coverageKey(building: string, unitCode: string): string {
   return `${building}::${unitCode}`;
 }
 
+/** Size assignment uses a reserved key prefix inside the same unitCoverage map. */
+const SIZE_PREFIX = '__size__::';
+export function sizeKey(building: string, size: string): string {
+  return `${SIZE_PREFIX}${building}::${size}`;
+}
+export function isSizeKey(k: string): boolean {
+  return k.startsWith(SIZE_PREFIX);
+}
+export function parseSizeKey(k: string): { building: string; size: string } | null {
+  if (!isSizeKey(k)) return null;
+  const rest = k.slice(SIZE_PREFIX.length);
+  const i = rest.indexOf('::');
+  if (i < 0) return null;
+  return { building: rest.slice(0, i), size: rest.slice(i + 2) };
+}
+
+export interface SizeAssignment {
+  building: string;
+  size: string;
+  quantity: number;
+}
+
+export function getSizeAssignments(p: Package): SizeAssignment[] {
+  const out: SizeAssignment[] = [];
+  Object.entries(p.unitCoverage ?? {}).forEach(([k, v]) => {
+    const parsed = parseSizeKey(k);
+    if (parsed && typeof v === 'number' && v > 0) {
+      out.push({ building: parsed.building, size: parsed.size, quantity: v });
+    }
+  });
+  return out;
+}
+
 const CACHE_KEY = 'cyprus-valley-packages';
 const HYDRATED_FLAG = 'cyprus-valley-packages-hydrated';
 
