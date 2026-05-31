@@ -1335,7 +1335,60 @@ function CoveragePanel({
 
       {open && (
         <div className="border-t p-3 space-y-5">
+          {/* === Per-size coverage across all packages === */}
+          <div>
+            <div className="text-xs font-semibold mb-2 uppercase tracking-wide text-muted-foreground">
+              Coverage by Apartment Type
+            </div>
+            <div className="overflow-x-auto border rounded-md">
+              <table className="w-full text-xs">
+                <thead className="bg-muted/40 text-muted-foreground">
+                  <tr>
+                    <th className="text-left px-2 py-1.5 font-medium">Apt. Type</th>
+                    <th className="text-right px-2 py-1.5 font-medium">Required</th>
+                    <th className="text-right px-2 py-1.5 font-medium">Selected</th>
+                    <th className="text-right px-2 py-1.5 font-medium">Remaining</th>
+                    <th className="text-right px-2 py-1.5 font-medium">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sizeCoverage.map(s => {
+                    const over = s.selected > s.total;
+                    const done = s.selected >= s.total && s.total > 0;
+                    return (
+                      <tr key={s.size} className="border-t">
+                        <td className="px-2 py-1.5 font-medium text-foreground">{s.size}</td>
+                        <td className="px-2 py-1.5 text-right text-foreground">{s.total}</td>
+                        <td className={`px-2 py-1.5 text-right font-semibold ${over ? 'text-destructive' : 'text-foreground'}`}>{s.selected}</td>
+                        <td className={`px-2 py-1.5 text-right font-semibold ${s.remaining < 0 ? 'text-destructive' : s.remaining === 0 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                          {s.remaining}
+                        </td>
+                        <td className="px-2 py-1.5 text-right">
+                          {done ? (
+                            <Badge className="bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/15 border-emerald-500/30">Complete</Badge>
+                          ) : s.selected === 0 ? (
+                            <Badge variant="outline" className="text-muted-foreground">Not started</Badge>
+                          ) : over ? (
+                            <Badge variant="destructive">Over</Badge>
+                          ) : (
+                            <Badge className="bg-amber-500/15 text-amber-700 hover:bg-amber-500/15 border-amber-500/30">
+                              {s.remaining} missing
+                            </Badge>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
           {/* === Short pivot: room counts per building by apartment type === */}
+          <div>
+            <div className="text-xs font-semibold mb-2 uppercase tracking-wide text-muted-foreground">
+              Room Counts by Apartment Type
+            </div>
           <div>
             <div className="text-xs font-semibold mb-2 uppercase tracking-wide text-muted-foreground">
               Room Counts by Apartment Type
