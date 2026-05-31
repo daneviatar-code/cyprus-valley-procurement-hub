@@ -1313,6 +1313,84 @@ function CoveragePanel({
 
       {open && (
         <div className="border-t p-3 space-y-5">
+          {/* === Desired by Packages vs Available (per Building × Size) === */}
+          <div>
+            <div className="text-xs font-semibold mb-2 uppercase tracking-wide text-muted-foreground">
+              Package Demand vs Available (by Building &amp; Room Size)
+            </div>
+            <p className="text-[11px] text-muted-foreground mb-2">
+              Sum of all packages' "Building &amp; Room Size Assignments" compared with the actual unit counts.
+            </p>
+            <div className="overflow-x-auto border rounded-md">
+              <table className="w-full text-xs">
+                <thead className="bg-muted/40 text-muted-foreground">
+                  <tr>
+                    <th className="text-left px-2 py-1.5 font-medium">Building</th>
+                    <th className="text-left px-2 py-1.5 font-medium">Room Size</th>
+                    <th className="text-right px-2 py-1.5 font-medium">Available</th>
+                    <th className="text-right px-2 py-1.5 font-medium">Assigned by Packages</th>
+                    <th className="text-right px-2 py-1.5 font-medium">Missing</th>
+                    <th className="text-left px-2 py-1.5 font-medium">Status</th>
+                    <th className="text-left px-2 py-1.5 font-medium">Packages</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {byBuildingSize.flatMap(({ building, sizes }) =>
+                    sizes.map(({ size, items }, idx) => {
+                      const available = items.reduce((s, r) => s + r.totalUnits, 0);
+                      const k = sizeKey(building, size);
+                      const contribs: { pkg: Package; qty: number }[] = [];
+                      packages.forEach(p => {
+                        const q = p.unitCoverage?.[k] ?? 0;
+                        if (q > 0) contribs.push({ pkg: p, qty: q });
+                      });
+                      const assigned = contribs.reduce((s, c) => s + c.qty, 0);
+                      const missing = available - assigned;
+                      let badge: JSX.Element;
+                      if (assigned === 0) {
+                        badge = <Badge variant="destructive" className="text-[10px]">Missing</Badge>;
+                      } else if (assigned > available) {
+                        badge = <Badge className="bg-amber-500/15 text-amber-700 hover:bg-amber-500/15 border-amber-500/30 text-[10px]">Over</Badge>;
+                      } else if (assigned === available) {
+                        badge = <Badge className="bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/15 border-emerald-500/30 text-[10px]">Covered</Badge>;
+                      } else {
+                        badge = <Badge className="bg-amber-500/15 text-amber-700 hover:bg-amber-500/15 border-amber-500/30 text-[10px]">Partial</Badge>;
+                      }
+                      return (
+                        <tr key={`${building}-${size}`} className="border-t">
+                          <td className="px-2 py-1.5 font-medium text-foreground">{idx === 0 ? `Building ${building}` : ''}</td>
+                          <td className="px-2 py-1.5 text-foreground">{size}</td>
+                          <td className="px-2 py-1.5 text-right text-muted-foreground">{available}</td>
+                          <td className="px-2 py-1.5 text-right text-foreground">{assigned}</td>
+                          <td className={`px-2 py-1.5 text-right ${missing > 0 ? 'text-destructive font-medium' : missing < 0 ? 'text-amber-700 font-medium' : 'text-muted-foreground'}`}>
+                            {missing}
+                          </td>
+                          <td className="px-2 py-1.5">{badge}</td>
+                          <td className="px-2 py-1.5">
+                            <div className="flex flex-wrap gap-1">
+                              {contribs.length === 0 ? (
+                                <span className="text-muted-foreground italic">—</span>
+                              ) : contribs.map(c => (
+                                <button
+                                  key={c.pkg.id}
+                                  onClick={() => onEdit(c.pkg)}
+                                  className="text-[10px] px-1.5 py-0.5 rounded bg-secondary hover:bg-secondary/80 text-secondary-foreground"
+                                  title={`Edit ${c.pkg.name}`}
+                                >
+                                  {c.pkg.name} ×{c.qty}
+                                </button>
+                              ))}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
           {/* === High-level summary: Building × Room-size category === */}
           <div>
             <div className="text-xs font-semibold text-foreground mb-2 uppercase tracking-wide text-muted-foreground">
