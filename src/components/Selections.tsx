@@ -46,7 +46,7 @@ import { buildingAUnits, buildingBUnits, buildingCUnits, UnitType } from '@/data
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { loadSuppliers, subscribeSuppliers, Supplier } from '@/data/supplierData';
-import { useEffect } from 'react';
+
 
 
 function getUnitsForConcept(concept: Concept): UnitType[] {
