@@ -570,11 +570,18 @@ export default function Selections() {
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Supplier</label>
                 <Input
+                  list="selections-suppliers-list"
                   value={selForm.supplier}
                   onChange={e => setSelForm(p => ({ ...p, supplier: e.target.value }))}
-                  placeholder="e.g. Muuto"
+                  placeholder="Select or type supplier"
                 />
+                <datalist id="selections-suppliers-list">
+                  {suppliers.map(s => (
+                    <option key={s.id} value={s.name} />
+                  ))}
+                </datalist>
               </div>
+
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Unit Price €</label>
                 <Input
