@@ -37,7 +37,7 @@ import {
   generatePackageId, getRoomTypesForBlock, BlockRoomType,
   getRoomTypesByFloorForBlock, floorLabel,
   UnitCoverageMap, coverageKey, getBuildingUnitTypes, unitCodeFromToken,
-  totalUnitsInBuilding,
+  totalUnitsInBuilding, sizeKey, isSizeKey, getSizesForBlock, getSizesInBuilding,
 } from '@/data/packagesData';
 import { ChevronRight } from 'lucide-react';
 import {
