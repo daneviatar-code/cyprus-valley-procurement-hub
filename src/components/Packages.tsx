@@ -429,7 +429,13 @@ export default function Packages() {
         {visiblePackages.length} package{visiblePackages.length === 1 ? '' : 's'} in {BLOCKS.find(b => b.id === activeBlock)?.label}
       </div>
 
-      <CoveragePanel block={activeBlock} packages={visiblePackages} onEdit={openEdit} />
+      <CoveragePanel
+        block={activeBlock}
+        packages={visiblePackages}
+        allPackages={packages}
+        onUpdatePackages={persist}
+        onEdit={openEdit}
+      />
 
 
       {visiblePackages.length === 0 ? (
