@@ -1371,6 +1371,11 @@ function CoveragePanel({
           <span className="text-xs text-muted-foreground">
             {overall.covered} / {overall.total} units assigned
           </span>
+          {overall.totalCost > 0 && (
+            <span className="text-xs font-semibold text-foreground ml-2">
+              · Total {fmtEur(overall.totalCost)}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {overall.covered >= overall.total ? (
@@ -1383,6 +1388,7 @@ function CoveragePanel({
             </Badge>
           )}
         </div>
+
       </button>
 
       {open && (
