@@ -626,6 +626,8 @@ export default function Packages() {
               block={activeBlock}
               unitCoverage={form.unitCoverage}
               onChange={uc => setForm(f => ({ ...f, unitCoverage: uc }))}
+              allPackages={packages}
+              editingId={editId}
             />
 
             {/* Room Types */}
