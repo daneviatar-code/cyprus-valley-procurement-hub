@@ -719,7 +719,104 @@ export default function Packages() {
                 );
               })()}
             </div>
+
+            {/* Target Buildings & Coverage */}
+            <div className="space-y-2">
+              <Label>Target Buildings & Unit Coverage</Label>
+              <div className="border rounded-md p-3 space-y-3">
+                <div>
+                  <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1.5">
+                    Buildings in {BLOCKS.find(b => b.id === activeBlock)?.label}
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    {ALL_BUILDINGS[activeBlock].map(b => {
+                      const checked = form.buildings.includes(b);
+                      return (
+                        <label key={b} className="flex items-center gap-1.5 text-xs cursor-pointer">
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={() => {
+                              setForm(f => ({
+                                ...f,
+                                buildings: checked ? f.buildings.filter(x => x !== b) : [...f.buildings, b],
+                              }));
+                            }}
+                          />
+                          <span className="font-medium text-foreground">{b}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {form.buildings.length === 0 ? (
+                  <div className="text-xs text-muted-foreground italic">
+                    Select at least one building to assign this package.
+                  </div>
+                ) : (() => {
+                  const selectedCodes = Array.from(new Set(form.roomTypes.map(unitCodeFromToken)));
+                  if (selectedCodes.length === 0) {
+                    return (
+                      <div className="text-xs text-muted-foreground italic">
+                        Select Compatible Room Types above to choose how many units this package covers.
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="border rounded-md overflow-hidden">
+                      <table className="w-full text-xs">
+                        <thead className="bg-muted/40 text-muted-foreground">
+                          <tr>
+                            <th className="text-left px-2 py-1.5 font-medium">Building</th>
+                            <th className="text-left px-2 py-1.5 font-medium">Unit Type</th>
+                            <th className="text-right px-2 py-1.5 font-medium">Total Units</th>
+                            <th className="text-right px-2 py-1.5 font-medium">Covered by this Package</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {form.buildings.flatMap(b =>
+                            selectedCodes.map(code => {
+                              const total = totalUnitsInBuilding(activeBlock, b, code);
+                              if (total === 0) return null;
+                              const k = coverageKey(b, code);
+                              const val = form.unitCoverage[k] ?? total;
+                              const desc = getRoomTypesForBlock(activeBlock).find(r => r.code === code)?.description ?? '';
+                              return (
+                                <tr key={k} className="border-t">
+                                  <td className="px-2 py-1.5 font-medium text-foreground">{b}</td>
+                                  <td className="px-2 py-1.5">
+                                    <span className="font-medium text-foreground">{code}</span>
+                                    <span className="text-muted-foreground"> · {desc}</span>
+                                  </td>
+                                  <td className="px-2 py-1.5 text-right text-muted-foreground">{total}</td>
+                                  <td className="px-2 py-1.5 text-right">
+                                    <Input
+                                      type="number"
+                                      min={0}
+                                      max={total}
+                                      value={val}
+                                      onChange={e => {
+                                        const n = Math.max(0, Math.min(total, parseInt(e.target.value) || 0));
+                                        setForm(f => ({ ...f, unitCoverage: { ...f.unitCoverage, [k]: n } }));
+                                      }}
+                                      className="w-16 h-7 text-xs text-right inline-block"
+                                    />
+                                    <span className="text-muted-foreground ml-1">/ {total}</span>
+                                  </td>
+                                </tr>
+                              );
+                            }).filter(Boolean)
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
           </div>
+
+
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditorOpen(false)}>Cancel</Button>
