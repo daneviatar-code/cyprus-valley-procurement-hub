@@ -429,7 +429,13 @@ export default function Packages() {
         {visiblePackages.length} package{visiblePackages.length === 1 ? '' : 's'} in {BLOCKS.find(b => b.id === activeBlock)?.label}
       </div>
 
-      <CoveragePanel block={activeBlock} packages={visiblePackages} onEdit={openEdit} />
+      <CoveragePanel
+        block={activeBlock}
+        packages={visiblePackages}
+        allPackages={packages}
+        onUpdatePackages={persist}
+        onEdit={openEdit}
+      />
 
 
       {visiblePackages.length === 0 ? (
@@ -1197,10 +1203,14 @@ export default function Packages() {
 function CoveragePanel({
   block,
   packages,
+  allPackages,
+  onUpdatePackages,
   onEdit,
 }: {
   block: Concept;
   packages: Package[];
+  allPackages: Package[];
+  onUpdatePackages: (data: Package[]) => void;
   onEdit: (p: Package) => void;
 }) {
   const [open, setOpen] = useState(true);
@@ -1215,6 +1225,36 @@ function CoveragePanel({
     });
     return [...m.entries()];
   }, [summary]);
+
+  // Group by building → size category → unit codes
+  const byBuildingSize = useMemo(() => {
+    return byBuilding.map(([building, rows]) => {
+      const sizeMap = new Map<string, typeof rows>();
+      rows.forEach(r => {
+        if (!sizeMap.has(r.description)) sizeMap.set(r.description, []);
+        sizeMap.get(r.description)!.push(r);
+      });
+      return {
+        building,
+        sizes: [...sizeMap.entries()]
+          .sort((a, b) => a[0].localeCompare(b[0]))
+          .map(([size, items]) => ({ size, items })),
+      };
+    });
+  }, [byBuilding]);
+
+  /** Update one package's coverage cell. Auto-adds the building if needed. */
+  const setPkgCoverage = (pkgId: string, building: string, unitCode: string, value: number) => {
+    const k = coverageKey(building, unitCode);
+    const next = allPackages.map(p => {
+      if (p.id !== pkgId) return p;
+      const buildings = p.buildings?.includes(building) ? p.buildings : [...(p.buildings ?? []), building];
+      const unitCoverage = { ...(p.unitCoverage ?? {}) };
+      if (value <= 0) delete unitCoverage[k]; else unitCoverage[k] = value;
+      return { ...p, buildings, unitCoverage };
+    });
+    onUpdatePackages(next);
+  };
 
   const coverageFor = (building: string, unitCode: string) => {
     const k = coverageKey(building, unitCode);
@@ -1322,6 +1362,119 @@ function CoveragePanel({
                   })}
                 </tbody>
               </table>
+            </div>
+          </div>
+
+          {/* === Package Assignment by Building × Room Size === */}
+          <div>
+            <div className="text-xs font-semibold mb-2 uppercase tracking-wide text-muted-foreground">
+              Assign Packages by Building &amp; Room Size
+            </div>
+            <p className="text-[11px] text-muted-foreground mb-2">
+              Enter how many physical units each package covers per unit-type. The total assigned per row cannot exceed the available units.
+            </p>
+            <div className="space-y-4">
+              {byBuildingSize.map(({ building, sizes }) => (
+                <div key={building} className="border rounded-md overflow-hidden">
+                  <div className="px-2 py-1.5 bg-muted/40 text-xs font-semibold text-foreground">
+                    Building {building}
+                  </div>
+                  <div className="divide-y">
+                    {sizes.map(({ size, items }) => {
+                      const sizeTotal = items.reduce((s, r) => s + r.totalUnits, 0);
+                      // Packages applicable to ANY unit-code of this size in this building.
+                      const sizeCodes = new Set(items.map(i => i.unitCode));
+                      const applicablePkgs = packages.filter(p =>
+                        p.roomTypes.some(t => sizeCodes.has(unitCodeFromToken(t)))
+                      );
+                      const sizeAssigned = items.reduce((s, r) => {
+                        return s + packages.reduce((ss, p) => ss + (p.unitCoverage?.[coverageKey(building, r.unitCode)] ?? 0), 0);
+                      }, 0);
+                      return (
+                        <div key={size} className="p-2 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="text-xs font-medium text-foreground">
+                              {size}
+                              <span className="text-muted-foreground font-normal"> · {sizeTotal} unit{sizeTotal === 1 ? '' : 's'}</span>
+                            </div>
+                            <div className="text-[11px] text-muted-foreground">
+                              {sizeAssigned} / {sizeTotal} assigned
+                              {sizeAssigned > sizeTotal && <span className="text-destructive font-medium"> · over</span>}
+                            </div>
+                          </div>
+                          {applicablePkgs.length === 0 ? (
+                            <div className="text-[11px] italic text-muted-foreground">
+                              No packages target this room size yet. Create a package and mark these unit types as compatible.
+                            </div>
+                          ) : (
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-xs">
+                                <thead className="text-muted-foreground">
+                                  <tr>
+                                    <th className="text-left px-2 py-1 font-medium">Unit Type</th>
+                                    <th className="text-right px-2 py-1 font-medium">Total</th>
+                                    <th className="text-right px-2 py-1 font-medium">Assigned</th>
+                                    {applicablePkgs.map(p => (
+                                      <th key={p.id} className="text-right px-2 py-1 font-medium min-w-[110px]">
+                                        <button
+                                          onClick={() => onEdit(p)}
+                                          className="hover:text-accent text-left truncate max-w-[140px] inline-block align-bottom"
+                                          title={p.name}
+                                        >
+                                          {p.name}
+                                        </button>
+                                      </th>
+                                    ))}
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {items.map(r => {
+                                    const assigned = packages.reduce(
+                                      (s, p) => s + (p.unitCoverage?.[coverageKey(building, r.unitCode)] ?? 0), 0,
+                                    );
+                                    const over = assigned > r.totalUnits;
+                                    return (
+                                      <tr key={r.unitCode} className="border-t">
+                                        <td className="px-2 py-1 font-medium text-foreground">{r.unitCode}</td>
+                                        <td className="px-2 py-1 text-right text-muted-foreground">{r.totalUnits}</td>
+                                        <td className={`px-2 py-1 text-right font-medium ${over ? 'text-destructive' : assigned === r.totalUnits ? 'text-emerald-600' : 'text-foreground'}`}>
+                                          {assigned}
+                                        </td>
+                                        {applicablePkgs.map(p => {
+                                          const k = coverageKey(building, r.unitCode);
+                                          const val = p.unitCoverage?.[k] ?? 0;
+                                          const applies = p.roomTypes.some(t => unitCodeFromToken(t) === r.unitCode);
+                                          if (!applies) {
+                                            return <td key={p.id} className="px-2 py-1 text-right text-muted-foreground/40">—</td>;
+                                          }
+                                          return (
+                                            <td key={p.id} className="px-2 py-1 text-right">
+                                              <Input
+                                                type="number"
+                                                min={0}
+                                                value={val}
+                                                onChange={e => {
+                                                  const n = Math.max(0, parseInt(e.target.value) || 0);
+                                                  setPkgCoverage(p.id, building, r.unitCode, n);
+                                                }}
+                                                className="w-16 h-7 text-xs text-right inline-block"
+                                              />
+                                            </td>
+                                          );
+                                        })}
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
