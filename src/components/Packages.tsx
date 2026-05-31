@@ -447,9 +447,8 @@ export default function Packages() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {visiblePackages.map(p => {
             const total = computeCardTotal(p);
-            const isMockup = /mock-?up/i.test(p.name) || /mock-?up/i.test(p.description);
             return (
-              <div key={p.id} className={`border rounded-lg p-4 flex flex-col gap-2 group ${isMockup ? 'bg-yellow-100 border-yellow-400 ring-2 ring-yellow-300' : 'bg-card'}`}>
+              <div key={p.id} className="bg-card border rounded-lg p-4 flex flex-col gap-2 group">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <h3 className="text-sm font-semibold text-foreground truncate">{p.name}</h3>
