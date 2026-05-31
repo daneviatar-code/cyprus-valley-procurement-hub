@@ -38,6 +38,7 @@ import {
   getRoomTypesByFloorForBlock, floorLabel,
   UnitCoverageMap, coverageKey, getBuildingUnitTypes, unitCodeFromToken,
   totalUnitsInBuilding, sizeKey, isSizeKey, getSizesForBlock, getSizesInBuilding,
+  getSizeAssignments,
 } from '@/data/packagesData';
 import { ChevronRight } from 'lucide-react';
 import {
