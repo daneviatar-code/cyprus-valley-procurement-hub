@@ -429,6 +429,9 @@ export default function Packages() {
         {visiblePackages.length} package{visiblePackages.length === 1 ? '' : 's'} in {BLOCKS.find(b => b.id === activeBlock)?.label}
       </div>
 
+      <CoveragePanel block={activeBlock} packages={visiblePackages} onEdit={openEdit} />
+
+
       {visiblePackages.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground bg-card border rounded-lg">
           No packages yet in this block. Click "Create Package" to start.
