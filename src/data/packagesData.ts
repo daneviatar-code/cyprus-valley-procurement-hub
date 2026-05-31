@@ -7,7 +7,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { enqueue } from '@/lib/cloudWriteQueue';
-import { Concept, ALL_BUILDINGS, isUnitCodeInBuilding, isZoneCode } from './masterData';
+import { Concept, ALL_BUILDINGS, isUnitCodeInBuilding } from './masterData';
 import {
   buildingAUnits,
   buildingBUnits,
