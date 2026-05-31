@@ -1203,10 +1203,14 @@ export default function Packages() {
 function CoveragePanel({
   block,
   packages,
+  allPackages,
+  onUpdatePackages,
   onEdit,
 }: {
   block: Concept;
   packages: Package[];
+  allPackages: Package[];
+  onUpdatePackages: (data: Package[]) => void;
   onEdit: (p: Package) => void;
 }) {
   const [open, setOpen] = useState(true);
@@ -1221,6 +1225,36 @@ function CoveragePanel({
     });
     return [...m.entries()];
   }, [summary]);
+
+  // Group by building → size category → unit codes
+  const byBuildingSize = useMemo(() => {
+    return byBuilding.map(([building, rows]) => {
+      const sizeMap = new Map<string, typeof rows>();
+      rows.forEach(r => {
+        if (!sizeMap.has(r.description)) sizeMap.set(r.description, []);
+        sizeMap.get(r.description)!.push(r);
+      });
+      return {
+        building,
+        sizes: [...sizeMap.entries()]
+          .sort((a, b) => a[0].localeCompare(b[0]))
+          .map(([size, items]) => ({ size, items })),
+      };
+    });
+  }, [byBuilding]);
+
+  /** Update one package's coverage cell. Auto-adds the building if needed. */
+  const setPkgCoverage = (pkgId: string, building: string, unitCode: string, value: number) => {
+    const k = coverageKey(building, unitCode);
+    const next = allPackages.map(p => {
+      if (p.id !== pkgId) return p;
+      const buildings = p.buildings?.includes(building) ? p.buildings : [...(p.buildings ?? []), building];
+      const unitCoverage = { ...(p.unitCoverage ?? {}) };
+      if (value <= 0) delete unitCoverage[k]; else unitCoverage[k] = value;
+      return { ...p, buildings, unitCoverage };
+    });
+    onUpdatePackages(next);
+  };
 
   const coverageFor = (building: string, unitCode: string) => {
     const k = coverageKey(building, unitCode);
