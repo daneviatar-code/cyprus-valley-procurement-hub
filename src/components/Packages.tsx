@@ -1712,8 +1712,12 @@ function SizeAssignmentsEditor({
                         <Input
                           type="number"
                           min={0}
+                          max={avail}
                           value={r.quantity}
-                          onChange={e => setCell(r.building, r.size, Math.max(0, parseInt(e.target.value) || 0))}
+                          onChange={e => {
+                            const n = Math.max(0, Math.min(avail, parseInt(e.target.value) || 0));
+                            setCell(r.building, r.size, n);
+                          }}
                           className={`w-16 h-7 text-xs text-right inline-block ${over ? 'border-destructive text-destructive' : ''}`}
                         />
                       </td>
