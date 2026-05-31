@@ -1322,8 +1322,10 @@ function CoveragePanel({
       ALL_BUILDINGS[block].forEach(b => { total += getSizesInBuilding(block, b)[size] ?? 0; });
       let selected = 0;
       let totalCost = 0;
+      const contributions: { pkg: Package; units: number; pkgCost: number; subtotal: number }[] = [];
       packages.forEach(p => {
         const cost = pkgCost(p);
+        let unitsForSize = 0;
         Object.entries(p.unitCoverage ?? {}).forEach(([k, v]) => {
           if (!isSizeKey(k) || typeof v !== 'number') return;
           const rest = k.slice('__size__::'.length);
@@ -1332,13 +1334,19 @@ function CoveragePanel({
           if (rest.slice(i + 2) === size) {
             selected += v;
             totalCost += cost * v;
+            unitsForSize += v;
           }
         });
+        if (unitsForSize > 0) {
+          contributions.push({ pkg: p, units: unitsForSize, pkgCost: cost, subtotal: cost * unitsForSize });
+        }
       });
       const unitCost = selected > 0 ? totalCost / selected : 0;
-      return { size, total, selected, remaining: total - selected, totalCost, unitCost };
+      return { size, total, selected, remaining: total - selected, totalCost, unitCost, contributions };
     });
   }, [block, packages, pkgCost]);
+
+  const [openSize, setOpenSize] = useState<string | null>(null);
 
   const overall = useMemo(() => {
     let total = 0, covered = 0, totalCost = 0;
