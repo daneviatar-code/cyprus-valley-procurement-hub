@@ -1389,10 +1389,6 @@ function CoveragePanel({
             <div className="text-xs font-semibold mb-2 uppercase tracking-wide text-muted-foreground">
               Room Counts by Apartment Type
             </div>
-          <div>
-            <div className="text-xs font-semibold mb-2 uppercase tracking-wide text-muted-foreground">
-              Room Counts by Apartment Type
-            </div>
             {(() => {
               const sizeSet = new Set<string>();
               byBuildingSize.forEach(({ sizes }) => sizes.forEach(s => sizeSet.add(s.size)));
