@@ -1313,332 +1313,51 @@ function CoveragePanel({
 
       {open && (
         <div className="border-t p-3 space-y-5">
-          {/* === Desired by Packages vs Available (per Building × Size) === */}
+          {/* === Short pivot: room counts per building by apartment type === */}
           <div>
             <div className="text-xs font-semibold mb-2 uppercase tracking-wide text-muted-foreground">
-              Package Demand vs Available (by Building &amp; Room Size)
+              Room Counts by Apartment Type
             </div>
-            <p className="text-[11px] text-muted-foreground mb-2">
-              Sum of all packages' "Building &amp; Room Size Assignments" compared with the actual unit counts.
-            </p>
-            <div className="overflow-x-auto border rounded-md">
-              <table className="w-full text-xs">
-                <thead className="bg-muted/40 text-muted-foreground">
-                  <tr>
-                    <th className="text-left px-2 py-1.5 font-medium">Building</th>
-                    <th className="text-left px-2 py-1.5 font-medium">Room Size</th>
-                    <th className="text-right px-2 py-1.5 font-medium">Available</th>
-                    <th className="text-right px-2 py-1.5 font-medium">Assigned by Packages</th>
-                    <th className="text-right px-2 py-1.5 font-medium">Missing</th>
-                    <th className="text-left px-2 py-1.5 font-medium">Status</th>
-                    <th className="text-left px-2 py-1.5 font-medium">Packages</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {byBuildingSize.flatMap(({ building, sizes }) =>
-                    sizes.map(({ size, items }, idx) => {
-                      const available = items.reduce((s, r) => s + r.totalUnits, 0);
-                      const k = sizeKey(building, size);
-                      const contribs: { pkg: Package; qty: number }[] = [];
-                      packages.forEach(p => {
-                        const q = p.unitCoverage?.[k] ?? 0;
-                        if (q > 0) contribs.push({ pkg: p, qty: q });
-                      });
-                      const assigned = contribs.reduce((s, c) => s + c.qty, 0);
-                      const missing = available - assigned;
-                      let badge: JSX.Element;
-                      if (assigned === 0) {
-                        badge = <Badge variant="destructive" className="text-[10px]">Missing</Badge>;
-                      } else if (assigned > available) {
-                        badge = <Badge className="bg-amber-500/15 text-amber-700 hover:bg-amber-500/15 border-amber-500/30 text-[10px]">Over</Badge>;
-                      } else if (assigned === available) {
-                        badge = <Badge className="bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/15 border-emerald-500/30 text-[10px]">Covered</Badge>;
-                      } else {
-                        badge = <Badge className="bg-amber-500/15 text-amber-700 hover:bg-amber-500/15 border-amber-500/30 text-[10px]">Partial</Badge>;
-                      }
-                      return (
-                        <tr key={`${building}-${size}`} className="border-t">
-                          <td className="px-2 py-1.5 font-medium text-foreground">{idx === 0 ? `Building ${building}` : ''}</td>
-                          <td className="px-2 py-1.5 text-foreground">{size}</td>
-                          <td className="px-2 py-1.5 text-right text-muted-foreground">{available}</td>
-                          <td className="px-2 py-1.5 text-right text-foreground">{assigned}</td>
-                          <td className={`px-2 py-1.5 text-right ${missing > 0 ? 'text-destructive font-medium' : missing < 0 ? 'text-amber-700 font-medium' : 'text-muted-foreground'}`}>
-                            {missing}
-                          </td>
-                          <td className="px-2 py-1.5">{badge}</td>
-                          <td className="px-2 py-1.5">
-                            <div className="flex flex-wrap gap-1">
-                              {contribs.length === 0 ? (
-                                <span className="text-muted-foreground italic">—</span>
-                              ) : contribs.map(c => (
-                                <button
-                                  key={c.pkg.id}
-                                  onClick={() => onEdit(c.pkg)}
-                                  className="text-[10px] px-1.5 py-0.5 rounded bg-secondary hover:bg-secondary/80 text-secondary-foreground"
-                                  title={`Edit ${c.pkg.name}`}
-                                >
-                                  {c.pkg.name} ×{c.qty}
-                                </button>
-                              ))}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* === High-level summary: Building × Room-size category === */}
-          <div>
-            <div className="text-xs font-semibold text-foreground mb-2 uppercase tracking-wide text-muted-foreground">
-              Summary by Building &amp; Room Size
-            </div>
-            <div className="overflow-x-auto border rounded-md">
-              <table className="w-full text-xs">
-                <thead className="bg-muted/40 text-muted-foreground">
-                  <tr>
-                    <th className="text-left px-2 py-1.5 font-medium">Building</th>
-                    <th className="text-left px-2 py-1.5 font-medium">Room Size</th>
-                    <th className="text-right px-2 py-1.5 font-medium">Total Units</th>
-                    <th className="text-right px-2 py-1.5 font-medium">Covered</th>
-                    <th className="text-right px-2 py-1.5 font-medium">Missing</th>
-                    <th className="text-left px-2 py-1.5 font-medium">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {byBuilding.flatMap(([building, rows]) => {
-                    // Group rows by description (room size category)
-                    const sizeMap = new Map<string, { total: number; covered: number }>();
-                    rows.forEach(r => {
-                      const size = r.description;
-                      const { covered } = coverageFor(r.building, r.unitCode);
-                      const cur = sizeMap.get(size) ?? { total: 0, covered: 0 };
-                      cur.total += r.totalUnits;
-                      cur.covered += Math.min(r.totalUnits, covered);
-                      sizeMap.set(size, cur);
-                    });
-                    const sorted = [...sizeMap.entries()].sort((a, b) => a[0].localeCompare(b[0]));
-                    return sorted.map(([size, agg], idx) => {
-                      const missing = agg.total - agg.covered;
-                      let badge: JSX.Element;
-                      if (missing === 0) {
-                        badge = <Badge className="bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/15 border-emerald-500/30 text-[10px]">Covered</Badge>;
-                      } else if (agg.covered === 0) {
-                        badge = <Badge variant="destructive" className="text-[10px]">Missing</Badge>;
-                      } else {
-                        badge = <Badge className="bg-amber-500/15 text-amber-700 hover:bg-amber-500/15 border-amber-500/30 text-[10px]">Partial</Badge>;
-                      }
-                      return (
-                        <tr key={`${building}-${size}`} className="border-t">
-                          <td className="px-2 py-1.5 font-medium text-foreground">
-                            {idx === 0 ? `Building ${building}` : ''}
-                          </td>
-                          <td className="px-2 py-1.5 text-foreground">{size}</td>
-                          <td className="px-2 py-1.5 text-right text-muted-foreground">{agg.total}</td>
-                          <td className="px-2 py-1.5 text-right text-foreground">{agg.covered}</td>
-                          <td className={`px-2 py-1.5 text-right ${missing > 0 ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>{missing}</td>
-                          <td className="px-2 py-1.5">{badge}</td>
-                        </tr>
-                      );
-                    });
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* === Package Assignment by Building × Room Size === */}
-          <div>
-            <div className="text-xs font-semibold mb-2 uppercase tracking-wide text-muted-foreground">
-              Assign Packages by Building &amp; Room Size
-            </div>
-            <p className="text-[11px] text-muted-foreground mb-2">
-              Enter how many physical units each package covers per unit-type. The total assigned per row cannot exceed the available units.
-            </p>
-            <div className="space-y-4">
-              {byBuildingSize.map(({ building, sizes }) => (
-                <div key={building} className="border rounded-md overflow-hidden">
-                  <div className="px-2 py-1.5 bg-muted/40 text-xs font-semibold text-foreground">
-                    Building {building}
-                  </div>
-                  <div className="divide-y">
-                    {sizes.map(({ size, items }) => {
-                      const sizeTotal = items.reduce((s, r) => s + r.totalUnits, 0);
-                      // Packages applicable to ANY unit-code of this size in this building.
-                      const sizeCodes = new Set(items.map(i => i.unitCode));
-                      const applicablePkgs = packages.filter(p =>
-                        p.roomTypes.some(t => sizeCodes.has(unitCodeFromToken(t)))
-                      );
-                      const sizeAssigned = items.reduce((s, r) => {
-                        return s + packages.reduce((ss, p) => ss + (p.unitCoverage?.[coverageKey(building, r.unitCode)] ?? 0), 0);
-                      }, 0);
-                      return (
-                        <div key={size} className="p-2 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <div className="text-xs font-medium text-foreground">
-                              {size}
-                              <span className="text-muted-foreground font-normal"> · {sizeTotal} unit{sizeTotal === 1 ? '' : 's'}</span>
-                            </div>
-                            <div className="text-[11px] text-muted-foreground">
-                              {sizeAssigned} / {sizeTotal} assigned
-                              {sizeAssigned > sizeTotal && <span className="text-destructive font-medium"> · over</span>}
-                            </div>
-                          </div>
-                          {applicablePkgs.length === 0 ? (
-                            <div className="text-[11px] italic text-muted-foreground">
-                              No packages target this room size yet. Create a package and mark these unit types as compatible.
-                            </div>
-                          ) : (
-                            <div className="overflow-x-auto">
-                              <table className="w-full text-xs">
-                                <thead className="text-muted-foreground">
-                                  <tr>
-                                    <th className="text-left px-2 py-1 font-medium">Unit Type</th>
-                                    <th className="text-right px-2 py-1 font-medium">Total</th>
-                                    <th className="text-right px-2 py-1 font-medium">Assigned</th>
-                                    {applicablePkgs.map(p => (
-                                      <th key={p.id} className="text-right px-2 py-1 font-medium min-w-[110px]">
-                                        <button
-                                          onClick={() => onEdit(p)}
-                                          className="hover:text-accent text-left truncate max-w-[140px] inline-block align-bottom"
-                                          title={p.name}
-                                        >
-                                          {p.name}
-                                        </button>
-                                      </th>
-                                    ))}
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {items.map(r => {
-                                    const assigned = packages.reduce(
-                                      (s, p) => s + (p.unitCoverage?.[coverageKey(building, r.unitCode)] ?? 0), 0,
-                                    );
-                                    const over = assigned > r.totalUnits;
-                                    return (
-                                      <tr key={r.unitCode} className="border-t">
-                                        <td className="px-2 py-1 font-medium text-foreground">{r.unitCode}</td>
-                                        <td className="px-2 py-1 text-right text-muted-foreground">{r.totalUnits}</td>
-                                        <td className={`px-2 py-1 text-right font-medium ${over ? 'text-destructive' : assigned === r.totalUnits ? 'text-emerald-600' : 'text-foreground'}`}>
-                                          {assigned}
-                                        </td>
-                                        {applicablePkgs.map(p => {
-                                          const k = coverageKey(building, r.unitCode);
-                                          const val = p.unitCoverage?.[k] ?? 0;
-                                          const applies = p.roomTypes.some(t => unitCodeFromToken(t) === r.unitCode);
-                                          if (!applies) {
-                                            return <td key={p.id} className="px-2 py-1 text-right text-muted-foreground/40">—</td>;
-                                          }
-                                          return (
-                                            <td key={p.id} className="px-2 py-1 text-right">
-                                              <Input
-                                                type="number"
-                                                min={0}
-                                                value={val}
-                                                onChange={e => {
-                                                  const n = Math.max(0, parseInt(e.target.value) || 0);
-                                                  setPkgCoverage(p.id, building, r.unitCode, n);
-                                                }}
-                                                className="w-16 h-7 text-xs text-right inline-block"
-                                              />
-                                            </td>
-                                          );
-                                        })}
-                                      </tr>
-                                    );
-                                  })}
-                                </tbody>
-                              </table>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
+            {(() => {
+              const sizeSet = new Set<string>();
+              byBuildingSize.forEach(({ sizes }) => sizes.forEach(s => sizeSet.add(s.size)));
+              const allSizes = [...sizeSet].sort((a, b) => a.localeCompare(b));
+              return (
+                <div className="overflow-x-auto border rounded-md">
+                  <table className="w-full text-xs">
+                    <thead className="bg-muted/40 text-muted-foreground">
+                      <tr>
+                        <th className="text-left px-2 py-1.5 font-medium">Building</th>
+                        {allSizes.map(s => (
+                          <th key={s} className="text-right px-2 py-1.5 font-medium">{s}</th>
+                        ))}
+                        <th className="text-right px-2 py-1.5 font-medium">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {byBuildingSize.map(({ building, sizes }) => {
+                        const counts: Record<string, number> = {};
+                        sizes.forEach(({ size, items }) => {
+                          counts[size] = items.reduce((s, r) => s + r.totalUnits, 0);
+                        });
+                        const total = Object.values(counts).reduce((s, n) => s + n, 0);
+                        return (
+                          <tr key={building} className="border-t">
+                            <td className="px-2 py-1.5 font-medium text-foreground">Building {building}</td>
+                            {allSizes.map(s => (
+                              <td key={s} className="px-2 py-1.5 text-right text-foreground">
+                                {counts[s] ?? <span className="text-muted-foreground/50">—</span>}
+                              </td>
+                            ))}
+                            <td className="px-2 py-1.5 text-right font-semibold text-foreground">{total}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* === Detailed table: per Unit Type === */}
-          <div>
-            <div className="text-xs font-semibold text-foreground mb-2 uppercase tracking-wide text-muted-foreground">
-              Detailed Coverage by Unit Type
-            </div>
-            <div className="space-y-3">
-          {byBuilding.map(([building, rows]) => {
-            const bTotal = rows.reduce((s, r) => s + r.totalUnits, 0);
-            const bCovered = rows.reduce((s, r) => s + Math.min(r.totalUnits, coverageFor(r.building, r.unitCode).covered), 0);
-            return (
-              <div key={building} className="border rounded-md overflow-hidden">
-                <div className="flex items-center justify-between px-2 py-1.5 bg-muted/40">
-                  <span className="text-xs font-semibold text-foreground">Building {building}</span>
-                  <span className="text-[11px] text-muted-foreground">{bCovered} / {bTotal} units</span>
-                </div>
-                <table className="w-full text-xs">
-                  <thead className="text-muted-foreground">
-                    <tr className="border-t">
-                      <th className="text-left px-2 py-1 font-medium">Unit Type</th>
-                      <th className="text-right px-2 py-1 font-medium">Total</th>
-                      <th className="text-right px-2 py-1 font-medium">Covered</th>
-                      <th className="text-right px-2 py-1 font-medium">Missing</th>
-                      <th className="text-left px-2 py-1 font-medium">Status</th>
-                      <th className="text-left px-2 py-1 font-medium">Packages</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map(r => {
-                      const { covered, pkgs } = coverageFor(r.building, r.unitCode);
-                      const clamped = Math.min(covered, r.totalUnits);
-                      const missing = r.totalUnits - clamped;
-                      let statusEl: JSX.Element;
-                      if (missing === 0 && covered === r.totalUnits) {
-                        statusEl = <Badge className="bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/15 border-emerald-500/30 text-[10px]">Covered</Badge>;
-                      } else if (covered === 0) {
-                        statusEl = <Badge variant="destructive" className="text-[10px]">Missing</Badge>;
-                      } else if (covered > r.totalUnits) {
-                        statusEl = <Badge className="bg-amber-500/15 text-amber-700 hover:bg-amber-500/15 border-amber-500/30 text-[10px]">Over ({covered})</Badge>;
-                      } else {
-                        statusEl = <Badge className="bg-amber-500/15 text-amber-700 hover:bg-amber-500/15 border-amber-500/30 text-[10px]">Partial</Badge>;
-                      }
-                      return (
-                        <tr key={`${r.building}-${r.unitCode}`} className="border-t">
-                          <td className="px-2 py-1.5">
-                            <span className="font-medium text-foreground">{r.unitCode}</span>
-                            <span className="text-muted-foreground"> · {r.description}</span>
-                          </td>
-                          <td className="px-2 py-1.5 text-right text-muted-foreground">{r.totalUnits}</td>
-                          <td className="px-2 py-1.5 text-right text-foreground">{clamped}</td>
-                          <td className={`px-2 py-1.5 text-right ${missing > 0 ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>{missing}</td>
-                          <td className="px-2 py-1.5">{statusEl}</td>
-                          <td className="px-2 py-1.5">
-                            <div className="flex flex-wrap gap-1">
-                              {pkgs.length === 0 ? (
-                                <span className="text-muted-foreground italic">—</span>
-                              ) : pkgs.map(p => (
-                                <button
-                                  key={p.id}
-                                  onClick={() => onEdit(p)}
-                                  className="text-[10px] px-1.5 py-0.5 rounded bg-secondary hover:bg-secondary/80 text-secondary-foreground"
-                                  title="Edit package"
-                                >
-                                  {p.name}
-                                </button>
-                              ))}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            );
-          })}
-            </div>
+              );
+            })()}
           </div>
         </div>
       )}
