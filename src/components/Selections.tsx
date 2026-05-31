@@ -81,6 +81,11 @@ export default function Selections() {
   // Force re-render after saves
   const [version, setVersion] = useState(0);
 
+  // Suppliers from the suppliers module
+  const [suppliers, setSuppliers] = useState<Supplier[]>(loadSuppliers);
+  useEffect(() => subscribeSuppliers(setSuppliers), []);
+
+
   // Build all room type cards FOR THE ACTIVE BLOCK ONLY.
   // Selections in localStorage are already keyed by concept+unitCode, so each block is independent.
   const allCards: RoomTypeCard[] = useMemo(() => {
