@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, Fragment } from 'react';
 import { Plus, Pencil, Trash2, Search, X, ImageIcon, Package as PackageIcon, GitCompare } from 'lucide-react';
 import PackagesComparison from './PackagesComparison';
 import { Button } from '@/components/ui/button';
@@ -436,7 +436,9 @@ export default function Packages() {
         allPackages={packages}
         onUpdatePackages={persist}
         onEdit={openEdit}
+        catalogById={catalogById}
       />
+
 
 
       {visiblePackages.length === 0 ? (
@@ -1236,14 +1238,28 @@ function CoveragePanel({
   allPackages,
   onUpdatePackages,
   onEdit,
+  catalogById,
 }: {
   block: Concept;
   packages: Package[];
   allPackages: Package[];
   onUpdatePackages: (data: Package[]) => void;
   onEdit: (p: Package) => void;
+  catalogById: Map<string, CatalogProduct>;
 }) {
   const [open, setOpen] = useState(true);
+
+  const fmtEur = (n: number) =>
+    `€${n.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  /** Cost of a single package = Σ items × catalog price */
+  const pkgCost = useCallback((p: Package): number => {
+    return p.items.reduce(
+      (s, it) => s + (catalogById.get(it.productId)?.unitPriceEur ?? 0) * it.quantity,
+      0
+    );
+  }, [catalogById]);
+
   const summary = useMemo(() => getBuildingUnitTypes(block), [block]);
 
   // Group by building
@@ -1298,34 +1314,49 @@ function CoveragePanel({
     return { covered, pkgs };
   };
 
-  // Per-size coverage across the block — sums all packages' size assignments.
+  // Per-size coverage across the block — sums all packages' size assignments + cost.
   const sizeCoverage = useMemo(() => {
     const sizes = getSizesForBlock(block);
     return sizes.map(size => {
       let total = 0;
       ALL_BUILDINGS[block].forEach(b => { total += getSizesInBuilding(block, b)[size] ?? 0; });
       let selected = 0;
+      let totalCost = 0;
       packages.forEach(p => {
+        const cost = pkgCost(p);
         Object.entries(p.unitCoverage ?? {}).forEach(([k, v]) => {
           if (!isSizeKey(k) || typeof v !== 'number') return;
           const rest = k.slice('__size__::'.length);
           const i = rest.indexOf('::');
           if (i < 0) return;
-          if (rest.slice(i + 2) === size) selected += v;
+          if (rest.slice(i + 2) === size) {
+            selected += v;
+            totalCost += cost * v;
+          }
         });
       });
-      return { size, total, selected, remaining: total - selected };
+      const unitCost = selected > 0 ? totalCost / selected : 0;
+      return { size, total, selected, remaining: total - selected, totalCost, unitCost };
     });
-  }, [block, packages]);
+  }, [block, packages, pkgCost]);
 
   const overall = useMemo(() => {
-    let total = 0, covered = 0;
+    let total = 0, covered = 0, totalCost = 0;
     sizeCoverage.forEach(s => {
       total += s.total;
       covered += Math.min(s.total, s.selected);
+      totalCost += s.totalCost;
     });
-    return { total, covered };
+    return { total, covered, totalCost };
   }, [sizeCoverage]);
+
+  /** Map size → avg cost per unit, used to derive per-building costs from master room counts. */
+  const unitCostBySize = useMemo(() => {
+    const m = new Map<string, number>();
+    sizeCoverage.forEach(s => m.set(s.size, s.unitCost));
+    return m;
+  }, [sizeCoverage]);
+
 
   return (
     <div className="border rounded-lg bg-card">
@@ -1340,6 +1371,11 @@ function CoveragePanel({
           <span className="text-xs text-muted-foreground">
             {overall.covered} / {overall.total} units assigned
           </span>
+          {overall.totalCost > 0 && (
+            <span className="text-xs font-semibold text-foreground ml-2">
+              · Total {fmtEur(overall.totalCost)}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {overall.covered >= overall.total ? (
@@ -1352,6 +1388,7 @@ function CoveragePanel({
             </Badge>
           )}
         </div>
+
       </button>
 
       {open && (
@@ -1369,6 +1406,8 @@ function CoveragePanel({
                     <th className="text-right px-2 py-1.5 font-medium">Required</th>
                     <th className="text-right px-2 py-1.5 font-medium">Selected</th>
                     <th className="text-right px-2 py-1.5 font-medium">Remaining</th>
+                    <th className="text-right px-2 py-1.5 font-medium">€ / Unit</th>
+                    <th className="text-right px-2 py-1.5 font-medium">Total €</th>
                     <th className="text-right px-2 py-1.5 font-medium">Status</th>
                   </tr>
                 </thead>
@@ -1383,6 +1422,12 @@ function CoveragePanel({
                         <td className={`px-2 py-1.5 text-right font-semibold ${over ? 'text-destructive' : 'text-foreground'}`}>{s.selected}</td>
                         <td className={`px-2 py-1.5 text-right font-semibold ${s.remaining < 0 ? 'text-destructive' : s.remaining === 0 ? 'text-emerald-600' : 'text-amber-600'}`}>
                           {s.remaining}
+                        </td>
+                        <td className="px-2 py-1.5 text-right text-muted-foreground">
+                          {s.unitCost > 0 ? fmtEur(s.unitCost) : '—'}
+                        </td>
+                        <td className="px-2 py-1.5 text-right font-semibold text-foreground">
+                          {s.totalCost > 0 ? fmtEur(s.totalCost) : '—'}
                         </td>
                         <td className="px-2 py-1.5 text-right">
                           {done ? (
@@ -1400,57 +1445,123 @@ function CoveragePanel({
                       </tr>
                     );
                   })}
+                  <tr className="border-t bg-muted/30">
+                    <td className="px-2 py-1.5 font-bold text-foreground">Hotel Total</td>
+                    <td className="px-2 py-1.5 text-right font-bold text-foreground">
+                      {sizeCoverage.reduce((s, r) => s + r.total, 0)}
+                    </td>
+                    <td className="px-2 py-1.5 text-right font-bold text-foreground">
+                      {sizeCoverage.reduce((s, r) => s + r.selected, 0)}
+                    </td>
+                    <td className="px-2 py-1.5" />
+                    <td className="px-2 py-1.5" />
+                    <td className="px-2 py-1.5 text-right font-bold text-foreground">
+                      {fmtEur(overall.totalCost)}
+                    </td>
+                    <td className="px-2 py-1.5" />
+                  </tr>
                 </tbody>
+
               </table>
             </div>
           </div>
 
-          {/* === Short pivot: room counts per building by apartment type === */}
+          {/* === Per-building room counts + cost === */}
           <div>
             <div className="text-xs font-semibold mb-2 uppercase tracking-wide text-muted-foreground">
-              Room Counts by Apartment Type
+              Cost by Building & Apartment Type
             </div>
             {(() => {
               const sizeSet = new Set<string>();
               byBuildingSize.forEach(({ sizes }) => sizes.forEach(s => sizeSet.add(s.size)));
               const allSizes = [...sizeSet].sort((a, b) => a.localeCompare(b));
+              const buildingRows = byBuildingSize.map(({ building, sizes }) => {
+                const counts: Record<string, number> = {};
+                sizes.forEach(({ size, items }) => {
+                  counts[size] = items.reduce((s, r) => s + r.totalUnits, 0);
+                });
+                const totalUnits = Object.values(counts).reduce((s, n) => s + n, 0);
+                const costs: Record<string, number> = {};
+                let totalCost = 0;
+                allSizes.forEach(sz => {
+                  const c = (counts[sz] ?? 0) * (unitCostBySize.get(sz) ?? 0);
+                  costs[sz] = c;
+                  totalCost += c;
+                });
+                return { building, counts, totalUnits, costs, totalCost };
+              });
+              const sizeTotalsUnits: Record<string, number> = {};
+              const sizeTotalsCost: Record<string, number> = {};
+              allSizes.forEach(sz => {
+                sizeTotalsUnits[sz] = buildingRows.reduce((s, r) => s + (r.counts[sz] ?? 0), 0);
+                sizeTotalsCost[sz] = buildingRows.reduce((s, r) => s + (r.costs[sz] ?? 0), 0);
+              });
+              const grandUnits = buildingRows.reduce((s, r) => s + r.totalUnits, 0);
+              const grandCost = buildingRows.reduce((s, r) => s + r.totalCost, 0);
               return (
                 <div className="overflow-x-auto border rounded-md">
                   <table className="w-full text-xs">
                     <thead className="bg-muted/40 text-muted-foreground">
                       <tr>
-                        <th className="text-left px-2 py-1.5 font-medium">Building</th>
+                        <th rowSpan={2} className="text-left px-2 py-1.5 font-medium border-r align-bottom">Building</th>
                         {allSizes.map(s => (
-                          <th key={s} className="text-right px-2 py-1.5 font-medium">{s}</th>
+                          <th key={s} colSpan={2} className="text-center px-2 py-1.5 font-medium border-r">{s}</th>
                         ))}
-                        <th className="text-right px-2 py-1.5 font-medium">Total</th>
+                        <th colSpan={2} className="text-center px-2 py-1.5 font-medium">Total</th>
+                      </tr>
+                      <tr>
+                        {allSizes.map(s => (
+                          <Fragment key={s}>
+                            <th className="text-right px-2 py-1 font-normal">Units</th>
+                            <th className="text-right px-2 py-1 font-normal border-r">€</th>
+                          </Fragment>
+                        ))}
+                        <th className="text-right px-2 py-1 font-normal">Units</th>
+                        <th className="text-right px-2 py-1 font-normal">€</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {byBuildingSize.map(({ building, sizes }) => {
-                        const counts: Record<string, number> = {};
-                        sizes.forEach(({ size, items }) => {
-                          counts[size] = items.reduce((s, r) => s + r.totalUnits, 0);
-                        });
-                        const total = Object.values(counts).reduce((s, n) => s + n, 0);
-                        return (
-                          <tr key={building} className="border-t">
-                            <td className="px-2 py-1.5 font-medium text-foreground">Building {building}</td>
-                            {allSizes.map(s => (
-                              <td key={s} className="px-2 py-1.5 text-right text-foreground">
-                                {counts[s] ?? <span className="text-muted-foreground/50">—</span>}
+                      {buildingRows.map(row => (
+                        <tr key={row.building} className="border-t">
+                          <td className="px-2 py-1.5 font-medium text-foreground border-r">Building {row.building}</td>
+                          {allSizes.map(s => (
+                            <Fragment key={s}>
+                              <td className="px-2 py-1.5 text-right text-foreground">
+                                {row.counts[s] ?? <span className="text-muted-foreground/50">—</span>}
                               </td>
-                            ))}
-                            <td className="px-2 py-1.5 text-right font-semibold text-foreground">{total}</td>
-                          </tr>
-                        );
-                      })}
+                              <td className="px-2 py-1.5 text-right text-muted-foreground border-r">
+                                {row.costs[s] > 0 ? fmtEur(row.costs[s]) : '—'}
+                              </td>
+                            </Fragment>
+                          ))}
+                          <td className="px-2 py-1.5 text-right font-semibold text-foreground">{row.totalUnits}</td>
+                          <td className="px-2 py-1.5 text-right font-semibold text-foreground">
+                            {row.totalCost > 0 ? fmtEur(row.totalCost) : '—'}
+                          </td>
+                        </tr>
+                      ))}
+                      <tr className="border-t bg-muted/30">
+                        <td className="px-2 py-1.5 font-bold text-foreground border-r">Hotel Total</td>
+                        {allSizes.map(s => (
+                          <Fragment key={s}>
+                            <td className="px-2 py-1.5 text-right font-bold text-foreground">{sizeTotalsUnits[s]}</td>
+                            <td className="px-2 py-1.5 text-right font-bold text-foreground border-r">
+                              {sizeTotalsCost[s] > 0 ? fmtEur(sizeTotalsCost[s]) : '—'}
+                            </td>
+                          </Fragment>
+                        ))}
+                        <td className="px-2 py-1.5 text-right font-bold text-foreground">{grandUnits}</td>
+                        <td className="px-2 py-1.5 text-right font-bold text-foreground">
+                          {grandCost > 0 ? fmtEur(grandCost) : '—'}
+                        </td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>
               );
             })()}
           </div>
+
         </div>
       )}
 
