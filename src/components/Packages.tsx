@@ -436,7 +436,9 @@ export default function Packages() {
         allPackages={packages}
         onUpdatePackages={persist}
         onEdit={openEdit}
+        catalogById={catalogById}
       />
+
 
 
       {visiblePackages.length === 0 ? (
