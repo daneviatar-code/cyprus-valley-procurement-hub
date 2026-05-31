@@ -36,13 +36,15 @@ import {
   Package, PackageLineItem, loadPackages, savePackages, subscribePackages,
   generatePackageId, getRoomTypesForBlock, BlockRoomType,
   getRoomTypesByFloorForBlock, floorLabel,
+  UnitCoverageMap, coverageKey, getBuildingUnitTypes, unitCodeFromToken,
+  totalUnitsInBuilding,
 } from '@/data/packagesData';
 import { ChevronRight } from 'lucide-react';
 import {
   CatalogProduct, loadCatalog, saveCatalog, subscribeCatalog, uploadCatalogImage,
   generateProductId, DISCIPLINES,
 } from '@/data/catalogData';
-import { Concept } from '@/data/masterData';
+import { Concept, ALL_BUILDINGS } from '@/data/masterData';
 import { toast } from '@/hooks/use-toast';
 import { Upload } from 'lucide-react';
 
@@ -57,6 +59,8 @@ interface FormState {
   description: string;
   items: PackageLineItem[];
   roomTypes: string[];
+  buildings: string[];
+  unitCoverage: UnitCoverageMap;
 }
 
 const emptyForm = (): FormState => ({
@@ -64,6 +68,8 @@ const emptyForm = (): FormState => ({
   description: '',
   items: [],
   roomTypes: [],
+  buildings: [],
+  unitCoverage: {},
 });
 
 function priceOf(p: CatalogProduct | undefined): number {
@@ -199,6 +205,8 @@ export default function Packages() {
       description: p.description,
       items: p.items.map(it => ({ ...it })),
       roomTypes: [...p.roomTypes],
+      buildings: [...(p.buildings ?? [])],
+      unitCoverage: { ...(p.unitCoverage ?? {}) },
     });
     setRtSearch('');
     setExpandedFloors(new Set());
@@ -213,7 +221,7 @@ export default function Packages() {
     let next: Package[];
     if (editId) {
       next = packages.map(p => p.id === editId
-        ? { ...p, name: form.name.trim(), description: form.description, items: form.items, roomTypes: form.roomTypes }
+        ? { ...p, name: form.name.trim(), description: form.description, items: form.items, roomTypes: form.roomTypes, buildings: form.buildings, unitCoverage: form.unitCoverage }
         : p);
     } else {
       const newPkg: Package = {
@@ -223,6 +231,8 @@ export default function Packages() {
         block: activeBlock,
         items: form.items,
         roomTypes: form.roomTypes,
+        buildings: form.buildings,
+        unitCoverage: form.unitCoverage,
       };
       next = [...packages, newPkg];
     }
@@ -419,6 +429,9 @@ export default function Packages() {
         {visiblePackages.length} package{visiblePackages.length === 1 ? '' : 's'} in {BLOCKS.find(b => b.id === activeBlock)?.label}
       </div>
 
+      <CoveragePanel block={activeBlock} packages={visiblePackages} onEdit={openEdit} />
+
+
       {visiblePackages.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground bg-card border rounded-lg">
           No packages yet in this block. Click "Create Package" to start.
@@ -445,6 +458,21 @@ export default function Packages() {
                   {p.items.length} item{p.items.length === 1 ? '' : 's'}
                 </div>
 
+                {p.buildings && p.buildings.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {p.buildings.map(b => {
+                      const units = Object.entries(p.unitCoverage ?? {})
+                        .filter(([k, v]) => k.startsWith(`${b}::`) && (v as number) > 0)
+                        .reduce((s, [, v]) => s + (v as number), 0);
+                      return (
+                        <Badge key={b} className="text-[10px] font-medium bg-accent/15 text-accent border-accent/30 hover:bg-accent/15">
+                          {b} · {units}u
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                )}
+
                 {p.roomTypes.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-1">
                     {p.roomTypes.map(rt => (
@@ -454,6 +482,7 @@ export default function Packages() {
                     ))}
                   </div>
                 )}
+
 
                 <div className="flex gap-1 mt-2 pt-2 border-t opacity-0 group-hover:opacity-100 transition-opacity">
                   <Button variant="outline" size="sm" className="flex-1 h-7 text-xs gap-1" onClick={() => openEdit(p)}>
@@ -709,7 +738,104 @@ export default function Packages() {
                 );
               })()}
             </div>
+
+            {/* Target Buildings & Coverage */}
+            <div className="space-y-2">
+              <Label>Target Buildings & Unit Coverage</Label>
+              <div className="border rounded-md p-3 space-y-3">
+                <div>
+                  <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1.5">
+                    Buildings in {BLOCKS.find(b => b.id === activeBlock)?.label}
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    {ALL_BUILDINGS[activeBlock].map(b => {
+                      const checked = form.buildings.includes(b);
+                      return (
+                        <label key={b} className="flex items-center gap-1.5 text-xs cursor-pointer">
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={() => {
+                              setForm(f => ({
+                                ...f,
+                                buildings: checked ? f.buildings.filter(x => x !== b) : [...f.buildings, b],
+                              }));
+                            }}
+                          />
+                          <span className="font-medium text-foreground">{b}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {form.buildings.length === 0 ? (
+                  <div className="text-xs text-muted-foreground italic">
+                    Select at least one building to assign this package.
+                  </div>
+                ) : (() => {
+                  const selectedCodes = Array.from(new Set(form.roomTypes.map(unitCodeFromToken)));
+                  if (selectedCodes.length === 0) {
+                    return (
+                      <div className="text-xs text-muted-foreground italic">
+                        Select Compatible Room Types above to choose how many units this package covers.
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="border rounded-md overflow-hidden">
+                      <table className="w-full text-xs">
+                        <thead className="bg-muted/40 text-muted-foreground">
+                          <tr>
+                            <th className="text-left px-2 py-1.5 font-medium">Building</th>
+                            <th className="text-left px-2 py-1.5 font-medium">Unit Type</th>
+                            <th className="text-right px-2 py-1.5 font-medium">Total Units</th>
+                            <th className="text-right px-2 py-1.5 font-medium">Covered by this Package</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {form.buildings.flatMap(b =>
+                            selectedCodes.map(code => {
+                              const total = totalUnitsInBuilding(activeBlock, b, code);
+                              if (total === 0) return null;
+                              const k = coverageKey(b, code);
+                              const val = form.unitCoverage[k] ?? total;
+                              const desc = getRoomTypesForBlock(activeBlock).find(r => r.code === code)?.description ?? '';
+                              return (
+                                <tr key={k} className="border-t">
+                                  <td className="px-2 py-1.5 font-medium text-foreground">{b}</td>
+                                  <td className="px-2 py-1.5">
+                                    <span className="font-medium text-foreground">{code}</span>
+                                    <span className="text-muted-foreground"> · {desc}</span>
+                                  </td>
+                                  <td className="px-2 py-1.5 text-right text-muted-foreground">{total}</td>
+                                  <td className="px-2 py-1.5 text-right">
+                                    <Input
+                                      type="number"
+                                      min={0}
+                                      max={total}
+                                      value={val}
+                                      onChange={e => {
+                                        const n = Math.max(0, Math.min(total, parseInt(e.target.value) || 0));
+                                        setForm(f => ({ ...f, unitCoverage: { ...f.unitCoverage, [k]: n } }));
+                                      }}
+                                      className="w-16 h-7 text-xs text-right inline-block"
+                                    />
+                                    <span className="text-muted-foreground ml-1">/ {total}</span>
+                                  </td>
+                                </tr>
+                              );
+                            }).filter(Boolean)
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
           </div>
+
+
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditorOpen(false)}>Cancel</Button>
@@ -1066,3 +1192,152 @@ export default function Packages() {
     </div>
   );
 }
+
+// ── Coverage Panel ────────────────────────────────────────────────────────
+function CoveragePanel({
+  block,
+  packages,
+  onEdit,
+}: {
+  block: Concept;
+  packages: Package[];
+  onEdit: (p: Package) => void;
+}) {
+  const [open, setOpen] = useState(true);
+  const summary = useMemo(() => getBuildingUnitTypes(block), [block]);
+
+  // Group by building
+  const byBuilding = useMemo(() => {
+    const m = new Map<string, typeof summary>();
+    summary.forEach(s => {
+      if (!m.has(s.building)) m.set(s.building, []);
+      m.get(s.building)!.push(s);
+    });
+    return [...m.entries()];
+  }, [summary]);
+
+  const coverageFor = (building: string, unitCode: string) => {
+    const k = coverageKey(building, unitCode);
+    let covered = 0;
+    const pkgs: Package[] = [];
+    packages.forEach(p => {
+      if (!p.buildings?.includes(building)) return;
+      const c = p.unitCoverage?.[k] ?? 0;
+      if (c > 0) { covered += c; pkgs.push(p); }
+    });
+    return { covered, pkgs };
+  };
+
+  const overall = useMemo(() => {
+    let total = 0, covered = 0;
+    summary.forEach(s => {
+      total += s.totalUnits;
+      covered += Math.min(s.totalUnits, coverageFor(s.building, s.unitCode).covered);
+    });
+    return { total, covered };
+  }, [summary, packages]);
+
+  return (
+    <div className="border rounded-lg bg-card">
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        className="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-muted/30 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <ChevronRight className={`w-4 h-4 transition-transform ${open ? 'rotate-90' : ''}`} />
+          <span className="text-sm font-semibold text-foreground">Coverage Report</span>
+          <span className="text-xs text-muted-foreground">
+            {overall.covered} / {overall.total} units assigned
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          {overall.covered >= overall.total ? (
+            <Badge className="bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/15 border-emerald-500/30">Complete</Badge>
+          ) : overall.covered === 0 ? (
+            <Badge variant="destructive">Not started</Badge>
+          ) : (
+            <Badge className="bg-amber-500/15 text-amber-700 hover:bg-amber-500/15 border-amber-500/30">
+              {overall.total - overall.covered} missing
+            </Badge>
+          )}
+        </div>
+      </button>
+
+      {open && (
+        <div className="border-t p-3 space-y-3">
+          {byBuilding.map(([building, rows]) => {
+            const bTotal = rows.reduce((s, r) => s + r.totalUnits, 0);
+            const bCovered = rows.reduce((s, r) => s + Math.min(r.totalUnits, coverageFor(r.building, r.unitCode).covered), 0);
+            return (
+              <div key={building} className="border rounded-md overflow-hidden">
+                <div className="flex items-center justify-between px-2 py-1.5 bg-muted/40">
+                  <span className="text-xs font-semibold text-foreground">Building {building}</span>
+                  <span className="text-[11px] text-muted-foreground">{bCovered} / {bTotal} units</span>
+                </div>
+                <table className="w-full text-xs">
+                  <thead className="text-muted-foreground">
+                    <tr className="border-t">
+                      <th className="text-left px-2 py-1 font-medium">Unit Type</th>
+                      <th className="text-right px-2 py-1 font-medium">Total</th>
+                      <th className="text-right px-2 py-1 font-medium">Covered</th>
+                      <th className="text-right px-2 py-1 font-medium">Missing</th>
+                      <th className="text-left px-2 py-1 font-medium">Status</th>
+                      <th className="text-left px-2 py-1 font-medium">Packages</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map(r => {
+                      const { covered, pkgs } = coverageFor(r.building, r.unitCode);
+                      const clamped = Math.min(covered, r.totalUnits);
+                      const missing = r.totalUnits - clamped;
+                      let statusEl: JSX.Element;
+                      if (missing === 0 && covered === r.totalUnits) {
+                        statusEl = <Badge className="bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/15 border-emerald-500/30 text-[10px]">Covered</Badge>;
+                      } else if (covered === 0) {
+                        statusEl = <Badge variant="destructive" className="text-[10px]">Missing</Badge>;
+                      } else if (covered > r.totalUnits) {
+                        statusEl = <Badge className="bg-amber-500/15 text-amber-700 hover:bg-amber-500/15 border-amber-500/30 text-[10px]">Over ({covered})</Badge>;
+                      } else {
+                        statusEl = <Badge className="bg-amber-500/15 text-amber-700 hover:bg-amber-500/15 border-amber-500/30 text-[10px]">Partial</Badge>;
+                      }
+                      return (
+                        <tr key={`${r.building}-${r.unitCode}`} className="border-t">
+                          <td className="px-2 py-1.5">
+                            <span className="font-medium text-foreground">{r.unitCode}</span>
+                            <span className="text-muted-foreground"> · {r.description}</span>
+                          </td>
+                          <td className="px-2 py-1.5 text-right text-muted-foreground">{r.totalUnits}</td>
+                          <td className="px-2 py-1.5 text-right text-foreground">{clamped}</td>
+                          <td className={`px-2 py-1.5 text-right ${missing > 0 ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>{missing}</td>
+                          <td className="px-2 py-1.5">{statusEl}</td>
+                          <td className="px-2 py-1.5">
+                            <div className="flex flex-wrap gap-1">
+                              {pkgs.length === 0 ? (
+                                <span className="text-muted-foreground italic">—</span>
+                              ) : pkgs.map(p => (
+                                <button
+                                  key={p.id}
+                                  onClick={() => onEdit(p)}
+                                  className="text-[10px] px-1.5 py-0.5 rounded bg-secondary hover:bg-secondary/80 text-secondary-foreground"
+                                  title="Edit package"
+                                >
+                                  {p.name}
+                                </button>
+                              ))}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+

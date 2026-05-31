@@ -260,32 +260,38 @@ export type Database = {
       packages: {
         Row: {
           block: string
+          buildings: Json
           created_at: string
           description: string
           id: string
           items: Json
           name: string
           room_types: Json
+          unit_coverage: Json
           updated_at: string
         }
         Insert: {
           block: string
+          buildings?: Json
           created_at?: string
           description?: string
           id: string
           items?: Json
           name?: string
           room_types?: Json
+          unit_coverage?: Json
           updated_at?: string
         }
         Update: {
           block?: string
+          buildings?: Json
           created_at?: string
           description?: string
           id?: string
           items?: Json
           name?: string
           room_types?: Json
+          unit_coverage?: Json
           updated_at?: string
         }
         Relationships: []

@@ -7,7 +7,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { enqueue } from '@/lib/cloudWriteQueue';
-import { Concept } from './masterData';
+import { Concept, ALL_BUILDINGS, isUnitCodeInBuilding } from './masterData';
 import {
   buildingAUnits,
   buildingBUnits,
@@ -20,14 +20,25 @@ export interface PackageLineItem {
   quantity: number;
 }
 
+/** Key format: `${building}::${unitCode}` -> number of physical units covered */
+export type UnitCoverageMap = Record<string, number>;
+
 export interface Package {
   id: string;
   name: string;
   description: string;
   block: Concept;
   items: PackageLineItem[];
-  roomTypes: string[]; // unit codes within the block
+  roomTypes: string[]; // unit codes / "floor:code" tokens within the block
+  /** Specific buildings within the block this package targets (e.g. ['A1','A2']). */
+  buildings: string[];
+  /** How many physical instances of (building, unitCode) this package covers. Key = "B1::A". */
+  unitCoverage: UnitCoverageMap;
   createdAt?: string;
+}
+
+export function coverageKey(building: string, unitCode: string): string {
+  return `${building}::${unitCode}`;
 }
 
 const CACHE_KEY = 'cyprus-valley-packages';
@@ -53,6 +64,8 @@ function fromDb(r: any): Package {
     block: (r.block ?? 'A') as Concept,
     items: Array.isArray(r.items) ? r.items : [],
     roomTypes: Array.isArray(r.room_types) ? r.room_types : [],
+    buildings: Array.isArray(r.buildings) ? r.buildings : [],
+    unitCoverage: (r.unit_coverage && typeof r.unit_coverage === 'object') ? r.unit_coverage : {},
     createdAt: r.created_at,
   };
 }
@@ -65,6 +78,8 @@ function toDb(p: Package) {
     block: p.block,
     items: p.items,
     room_types: p.roomTypes,
+    buildings: p.buildings ?? [],
+    unit_coverage: p.unitCoverage ?? {},
   };
 }
 
@@ -186,4 +201,47 @@ export function getRoomTypesByFloorForBlock(block: Concept): BlockRoomTypeByFloo
 export function floorLabel(floor: number): string {
   if (floor === 0) return 'Floor 1 (Ground)';
   return `Floor ${floor + 1}`;
+}
+
+/** Extract bare unit code from a roomTypes token ("floor:code" or just "code"). */
+export function unitCodeFromToken(token: string): string {
+  const i = token.indexOf(':');
+  return i >= 0 ? token.slice(i + 1) : token;
+}
+
+/** Total physical instances of a given unitCode inside a specific building. */
+export function totalUnitsInBuilding(block: Concept, building: string, unitCode: string): number {
+  if (!isUnitCodeInBuilding(block, unitCode, building)) return 0;
+  const unit = getUnitsForBlock(block).find(u => u.code === unitCode);
+  if (!unit) return 0;
+  let total = 0;
+  unit.floors.forEach(f => { total += unit.unitsPerFloor[f] || 0; });
+  return total;
+}
+
+export interface BuildingUnitTypeSummary {
+  building: string;
+  unitCode: string;
+  description: string;
+  totalUnits: number;
+}
+
+/** All residential (non-zone) unit-types per building inside a block. */
+export function getBuildingUnitTypes(block: Concept): BuildingUnitTypeSummary[] {
+  const out: BuildingUnitTypeSummary[] = [];
+  const seen = new Set<string>();
+  ALL_BUILDINGS[block].forEach(building => {
+    getUnitsForBlock(block).forEach(u => {
+      if (u.isZone) return;
+      if (!isUnitCodeInBuilding(block, u.code, building)) return;
+      const key = `${building}::${u.code}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      const totalUnits = totalUnitsInBuilding(block, building, u.code);
+      if (totalUnits > 0) {
+        out.push({ building, unitCode: u.code, description: u.description, totalUnits });
+      }
+    });
+  });
+  return out;
 }
