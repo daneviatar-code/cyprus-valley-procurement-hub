@@ -621,6 +621,13 @@ export default function Packages() {
               )}
             </div>
 
+            {/* Size Assignments — building + room size + desired qty */}
+            <SizeAssignmentsEditor
+              block={activeBlock}
+              unitCoverage={form.unitCoverage}
+              onChange={uc => setForm(f => ({ ...f, unitCoverage: uc }))}
+            />
+
             {/* Room Types */}
             <div className="space-y-2">
               <Label>Compatible Room Types ({BLOCKS.find(b => b.id === activeBlock)?.label})</Label>
