@@ -1466,52 +1466,102 @@ function CoveragePanel({
             </div>
           </div>
 
-          {/* === Short pivot: room counts per building by apartment type === */}
+          {/* === Per-building room counts + cost === */}
           <div>
             <div className="text-xs font-semibold mb-2 uppercase tracking-wide text-muted-foreground">
-              Room Counts by Apartment Type
+              Cost by Building & Apartment Type
             </div>
             {(() => {
               const sizeSet = new Set<string>();
               byBuildingSize.forEach(({ sizes }) => sizes.forEach(s => sizeSet.add(s.size)));
               const allSizes = [...sizeSet].sort((a, b) => a.localeCompare(b));
+              const buildingRows = byBuildingSize.map(({ building, sizes }) => {
+                const counts: Record<string, number> = {};
+                sizes.forEach(({ size, items }) => {
+                  counts[size] = items.reduce((s, r) => s + r.totalUnits, 0);
+                });
+                const totalUnits = Object.values(counts).reduce((s, n) => s + n, 0);
+                const costs: Record<string, number> = {};
+                let totalCost = 0;
+                allSizes.forEach(sz => {
+                  const c = (counts[sz] ?? 0) * (unitCostBySize.get(sz) ?? 0);
+                  costs[sz] = c;
+                  totalCost += c;
+                });
+                return { building, counts, totalUnits, costs, totalCost };
+              });
+              const sizeTotalsUnits: Record<string, number> = {};
+              const sizeTotalsCost: Record<string, number> = {};
+              allSizes.forEach(sz => {
+                sizeTotalsUnits[sz] = buildingRows.reduce((s, r) => s + (r.counts[sz] ?? 0), 0);
+                sizeTotalsCost[sz] = buildingRows.reduce((s, r) => s + (r.costs[sz] ?? 0), 0);
+              });
+              const grandUnits = buildingRows.reduce((s, r) => s + r.totalUnits, 0);
+              const grandCost = buildingRows.reduce((s, r) => s + r.totalCost, 0);
               return (
                 <div className="overflow-x-auto border rounded-md">
                   <table className="w-full text-xs">
                     <thead className="bg-muted/40 text-muted-foreground">
                       <tr>
-                        <th className="text-left px-2 py-1.5 font-medium">Building</th>
+                        <th rowSpan={2} className="text-left px-2 py-1.5 font-medium border-r align-bottom">Building</th>
                         {allSizes.map(s => (
-                          <th key={s} className="text-right px-2 py-1.5 font-medium">{s}</th>
+                          <th key={s} colSpan={2} className="text-center px-2 py-1.5 font-medium border-r">{s}</th>
                         ))}
-                        <th className="text-right px-2 py-1.5 font-medium">Total</th>
+                        <th colSpan={2} className="text-center px-2 py-1.5 font-medium">Total</th>
+                      </tr>
+                      <tr>
+                        {allSizes.map(s => (
+                          <Fragment key={s}>
+                            <th className="text-right px-2 py-1 font-normal">Units</th>
+                            <th className="text-right px-2 py-1 font-normal border-r">€</th>
+                          </Fragment>
+                        ))}
+                        <th className="text-right px-2 py-1 font-normal">Units</th>
+                        <th className="text-right px-2 py-1 font-normal">€</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {byBuildingSize.map(({ building, sizes }) => {
-                        const counts: Record<string, number> = {};
-                        sizes.forEach(({ size, items }) => {
-                          counts[size] = items.reduce((s, r) => s + r.totalUnits, 0);
-                        });
-                        const total = Object.values(counts).reduce((s, n) => s + n, 0);
-                        return (
-                          <tr key={building} className="border-t">
-                            <td className="px-2 py-1.5 font-medium text-foreground">Building {building}</td>
-                            {allSizes.map(s => (
-                              <td key={s} className="px-2 py-1.5 text-right text-foreground">
-                                {counts[s] ?? <span className="text-muted-foreground/50">—</span>}
+                      {buildingRows.map(row => (
+                        <tr key={row.building} className="border-t">
+                          <td className="px-2 py-1.5 font-medium text-foreground border-r">Building {row.building}</td>
+                          {allSizes.map(s => (
+                            <Fragment key={s}>
+                              <td className="px-2 py-1.5 text-right text-foreground">
+                                {row.counts[s] ?? <span className="text-muted-foreground/50">—</span>}
                               </td>
-                            ))}
-                            <td className="px-2 py-1.5 text-right font-semibold text-foreground">{total}</td>
-                          </tr>
-                        );
-                      })}
+                              <td className="px-2 py-1.5 text-right text-muted-foreground border-r">
+                                {row.costs[s] > 0 ? fmtEur(row.costs[s]) : '—'}
+                              </td>
+                            </Fragment>
+                          ))}
+                          <td className="px-2 py-1.5 text-right font-semibold text-foreground">{row.totalUnits}</td>
+                          <td className="px-2 py-1.5 text-right font-semibold text-foreground">
+                            {row.totalCost > 0 ? fmtEur(row.totalCost) : '—'}
+                          </td>
+                        </tr>
+                      ))}
+                      <tr className="border-t bg-muted/30">
+                        <td className="px-2 py-1.5 font-bold text-foreground border-r">Hotel Total</td>
+                        {allSizes.map(s => (
+                          <Fragment key={s}>
+                            <td className="px-2 py-1.5 text-right font-bold text-foreground">{sizeTotalsUnits[s]}</td>
+                            <td className="px-2 py-1.5 text-right font-bold text-foreground border-r">
+                              {sizeTotalsCost[s] > 0 ? fmtEur(sizeTotalsCost[s]) : '—'}
+                            </td>
+                          </Fragment>
+                        ))}
+                        <td className="px-2 py-1.5 text-right font-bold text-foreground">{grandUnits}</td>
+                        <td className="px-2 py-1.5 text-right font-bold text-foreground">
+                          {grandCost > 0 ? fmtEur(grandCost) : '—'}
+                        </td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>
               );
             })()}
           </div>
+
         </div>
       )}
 
