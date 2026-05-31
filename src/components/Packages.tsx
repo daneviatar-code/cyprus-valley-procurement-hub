@@ -1527,6 +1527,7 @@ function SizeAssignmentsEditor({
                 <th className="text-right px-2 py-1.5 font-medium">Total in Block</th>
                 <th className="text-right px-2 py-1.5 font-medium">Other Pkgs</th>
                 <th className="text-right px-2 py-1.5 font-medium">This Pkg</th>
+                <th className="text-right px-2 py-1.5 font-medium">Selected / Required</th>
                 <th className="text-right px-2 py-1.5 font-medium">Remaining</th>
               </tr>
             </thead>
@@ -1535,9 +1536,11 @@ function SizeAssignmentsEditor({
                 const total = totalUnitsForSizeInBlock(block, size);
                 const others = usedByOthers(size);
                 const mine = currentBySize[size] ?? 0;
+                const selectedAll = others + mine;
                 const maxThis = Math.max(0, total - others);
                 const remaining = total - others - mine;
                 const over = mine > maxThis;
+                const done = selectedAll >= total && total > 0;
                 return (
                   <tr key={size} className="border-t">
                     <td className="px-2 py-1.5 font-medium text-foreground">{size}</td>
@@ -1555,6 +1558,16 @@ function SizeAssignmentsEditor({
                         }}
                         className={`w-20 h-7 text-xs text-right inline-block ${over ? 'border-destructive text-destructive' : ''}`}
                       />
+                    </td>
+                    <td className="px-2 py-1.5 text-right">
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold ${
+                        selectedAll > total ? 'bg-destructive/15 text-destructive' :
+                        done ? 'bg-emerald-500/15 text-emerald-700' :
+                        selectedAll === 0 ? 'bg-muted text-muted-foreground' :
+                        'bg-amber-500/15 text-amber-700'
+                      }`}>
+                        {selectedAll} / {total}
+                      </span>
                     </td>
                     <td className={`px-2 py-1.5 text-right font-semibold ${remaining < 0 ? 'text-destructive' : remaining === 0 ? 'text-emerald-600' : 'text-foreground'}`}>
                       {remaining}
