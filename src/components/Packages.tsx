@@ -38,6 +38,7 @@ import {
   getRoomTypesByFloorForBlock, floorLabel,
   UnitCoverageMap, coverageKey, getBuildingUnitTypes, unitCodeFromToken,
   totalUnitsInBuilding, sizeKey, isSizeKey, getSizesForBlock, getSizesInBuilding,
+  getSizeAssignments,
 } from '@/data/packagesData';
 import { ChevronRight } from 'lucide-react';
 import {
@@ -463,6 +464,25 @@ export default function Packages() {
                 <div className="text-xs text-muted-foreground">
                   {p.items.length} item{p.items.length === 1 ? '' : 's'}
                 </div>
+
+                {(() => {
+                  const sizeMap: Record<string, number> = {};
+                  getSizeAssignments(p).forEach(a => {
+                    sizeMap[a.size] = (sizeMap[a.size] ?? 0) + a.quantity;
+                  });
+                  const sizes = getSizesForBlock(activeBlock);
+                  const assigned = sizes.filter(s => (sizeMap[s] ?? 0) > 0);
+                  if (assigned.length === 0) return null;
+                  return (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {assigned.map(s => (
+                        <Badge key={s} className="text-[10px] font-medium bg-primary/15 text-primary border-primary/30 hover:bg-primary/15">
+                          {s} · {sizeMap[s]}u
+                        </Badge>
+                      ))}
+                    </div>
+                  );
+                })()}
 
                 {p.buildings && p.buildings.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-1">
