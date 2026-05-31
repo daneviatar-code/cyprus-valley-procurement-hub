@@ -1314,34 +1314,49 @@ function CoveragePanel({
     return { covered, pkgs };
   };
 
-  // Per-size coverage across the block — sums all packages' size assignments.
+  // Per-size coverage across the block — sums all packages' size assignments + cost.
   const sizeCoverage = useMemo(() => {
     const sizes = getSizesForBlock(block);
     return sizes.map(size => {
       let total = 0;
       ALL_BUILDINGS[block].forEach(b => { total += getSizesInBuilding(block, b)[size] ?? 0; });
       let selected = 0;
+      let totalCost = 0;
       packages.forEach(p => {
+        const cost = pkgCost(p);
         Object.entries(p.unitCoverage ?? {}).forEach(([k, v]) => {
           if (!isSizeKey(k) || typeof v !== 'number') return;
           const rest = k.slice('__size__::'.length);
           const i = rest.indexOf('::');
           if (i < 0) return;
-          if (rest.slice(i + 2) === size) selected += v;
+          if (rest.slice(i + 2) === size) {
+            selected += v;
+            totalCost += cost * v;
+          }
         });
       });
-      return { size, total, selected, remaining: total - selected };
+      const unitCost = selected > 0 ? totalCost / selected : 0;
+      return { size, total, selected, remaining: total - selected, totalCost, unitCost };
     });
-  }, [block, packages]);
+  }, [block, packages, pkgCost]);
 
   const overall = useMemo(() => {
-    let total = 0, covered = 0;
+    let total = 0, covered = 0, totalCost = 0;
     sizeCoverage.forEach(s => {
       total += s.total;
       covered += Math.min(s.total, s.selected);
+      totalCost += s.totalCost;
     });
-    return { total, covered };
+    return { total, covered, totalCost };
   }, [sizeCoverage]);
+
+  /** Map size → avg cost per unit, used to derive per-building costs from master room counts. */
+  const unitCostBySize = useMemo(() => {
+    const m = new Map<string, number>();
+    sizeCoverage.forEach(s => m.set(s.size, s.unitCost));
+    return m;
+  }, [sizeCoverage]);
+
 
   return (
     <div className="border rounded-lg bg-card">
