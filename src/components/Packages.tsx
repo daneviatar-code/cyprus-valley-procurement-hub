@@ -36,13 +36,15 @@ import {
   Package, PackageLineItem, loadPackages, savePackages, subscribePackages,
   generatePackageId, getRoomTypesForBlock, BlockRoomType,
   getRoomTypesByFloorForBlock, floorLabel,
+  UnitCoverageMap, coverageKey, getBuildingUnitTypes, unitCodeFromToken,
+  totalUnitsInBuilding,
 } from '@/data/packagesData';
 import { ChevronRight } from 'lucide-react';
 import {
   CatalogProduct, loadCatalog, saveCatalog, subscribeCatalog, uploadCatalogImage,
   generateProductId, DISCIPLINES,
 } from '@/data/catalogData';
-import { Concept } from '@/data/masterData';
+import { Concept, ALL_BUILDINGS } from '@/data/masterData';
 import { toast } from '@/hooks/use-toast';
 import { Upload } from 'lucide-react';
 
@@ -57,6 +59,8 @@ interface FormState {
   description: string;
   items: PackageLineItem[];
   roomTypes: string[];
+  buildings: string[];
+  unitCoverage: UnitCoverageMap;
 }
 
 const emptyForm = (): FormState => ({
@@ -64,6 +68,8 @@ const emptyForm = (): FormState => ({
   description: '',
   items: [],
   roomTypes: [],
+  buildings: [],
+  unitCoverage: {},
 });
 
 function priceOf(p: CatalogProduct | undefined): number {
