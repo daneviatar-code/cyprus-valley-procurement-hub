@@ -1238,14 +1238,28 @@ function CoveragePanel({
   allPackages,
   onUpdatePackages,
   onEdit,
+  catalogById,
 }: {
   block: Concept;
   packages: Package[];
   allPackages: Package[];
   onUpdatePackages: (data: Package[]) => void;
   onEdit: (p: Package) => void;
+  catalogById: Map<string, CatalogProduct>;
 }) {
   const [open, setOpen] = useState(true);
+
+  const fmtEur = (n: number) =>
+    `€${n.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  /** Cost of a single package = Σ items × catalog price */
+  const pkgCost = useCallback((p: Package): number => {
+    return p.items.reduce(
+      (s, it) => s + (catalogById.get(it.productId)?.unitPriceEur ?? 0) * it.quantity,
+      0
+    );
+  }, [catalogById]);
+
   const summary = useMemo(() => getBuildingUnitTypes(block), [block]);
 
   // Group by building
