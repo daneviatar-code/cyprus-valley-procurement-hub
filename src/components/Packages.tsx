@@ -205,6 +205,8 @@ export default function Packages() {
       description: p.description,
       items: p.items.map(it => ({ ...it })),
       roomTypes: [...p.roomTypes],
+      buildings: [...(p.buildings ?? [])],
+      unitCoverage: { ...(p.unitCoverage ?? {}) },
     });
     setRtSearch('');
     setExpandedFloors(new Set());
@@ -219,7 +221,7 @@ export default function Packages() {
     let next: Package[];
     if (editId) {
       next = packages.map(p => p.id === editId
-        ? { ...p, name: form.name.trim(), description: form.description, items: form.items, roomTypes: form.roomTypes }
+        ? { ...p, name: form.name.trim(), description: form.description, items: form.items, roomTypes: form.roomTypes, buildings: form.buildings, unitCoverage: form.unitCoverage }
         : p);
     } else {
       const newPkg: Package = {
@@ -229,6 +231,8 @@ export default function Packages() {
         block: activeBlock,
         items: form.items,
         roomTypes: form.roomTypes,
+        buildings: form.buildings,
+        unitCoverage: form.unitCoverage,
       };
       next = [...packages, newPkg];
     }
