@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,6 +45,9 @@ import { Selection, SelectionMap, loadSelections, saveSelections } from '@/data/
 import { buildingAUnits, buildingBUnits, buildingCUnits, UnitType } from '@/data/unitFurnitureData';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { loadSuppliers, subscribeSuppliers, Supplier } from '@/data/supplierData';
+
+
 
 function getUnitsForConcept(concept: Concept): UnitType[] {
   switch (concept) {
@@ -77,6 +80,11 @@ export default function Selections() {
 
   // Force re-render after saves
   const [version, setVersion] = useState(0);
+
+  // Suppliers from the suppliers module
+  const [suppliers, setSuppliers] = useState<Supplier[]>(loadSuppliers);
+  useEffect(() => subscribeSuppliers(setSuppliers), []);
+
 
   // Build all room type cards FOR THE ACTIVE BLOCK ONLY.
   // Selections in localStorage are already keyed by concept+unitCode, so each block is independent.
@@ -562,11 +570,18 @@ export default function Selections() {
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Supplier</label>
                 <Input
+                  list="selections-suppliers-list"
                   value={selForm.supplier}
                   onChange={e => setSelForm(p => ({ ...p, supplier: e.target.value }))}
-                  placeholder="e.g. Muuto"
+                  placeholder="Select or type supplier"
                 />
+                <datalist id="selections-suppliers-list">
+                  {suppliers.map(s => (
+                    <option key={s.id} value={s.name} />
+                  ))}
+                </datalist>
               </div>
+
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Unit Price €</label>
                 <Input
