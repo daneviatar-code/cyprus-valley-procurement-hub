@@ -1712,8 +1712,12 @@ function SizeAssignmentsEditor({
                         <Input
                           type="number"
                           min={0}
+                          max={avail}
                           value={r.quantity}
-                          onChange={e => setCell(r.building, r.size, Math.max(0, parseInt(e.target.value) || 0))}
+                          onChange={e => {
+                            const n = Math.max(0, Math.min(avail, parseInt(e.target.value) || 0));
+                            setCell(r.building, r.size, n);
+                          }}
                           className={`w-16 h-7 text-xs text-right inline-block ${over ? 'border-destructive text-destructive' : ''}`}
                         />
                       </td>
@@ -1754,13 +1758,21 @@ function SizeAssignmentsEditor({
           </div>
           <div>
             <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Desired Qty</div>
-            <Input
-              type="number"
-              min={1}
-              value={newQty}
-              onChange={e => setNewQty(Math.max(1, parseInt(e.target.value) || 1))}
-              className="w-20 h-8 text-xs"
-            />
+            {(() => {
+              const avail = getSizesInBuilding(block, newBuilding)[newSize] ?? 0;
+              const existing = unitCoverage[sizeKey(newBuilding, newSize)] ?? 0;
+              const maxAdd = Math.max(0, avail - existing);
+              return (
+                <Input
+                  type="number"
+                  min={1}
+                  max={maxAdd}
+                  value={newQty}
+                  onChange={e => setNewQty(Math.max(1, Math.min(maxAdd || 1, parseInt(e.target.value) || 1)))}
+                  className="w-20 h-8 text-xs"
+                />
+              );
+            })()}
           </div>
           <Button
             type="button"
@@ -1769,8 +1781,15 @@ function SizeAssignmentsEditor({
             className="h-8 gap-1"
             onClick={() => {
               if (!newBuilding || !newSize) return;
+              const avail = getSizesInBuilding(block, newBuilding)[newSize] ?? 0;
               const existing = unitCoverage[sizeKey(newBuilding, newSize)] ?? 0;
-              setCell(newBuilding, newSize, existing + newQty);
+              const maxAdd = Math.max(0, avail - existing);
+              if (maxAdd <= 0) {
+                toast({ title: 'No remaining units available for this building & size.', variant: 'destructive' });
+                return;
+              }
+              const addQty = Math.min(maxAdd, newQty);
+              setCell(newBuilding, newSize, existing + addQty);
               setNewQty(1);
             }}
           >
