@@ -626,6 +626,8 @@ export default function Packages() {
               block={activeBlock}
               unitCoverage={form.unitCoverage}
               onChange={uc => setForm(f => ({ ...f, unitCoverage: uc }))}
+              allPackages={packages}
+              editingId={editId}
             />
 
             {/* Room Types */}
@@ -1371,13 +1373,30 @@ function SizeAssignmentsEditor({
   block,
   unitCoverage,
   onChange,
+  allPackages,
+  editingId,
 }: {
   block: Concept;
   unitCoverage: UnitCoverageMap;
   onChange: (next: UnitCoverageMap) => void;
+  allPackages: Package[];
+  editingId: string | null;
 }) {
   const buildings = ALL_BUILDINGS[block];
   const sizes = getSizesForBlock(block);
+
+  /** Quantity assigned to (building,size) by OTHER packages in this same block. */
+  const usedByOthers = useCallback((building: string, size: string) => {
+    const k = sizeKey(building, size);
+    let sum = 0;
+    allPackages.forEach(p => {
+      if (p.block !== block) return;
+      if (p.id === editingId) return;
+      const v = p.unitCoverage?.[k];
+      if (typeof v === 'number' && v > 0) sum += v;
+    });
+    return sum;
+  }, [allPackages, block, editingId]);
 
   const rows = Object.entries(unitCoverage)
     .filter(([k, v]) => isSizeKey(k) && typeof v === 'number' && v > 0)
@@ -1403,7 +1422,8 @@ function SizeAssignmentsEditor({
       <Label>Building &amp; Room Size Assignments</Label>
       <div className="border rounded-md p-3 space-y-3">
         <p className="text-[11px] text-muted-foreground">
-          Pick a building and room size, then enter how many units of this package go there.
+          Pick a building and apartment type, then enter how many units of this package go there.
+          <span className="block">"Remaining" shows what's left of that apartment type after all packages.</span>
         </p>
 
         {rows.length > 0 && (
@@ -1412,33 +1432,42 @@ function SizeAssignmentsEditor({
               <thead className="bg-muted/40 text-muted-foreground">
                 <tr>
                   <th className="text-left px-2 py-1.5 font-medium">Building</th>
-                  <th className="text-left px-2 py-1.5 font-medium">Room Size</th>
-                  <th className="text-right px-2 py-1.5 font-medium">Available</th>
-                  <th className="text-right px-2 py-1.5 font-medium">Desired Qty</th>
+                  <th className="text-left px-2 py-1.5 font-medium">Apt. Type</th>
+                  <th className="text-right px-2 py-1.5 font-medium">Total</th>
+                  <th className="text-right px-2 py-1.5 font-medium">Other Pkgs</th>
+                  <th className="text-right px-2 py-1.5 font-medium">This Pkg</th>
+                  <th className="text-right px-2 py-1.5 font-medium">Remaining</th>
                   <th className="w-8"></th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map(r => {
-                  const avail = getSizesInBuilding(block, r.building)[r.size] ?? 0;
-                  const over = r.quantity > avail;
+                  const total = getSizesInBuilding(block, r.building)[r.size] ?? 0;
+                  const others = usedByOthers(r.building, r.size);
+                  const maxThis = Math.max(0, total - others);
+                  const remaining = total - others - r.quantity;
+                  const over = r.quantity > maxThis;
                   return (
                     <tr key={r.key} className="border-t">
                       <td className="px-2 py-1.5 font-medium text-foreground">{r.building}</td>
                       <td className="px-2 py-1.5 text-foreground">{r.size}</td>
-                      <td className="px-2 py-1.5 text-right text-muted-foreground">{avail}</td>
+                      <td className="px-2 py-1.5 text-right text-muted-foreground">{total}</td>
+                      <td className="px-2 py-1.5 text-right text-muted-foreground">{others}</td>
                       <td className="px-2 py-1.5 text-right">
                         <Input
                           type="number"
                           min={0}
-                          max={avail}
+                          max={maxThis}
                           value={r.quantity}
                           onChange={e => {
-                            const n = Math.max(0, Math.min(avail, parseInt(e.target.value) || 0));
+                            const n = Math.max(0, Math.min(maxThis, parseInt(e.target.value) || 0));
                             setCell(r.building, r.size, n);
                           }}
                           className={`w-16 h-7 text-xs text-right inline-block ${over ? 'border-destructive text-destructive' : ''}`}
                         />
+                      </td>
+                      <td className={`px-2 py-1.5 text-right font-semibold ${remaining < 0 ? 'text-destructive' : remaining === 0 ? 'text-emerald-600' : 'text-foreground'}`}>
+                        {remaining}
                       </td>
                       <td className="px-1">
                         <Button type="button" variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
@@ -1454,69 +1483,84 @@ function SizeAssignmentsEditor({
           </div>
         )}
 
-        <div className="flex items-end gap-2 flex-wrap">
-          <div>
-            <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Building</div>
-            <select
-              value={newBuilding}
-              onChange={e => setNewBuilding(e.target.value)}
-              className="h-8 rounded-md border border-input bg-background px-2 text-xs"
-            >
-              {buildings.map(b => <option key={b} value={b}>{b}</option>)}
-            </select>
-          </div>
-          <div>
-            <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Room Size</div>
-            <select
-              value={newSize}
-              onChange={e => setNewSize(e.target.value)}
-              className="h-8 rounded-md border border-input bg-background px-2 text-xs"
-            >
-              {sizes.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-          </div>
-          <div>
-            <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Desired Qty</div>
-            {(() => {
-              const avail = getSizesInBuilding(block, newBuilding)[newSize] ?? 0;
-              const existing = unitCoverage[sizeKey(newBuilding, newSize)] ?? 0;
-              const maxAdd = Math.max(0, avail - existing);
-              return (
-                <Input
-                  type="number"
-                  min={1}
-                  max={maxAdd}
-                  value={newQty}
-                  onChange={e => setNewQty(Math.max(1, Math.min(maxAdd || 1, parseInt(e.target.value) || 1)))}
-                  className="w-20 h-8 text-xs"
-                />
-              );
-            })()}
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-8 gap-1"
-            onClick={() => {
-              if (!newBuilding || !newSize) return;
-              const avail = getSizesInBuilding(block, newBuilding)[newSize] ?? 0;
-              const existing = unitCoverage[sizeKey(newBuilding, newSize)] ?? 0;
-              const maxAdd = Math.max(0, avail - existing);
-              if (maxAdd <= 0) {
-                toast({ title: 'No remaining units available for this building & size.', variant: 'destructive' });
-                return;
-              }
-              const addQty = Math.min(maxAdd, newQty);
-              setCell(newBuilding, newSize, existing + addQty);
-              setNewQty(1);
-            }}
-          >
-            <Plus className="w-3.5 h-3.5" /> Add
-          </Button>
-        </div>
+        {(() => {
+          const total = getSizesInBuilding(block, newBuilding)[newSize] ?? 0;
+          const others = usedByOthers(newBuilding, newSize);
+          const existing = unitCoverage[sizeKey(newBuilding, newSize)] ?? 0;
+          const maxAdd = Math.max(0, total - others - existing);
+          const previewRemaining = total - others - existing - Math.min(maxAdd, Math.max(0, newQty));
+          return (
+            <div className="space-y-2">
+              <div className="flex items-end gap-2 flex-wrap">
+                <div>
+                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Building</div>
+                  <select
+                    value={newBuilding}
+                    onChange={e => setNewBuilding(e.target.value)}
+                    className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+                  >
+                    {buildings.map(b => <option key={b} value={b}>{b}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Apt. Type</div>
+                  <select
+                    value={newSize}
+                    onChange={e => setNewSize(e.target.value)}
+                    className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+                  >
+                    {sizes.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Qty</div>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={Math.max(1, maxAdd)}
+                    value={newQty}
+                    onChange={e => setNewQty(Math.max(1, Math.min(Math.max(1, maxAdd), parseInt(e.target.value) || 1)))}
+                    className="w-20 h-8 text-xs"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1"
+                  disabled={maxAdd <= 0}
+                  onClick={() => {
+                    if (!newBuilding || !newSize) return;
+                    if (maxAdd <= 0) {
+                      toast({ title: 'No remaining units available for this building & apartment type.', variant: 'destructive' });
+                      return;
+                    }
+                    const addQty = Math.min(maxAdd, newQty);
+                    setCell(newBuilding, newSize, existing + addQty);
+                    setNewQty(1);
+                  }}
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add
+                </Button>
+              </div>
+              <div className="text-[11px] text-muted-foreground flex flex-wrap gap-x-4 gap-y-0.5">
+                <span>Total <strong className="text-foreground">{total}</strong></span>
+                <span>Used by other packages <strong className="text-foreground">{others}</strong></span>
+                <span>Already in this package <strong className="text-foreground">{existing}</strong></span>
+                <span>
+                  After adding:{' '}
+                  <strong className={previewRemaining < 0 ? 'text-destructive' : previewRemaining === 0 ? 'text-emerald-600' : 'text-foreground'}>
+                    {previewRemaining}
+                  </strong>{' '}
+                  left
+                </span>
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );
 }
+
 
