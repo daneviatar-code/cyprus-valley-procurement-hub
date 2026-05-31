@@ -37,7 +37,7 @@ import {
   generatePackageId, getRoomTypesForBlock, BlockRoomType,
   getRoomTypesByFloorForBlock, floorLabel,
   UnitCoverageMap, coverageKey, getBuildingUnitTypes, unitCodeFromToken,
-  totalUnitsInBuilding,
+  totalUnitsInBuilding, sizeKey, isSizeKey, getSizesForBlock, getSizesInBuilding,
 } from '@/data/packagesData';
 import { ChevronRight } from 'lucide-react';
 import {
@@ -620,6 +620,13 @@ export default function Packages() {
                 </div>
               )}
             </div>
+
+            {/* Size Assignments — building + room size + desired qty */}
+            <SizeAssignmentsEditor
+              block={activeBlock}
+              unitCoverage={form.unitCoverage}
+              onChange={uc => setForm(f => ({ ...f, unitCoverage: uc }))}
+            />
 
             {/* Room Types */}
             <div className="space-y-2">
@@ -1306,6 +1313,84 @@ function CoveragePanel({
 
       {open && (
         <div className="border-t p-3 space-y-5">
+          {/* === Desired by Packages vs Available (per Building × Size) === */}
+          <div>
+            <div className="text-xs font-semibold mb-2 uppercase tracking-wide text-muted-foreground">
+              Package Demand vs Available (by Building &amp; Room Size)
+            </div>
+            <p className="text-[11px] text-muted-foreground mb-2">
+              Sum of all packages' "Building &amp; Room Size Assignments" compared with the actual unit counts.
+            </p>
+            <div className="overflow-x-auto border rounded-md">
+              <table className="w-full text-xs">
+                <thead className="bg-muted/40 text-muted-foreground">
+                  <tr>
+                    <th className="text-left px-2 py-1.5 font-medium">Building</th>
+                    <th className="text-left px-2 py-1.5 font-medium">Room Size</th>
+                    <th className="text-right px-2 py-1.5 font-medium">Available</th>
+                    <th className="text-right px-2 py-1.5 font-medium">Assigned by Packages</th>
+                    <th className="text-right px-2 py-1.5 font-medium">Missing</th>
+                    <th className="text-left px-2 py-1.5 font-medium">Status</th>
+                    <th className="text-left px-2 py-1.5 font-medium">Packages</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {byBuildingSize.flatMap(({ building, sizes }) =>
+                    sizes.map(({ size, items }, idx) => {
+                      const available = items.reduce((s, r) => s + r.totalUnits, 0);
+                      const k = sizeKey(building, size);
+                      const contribs: { pkg: Package; qty: number }[] = [];
+                      packages.forEach(p => {
+                        const q = p.unitCoverage?.[k] ?? 0;
+                        if (q > 0) contribs.push({ pkg: p, qty: q });
+                      });
+                      const assigned = contribs.reduce((s, c) => s + c.qty, 0);
+                      const missing = available - assigned;
+                      let badge: JSX.Element;
+                      if (assigned === 0) {
+                        badge = <Badge variant="destructive" className="text-[10px]">Missing</Badge>;
+                      } else if (assigned > available) {
+                        badge = <Badge className="bg-amber-500/15 text-amber-700 hover:bg-amber-500/15 border-amber-500/30 text-[10px]">Over</Badge>;
+                      } else if (assigned === available) {
+                        badge = <Badge className="bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/15 border-emerald-500/30 text-[10px]">Covered</Badge>;
+                      } else {
+                        badge = <Badge className="bg-amber-500/15 text-amber-700 hover:bg-amber-500/15 border-amber-500/30 text-[10px]">Partial</Badge>;
+                      }
+                      return (
+                        <tr key={`${building}-${size}`} className="border-t">
+                          <td className="px-2 py-1.5 font-medium text-foreground">{idx === 0 ? `Building ${building}` : ''}</td>
+                          <td className="px-2 py-1.5 text-foreground">{size}</td>
+                          <td className="px-2 py-1.5 text-right text-muted-foreground">{available}</td>
+                          <td className="px-2 py-1.5 text-right text-foreground">{assigned}</td>
+                          <td className={`px-2 py-1.5 text-right ${missing > 0 ? 'text-destructive font-medium' : missing < 0 ? 'text-amber-700 font-medium' : 'text-muted-foreground'}`}>
+                            {missing}
+                          </td>
+                          <td className="px-2 py-1.5">{badge}</td>
+                          <td className="px-2 py-1.5">
+                            <div className="flex flex-wrap gap-1">
+                              {contribs.length === 0 ? (
+                                <span className="text-muted-foreground italic">—</span>
+                              ) : contribs.map(c => (
+                                <button
+                                  key={c.pkg.id}
+                                  onClick={() => onEdit(c.pkg)}
+                                  className="text-[10px] px-1.5 py-0.5 rounded bg-secondary hover:bg-secondary/80 text-secondary-foreground"
+                                  title={`Edit ${c.pkg.name}`}
+                                >
+                                  {c.pkg.name} ×{c.qty}
+                                </button>
+                              ))}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
           {/* === High-level summary: Building × Room-size category === */}
           <div>
             <div className="text-xs font-semibold text-foreground mb-2 uppercase tracking-wide text-muted-foreground">
@@ -1558,6 +1643,141 @@ function CoveragePanel({
         </div>
       )}
 
+    </div>
+  );
+}
+
+// ── Size Assignments editor (inside Package dialog) ──────────────────────
+function SizeAssignmentsEditor({
+  block,
+  unitCoverage,
+  onChange,
+}: {
+  block: Concept;
+  unitCoverage: UnitCoverageMap;
+  onChange: (next: UnitCoverageMap) => void;
+}) {
+  const buildings = ALL_BUILDINGS[block];
+  const sizes = getSizesForBlock(block);
+
+  const rows = Object.entries(unitCoverage)
+    .filter(([k, v]) => isSizeKey(k) && typeof v === 'number' && v > 0)
+    .map(([k, v]) => {
+      const rest = k.slice('__size__::'.length);
+      const i = rest.indexOf('::');
+      return { key: k, building: rest.slice(0, i), size: rest.slice(i + 2), quantity: v as number };
+    });
+
+  const setCell = (building: string, size: string, qty: number) => {
+    const k = sizeKey(building, size);
+    const next = { ...unitCoverage };
+    if (qty <= 0) delete next[k]; else next[k] = qty;
+    onChange(next);
+  };
+
+  const [newBuilding, setNewBuilding] = useState(buildings[0]);
+  const [newSize, setNewSize] = useState(sizes[0] ?? '');
+  const [newQty, setNewQty] = useState(1);
+
+  return (
+    <div className="space-y-2">
+      <Label>Building &amp; Room Size Assignments</Label>
+      <div className="border rounded-md p-3 space-y-3">
+        <p className="text-[11px] text-muted-foreground">
+          Pick a building and room size, then enter how many units of this package go there.
+        </p>
+
+        {rows.length > 0 && (
+          <div className="border rounded-md overflow-hidden">
+            <table className="w-full text-xs">
+              <thead className="bg-muted/40 text-muted-foreground">
+                <tr>
+                  <th className="text-left px-2 py-1.5 font-medium">Building</th>
+                  <th className="text-left px-2 py-1.5 font-medium">Room Size</th>
+                  <th className="text-right px-2 py-1.5 font-medium">Available</th>
+                  <th className="text-right px-2 py-1.5 font-medium">Desired Qty</th>
+                  <th className="w-8"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map(r => {
+                  const avail = getSizesInBuilding(block, r.building)[r.size] ?? 0;
+                  const over = r.quantity > avail;
+                  return (
+                    <tr key={r.key} className="border-t">
+                      <td className="px-2 py-1.5 font-medium text-foreground">{r.building}</td>
+                      <td className="px-2 py-1.5 text-foreground">{r.size}</td>
+                      <td className="px-2 py-1.5 text-right text-muted-foreground">{avail}</td>
+                      <td className="px-2 py-1.5 text-right">
+                        <Input
+                          type="number"
+                          min={0}
+                          value={r.quantity}
+                          onChange={e => setCell(r.building, r.size, Math.max(0, parseInt(e.target.value) || 0))}
+                          className={`w-16 h-7 text-xs text-right inline-block ${over ? 'border-destructive text-destructive' : ''}`}
+                        />
+                      </td>
+                      <td className="px-1">
+                        <Button type="button" variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                          onClick={() => setCell(r.building, r.size, 0)}>
+                          <X className="w-3.5 h-3.5" />
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <div className="flex items-end gap-2 flex-wrap">
+          <div>
+            <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Building</div>
+            <select
+              value={newBuilding}
+              onChange={e => setNewBuilding(e.target.value)}
+              className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+            >
+              {buildings.map(b => <option key={b} value={b}>{b}</option>)}
+            </select>
+          </div>
+          <div>
+            <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Room Size</div>
+            <select
+              value={newSize}
+              onChange={e => setNewSize(e.target.value)}
+              className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+            >
+              {sizes.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+          <div>
+            <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Desired Qty</div>
+            <Input
+              type="number"
+              min={1}
+              value={newQty}
+              onChange={e => setNewQty(Math.max(1, parseInt(e.target.value) || 1))}
+              className="w-20 h-8 text-xs"
+            />
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1"
+            onClick={() => {
+              if (!newBuilding || !newSize) return;
+              const existing = unitCoverage[sizeKey(newBuilding, newSize)] ?? 0;
+              setCell(newBuilding, newSize, existing + newQty);
+              setNewQty(1);
+            }}
+          >
+            <Plus className="w-3.5 h-3.5" /> Add
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

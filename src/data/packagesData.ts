@@ -41,6 +41,39 @@ export function coverageKey(building: string, unitCode: string): string {
   return `${building}::${unitCode}`;
 }
 
+/** Size assignment uses a reserved key prefix inside the same unitCoverage map. */
+const SIZE_PREFIX = '__size__::';
+export function sizeKey(building: string, size: string): string {
+  return `${SIZE_PREFIX}${building}::${size}`;
+}
+export function isSizeKey(k: string): boolean {
+  return k.startsWith(SIZE_PREFIX);
+}
+export function parseSizeKey(k: string): { building: string; size: string } | null {
+  if (!isSizeKey(k)) return null;
+  const rest = k.slice(SIZE_PREFIX.length);
+  const i = rest.indexOf('::');
+  if (i < 0) return null;
+  return { building: rest.slice(0, i), size: rest.slice(i + 2) };
+}
+
+export interface SizeAssignment {
+  building: string;
+  size: string;
+  quantity: number;
+}
+
+export function getSizeAssignments(p: Package): SizeAssignment[] {
+  const out: SizeAssignment[] = [];
+  Object.entries(p.unitCoverage ?? {}).forEach(([k, v]) => {
+    const parsed = parseSizeKey(k);
+    if (parsed && typeof v === 'number' && v > 0) {
+      out.push({ building: parsed.building, size: parsed.size, quantity: v });
+    }
+  });
+  return out;
+}
+
 const CACHE_KEY = 'cyprus-valley-packages';
 const HYDRATED_FLAG = 'cyprus-valley-packages-hydrated';
 
@@ -244,4 +277,27 @@ export function getBuildingUnitTypes(block: Concept): BuildingUnitTypeSummary[] 
     });
   });
   return out;
+}
+
+/** Returns { size: totalUnits } for a given building. */
+export function getSizesInBuilding(block: Concept, building: string): Record<string, number> {
+  const out: Record<string, number> = {};
+  getBuildingUnitTypes(block)
+    .filter(s => s.building === building)
+    .forEach(s => { out[s.description] = (out[s.description] ?? 0) + s.totalUnits; });
+  return out;
+}
+
+/** Ordered list of all size categories present in a block. */
+export function getSizesForBlock(block: Concept): string[] {
+  const set = new Set<string>();
+  getBuildingUnitTypes(block).forEach(s => set.add(s.description));
+  const order = ['Studio', '1BD', '2BD', '3BD', '4BD'];
+  return [...set].sort((a, b) => {
+    const ai = order.indexOf(a), bi = order.indexOf(b);
+    if (ai < 0 && bi < 0) return a.localeCompare(b);
+    if (ai < 0) return 1;
+    if (bi < 0) return -1;
+    return ai - bi;
+  });
 }
