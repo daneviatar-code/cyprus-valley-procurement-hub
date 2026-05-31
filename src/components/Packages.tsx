@@ -1423,34 +1423,89 @@ function CoveragePanel({
                   {sizeCoverage.map(s => {
                     const over = s.selected > s.total;
                     const done = s.selected >= s.total && s.total > 0;
+                    const isOpen = openSize === s.size;
                     return (
-                      <tr key={s.size} className="border-t">
-                        <td className="px-2 py-1.5 font-medium text-foreground">{s.size}</td>
-                        <td className="px-2 py-1.5 text-right text-foreground">{s.total}</td>
-                        <td className={`px-2 py-1.5 text-right font-semibold ${over ? 'text-destructive' : 'text-foreground'}`}>{s.selected}</td>
-                        <td className={`px-2 py-1.5 text-right font-semibold ${s.remaining < 0 ? 'text-destructive' : s.remaining === 0 ? 'text-emerald-600' : 'text-amber-600'}`}>
-                          {s.remaining}
-                        </td>
-                        <td className="px-2 py-1.5 text-right text-muted-foreground">
-                          {s.unitCost > 0 ? fmtEur(s.unitCost) : '—'}
-                        </td>
-                        <td className="px-2 py-1.5 text-right font-semibold text-foreground">
-                          {s.totalCost > 0 ? fmtEur(s.totalCost) : '—'}
-                        </td>
-                        <td className="px-2 py-1.5 text-right">
-                          {done ? (
-                            <Badge className="bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/15 border-emerald-500/30">Complete</Badge>
-                          ) : s.selected === 0 ? (
-                            <Badge variant="outline" className="text-muted-foreground">Not started</Badge>
-                          ) : over ? (
-                            <Badge variant="destructive">Over</Badge>
-                          ) : (
-                            <Badge className="bg-amber-500/15 text-amber-700 hover:bg-amber-500/15 border-amber-500/30">
-                              {s.remaining} missing
-                            </Badge>
-                          )}
-                        </td>
-                      </tr>
+                      <Fragment key={s.size}>
+                        <tr
+                          className="border-t cursor-pointer hover:bg-muted/30"
+                          onClick={() => setOpenSize(isOpen ? null : s.size)}
+                        >
+                          <td className="px-2 py-1.5 font-medium text-foreground">
+                            <span className="inline-flex items-center gap-1">
+                              <ChevronRight className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
+                              {s.size}
+                            </span>
+                          </td>
+                          <td className="px-2 py-1.5 text-right text-foreground">{s.total}</td>
+                          <td className={`px-2 py-1.5 text-right font-semibold ${over ? 'text-destructive' : 'text-foreground'}`}>{s.selected}</td>
+                          <td className={`px-2 py-1.5 text-right font-semibold ${s.remaining < 0 ? 'text-destructive' : s.remaining === 0 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                            {s.remaining}
+                          </td>
+                          <td className="px-2 py-1.5 text-right text-muted-foreground">
+                            {s.unitCost > 0 ? fmtEur(s.unitCost) : '—'}
+                          </td>
+                          <td className="px-2 py-1.5 text-right font-semibold text-foreground">
+                            {s.totalCost > 0 ? fmtEur(s.totalCost) : '—'}
+                          </td>
+                          <td className="px-2 py-1.5 text-right">
+                            {done ? (
+                              <Badge className="bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/15 border-emerald-500/30">Complete</Badge>
+                            ) : s.selected === 0 ? (
+                              <Badge variant="outline" className="text-muted-foreground">Not started</Badge>
+                            ) : over ? (
+                              <Badge variant="destructive">Over</Badge>
+                            ) : (
+                              <Badge className="bg-amber-500/15 text-amber-700 hover:bg-amber-500/15 border-amber-500/30">
+                                {s.remaining} missing
+                              </Badge>
+                            )}
+                          </td>
+                        </tr>
+                        {isOpen && (
+                          <tr className="bg-muted/20 border-t">
+                            <td colSpan={7} className="px-2 py-2">
+                              {s.contributions.length === 0 ? (
+                                <div className="text-xs text-muted-foreground px-2 py-1">No packages assigned yet.</div>
+                              ) : (
+                                <table className="w-full text-xs">
+                                  <thead className="text-muted-foreground">
+                                    <tr>
+                                      <th className="text-left px-2 py-1 font-medium">Package</th>
+                                      <th className="text-right px-2 py-1 font-medium">Units</th>
+                                      <th className="text-right px-2 py-1 font-medium">€ / Package</th>
+                                      <th className="text-right px-2 py-1 font-medium">Subtotal</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {s.contributions.map(c => (
+                                      <tr key={c.pkg.id} className="border-t">
+                                        <td className="px-2 py-1 text-foreground">
+                                          <button
+                                            type="button"
+                                            className="hover:underline text-left"
+                                            onClick={(e) => { e.stopPropagation(); onEdit(c.pkg); }}
+                                          >
+                                            {c.pkg.name || 'Untitled'}
+                                          </button>
+                                        </td>
+                                        <td className="px-2 py-1 text-right text-foreground">{c.units}</td>
+                                        <td className="px-2 py-1 text-right text-muted-foreground">{fmtEur(c.pkgCost)}</td>
+                                        <td className="px-2 py-1 text-right font-semibold text-foreground">{fmtEur(c.subtotal)}</td>
+                                      </tr>
+                                    ))}
+                                    <tr className="border-t bg-muted/30">
+                                      <td className="px-2 py-1 font-bold text-foreground">Total</td>
+                                      <td className="px-2 py-1 text-right font-bold text-foreground">{s.selected}</td>
+                                      <td className="px-2 py-1" />
+                                      <td className="px-2 py-1 text-right font-bold text-foreground">{fmtEur(s.totalCost)}</td>
+                                    </tr>
+                                  </tbody>
+                                </table>
+                              )}
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
                     );
                   })}
                   <tr className="border-t bg-muted/30">
