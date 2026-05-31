@@ -7,7 +7,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { enqueue } from '@/lib/cloudWriteQueue';
-import { Concept } from './masterData';
+import { Concept, ALL_BUILDINGS, isUnitCodeInBuilding, isZoneCode } from './masterData';
 import {
   buildingAUnits,
   buildingBUnits,
@@ -20,14 +20,25 @@ export interface PackageLineItem {
   quantity: number;
 }
 
+/** Key format: `${building}::${unitCode}` -> number of physical units covered */
+export type UnitCoverageMap = Record<string, number>;
+
 export interface Package {
   id: string;
   name: string;
   description: string;
   block: Concept;
   items: PackageLineItem[];
-  roomTypes: string[]; // unit codes within the block
+  roomTypes: string[]; // unit codes / "floor:code" tokens within the block
+  /** Specific buildings within the block this package targets (e.g. ['A1','A2']). */
+  buildings: string[];
+  /** How many physical instances of (building, unitCode) this package covers. Key = "B1::A". */
+  unitCoverage: UnitCoverageMap;
   createdAt?: string;
+}
+
+export function coverageKey(building: string, unitCode: string): string {
+  return `${building}::${unitCode}`;
 }
 
 const CACHE_KEY = 'cyprus-valley-packages';
@@ -53,6 +64,8 @@ function fromDb(r: any): Package {
     block: (r.block ?? 'A') as Concept,
     items: Array.isArray(r.items) ? r.items : [],
     roomTypes: Array.isArray(r.room_types) ? r.room_types : [],
+    buildings: Array.isArray(r.buildings) ? r.buildings : [],
+    unitCoverage: (r.unit_coverage && typeof r.unit_coverage === 'object') ? r.unit_coverage : {},
     createdAt: r.created_at,
   };
 }
@@ -65,6 +78,8 @@ function toDb(p: Package) {
     block: p.block,
     items: p.items,
     room_types: p.roomTypes,
+    buildings: p.buildings ?? [],
+    unit_coverage: p.unitCoverage ?? {},
   };
 }
 
