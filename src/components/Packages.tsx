@@ -1176,3 +1176,152 @@ export default function Packages() {
     </div>
   );
 }
+
+// ── Coverage Panel ────────────────────────────────────────────────────────
+function CoveragePanel({
+  block,
+  packages,
+  onEdit,
+}: {
+  block: Concept;
+  packages: Package[];
+  onEdit: (p: Package) => void;
+}) {
+  const [open, setOpen] = useState(true);
+  const summary = useMemo(() => getBuildingUnitTypes(block), [block]);
+
+  // Group by building
+  const byBuilding = useMemo(() => {
+    const m = new Map<string, typeof summary>();
+    summary.forEach(s => {
+      if (!m.has(s.building)) m.set(s.building, []);
+      m.get(s.building)!.push(s);
+    });
+    return [...m.entries()];
+  }, [summary]);
+
+  const coverageFor = (building: string, unitCode: string) => {
+    const k = coverageKey(building, unitCode);
+    let covered = 0;
+    const pkgs: Package[] = [];
+    packages.forEach(p => {
+      if (!p.buildings?.includes(building)) return;
+      const c = p.unitCoverage?.[k] ?? 0;
+      if (c > 0) { covered += c; pkgs.push(p); }
+    });
+    return { covered, pkgs };
+  };
+
+  const overall = useMemo(() => {
+    let total = 0, covered = 0;
+    summary.forEach(s => {
+      total += s.totalUnits;
+      covered += Math.min(s.totalUnits, coverageFor(s.building, s.unitCode).covered);
+    });
+    return { total, covered };
+  }, [summary, packages]);
+
+  return (
+    <div className="border rounded-lg bg-card">
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        className="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-muted/30 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <ChevronRight className={`w-4 h-4 transition-transform ${open ? 'rotate-90' : ''}`} />
+          <span className="text-sm font-semibold text-foreground">Coverage Report</span>
+          <span className="text-xs text-muted-foreground">
+            {overall.covered} / {overall.total} units assigned
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          {overall.covered >= overall.total ? (
+            <Badge className="bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/15 border-emerald-500/30">Complete</Badge>
+          ) : overall.covered === 0 ? (
+            <Badge variant="destructive">Not started</Badge>
+          ) : (
+            <Badge className="bg-amber-500/15 text-amber-700 hover:bg-amber-500/15 border-amber-500/30">
+              {overall.total - overall.covered} missing
+            </Badge>
+          )}
+        </div>
+      </button>
+
+      {open && (
+        <div className="border-t p-3 space-y-3">
+          {byBuilding.map(([building, rows]) => {
+            const bTotal = rows.reduce((s, r) => s + r.totalUnits, 0);
+            const bCovered = rows.reduce((s, r) => s + Math.min(r.totalUnits, coverageFor(r.building, r.unitCode).covered), 0);
+            return (
+              <div key={building} className="border rounded-md overflow-hidden">
+                <div className="flex items-center justify-between px-2 py-1.5 bg-muted/40">
+                  <span className="text-xs font-semibold text-foreground">Building {building}</span>
+                  <span className="text-[11px] text-muted-foreground">{bCovered} / {bTotal} units</span>
+                </div>
+                <table className="w-full text-xs">
+                  <thead className="text-muted-foreground">
+                    <tr className="border-t">
+                      <th className="text-left px-2 py-1 font-medium">Unit Type</th>
+                      <th className="text-right px-2 py-1 font-medium">Total</th>
+                      <th className="text-right px-2 py-1 font-medium">Covered</th>
+                      <th className="text-right px-2 py-1 font-medium">Missing</th>
+                      <th className="text-left px-2 py-1 font-medium">Status</th>
+                      <th className="text-left px-2 py-1 font-medium">Packages</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map(r => {
+                      const { covered, pkgs } = coverageFor(r.building, r.unitCode);
+                      const clamped = Math.min(covered, r.totalUnits);
+                      const missing = r.totalUnits - clamped;
+                      let statusEl: JSX.Element;
+                      if (missing === 0 && covered === r.totalUnits) {
+                        statusEl = <Badge className="bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/15 border-emerald-500/30 text-[10px]">Covered</Badge>;
+                      } else if (covered === 0) {
+                        statusEl = <Badge variant="destructive" className="text-[10px]">Missing</Badge>;
+                      } else if (covered > r.totalUnits) {
+                        statusEl = <Badge className="bg-amber-500/15 text-amber-700 hover:bg-amber-500/15 border-amber-500/30 text-[10px]">Over ({covered})</Badge>;
+                      } else {
+                        statusEl = <Badge className="bg-amber-500/15 text-amber-700 hover:bg-amber-500/15 border-amber-500/30 text-[10px]">Partial</Badge>;
+                      }
+                      return (
+                        <tr key={`${r.building}-${r.unitCode}`} className="border-t">
+                          <td className="px-2 py-1.5">
+                            <span className="font-medium text-foreground">{r.unitCode}</span>
+                            <span className="text-muted-foreground"> · {r.description}</span>
+                          </td>
+                          <td className="px-2 py-1.5 text-right text-muted-foreground">{r.totalUnits}</td>
+                          <td className="px-2 py-1.5 text-right text-foreground">{clamped}</td>
+                          <td className={`px-2 py-1.5 text-right ${missing > 0 ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>{missing}</td>
+                          <td className="px-2 py-1.5">{statusEl}</td>
+                          <td className="px-2 py-1.5">
+                            <div className="flex flex-wrap gap-1">
+                              {pkgs.length === 0 ? (
+                                <span className="text-muted-foreground italic">—</span>
+                              ) : pkgs.map(p => (
+                                <button
+                                  key={p.id}
+                                  onClick={() => onEdit(p)}
+                                  className="text-[10px] px-1.5 py-0.5 rounded bg-secondary hover:bg-secondary/80 text-secondary-foreground"
+                                  title="Edit package"
+                                >
+                                  {p.name}
+                                </button>
+                              ))}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
