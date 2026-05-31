@@ -1406,6 +1406,8 @@ function CoveragePanel({
                     <th className="text-right px-2 py-1.5 font-medium">Required</th>
                     <th className="text-right px-2 py-1.5 font-medium">Selected</th>
                     <th className="text-right px-2 py-1.5 font-medium">Remaining</th>
+                    <th className="text-right px-2 py-1.5 font-medium">€ / Unit</th>
+                    <th className="text-right px-2 py-1.5 font-medium">Total €</th>
                     <th className="text-right px-2 py-1.5 font-medium">Status</th>
                   </tr>
                 </thead>
@@ -1420,6 +1422,12 @@ function CoveragePanel({
                         <td className={`px-2 py-1.5 text-right font-semibold ${over ? 'text-destructive' : 'text-foreground'}`}>{s.selected}</td>
                         <td className={`px-2 py-1.5 text-right font-semibold ${s.remaining < 0 ? 'text-destructive' : s.remaining === 0 ? 'text-emerald-600' : 'text-amber-600'}`}>
                           {s.remaining}
+                        </td>
+                        <td className="px-2 py-1.5 text-right text-muted-foreground">
+                          {s.unitCost > 0 ? fmtEur(s.unitCost) : '—'}
+                        </td>
+                        <td className="px-2 py-1.5 text-right font-semibold text-foreground">
+                          {s.totalCost > 0 ? fmtEur(s.totalCost) : '—'}
                         </td>
                         <td className="px-2 py-1.5 text-right">
                           {done ? (
@@ -1437,7 +1445,23 @@ function CoveragePanel({
                       </tr>
                     );
                   })}
+                  <tr className="border-t bg-muted/30">
+                    <td className="px-2 py-1.5 font-bold text-foreground">Hotel Total</td>
+                    <td className="px-2 py-1.5 text-right font-bold text-foreground">
+                      {sizeCoverage.reduce((s, r) => s + r.total, 0)}
+                    </td>
+                    <td className="px-2 py-1.5 text-right font-bold text-foreground">
+                      {sizeCoverage.reduce((s, r) => s + r.selected, 0)}
+                    </td>
+                    <td className="px-2 py-1.5" />
+                    <td className="px-2 py-1.5" />
+                    <td className="px-2 py-1.5 text-right font-bold text-foreground">
+                      {fmtEur(overall.totalCost)}
+                    </td>
+                    <td className="px-2 py-1.5" />
+                  </tr>
                 </tbody>
+
               </table>
             </div>
           </div>
