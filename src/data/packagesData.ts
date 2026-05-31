@@ -202,3 +202,46 @@ export function floorLabel(floor: number): string {
   if (floor === 0) return 'Floor 1 (Ground)';
   return `Floor ${floor + 1}`;
 }
+
+/** Extract bare unit code from a roomTypes token ("floor:code" or just "code"). */
+export function unitCodeFromToken(token: string): string {
+  const i = token.indexOf(':');
+  return i >= 0 ? token.slice(i + 1) : token;
+}
+
+/** Total physical instances of a given unitCode inside a specific building. */
+export function totalUnitsInBuilding(block: Concept, building: string, unitCode: string): number {
+  if (!isUnitCodeInBuilding(block, unitCode, building)) return 0;
+  const unit = getUnitsForBlock(block).find(u => u.code === unitCode);
+  if (!unit) return 0;
+  let total = 0;
+  unit.floors.forEach(f => { total += unit.unitsPerFloor[f] || 0; });
+  return total;
+}
+
+export interface BuildingUnitTypeSummary {
+  building: string;
+  unitCode: string;
+  description: string;
+  totalUnits: number;
+}
+
+/** All residential (non-zone) unit-types per building inside a block. */
+export function getBuildingUnitTypes(block: Concept): BuildingUnitTypeSummary[] {
+  const out: BuildingUnitTypeSummary[] = [];
+  const seen = new Set<string>();
+  ALL_BUILDINGS[block].forEach(building => {
+    getUnitsForBlock(block).forEach(u => {
+      if (u.isZone) return;
+      if (!isUnitCodeInBuilding(block, u.code, building)) return;
+      const key = `${building}::${u.code}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      const totalUnits = totalUnitsInBuilding(block, building, u.code);
+      if (totalUnits > 0) {
+        out.push({ building, unitCode: u.code, description: u.description, totalUnits });
+      }
+    });
+  });
+  return out;
+}
