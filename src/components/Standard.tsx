@@ -636,6 +636,7 @@ export default function Standard() {
                     apartmentType={view}
                     unitCounts={unitCounts}
                     onUpdateQty={updateQty}
+                    onDeleteItem={deleteMasterItem}
                     onJumpToMaster={() => setView('standard')}
                   />
                 )}
