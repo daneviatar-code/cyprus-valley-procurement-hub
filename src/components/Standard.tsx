@@ -782,10 +782,10 @@ function MasterEditor({
   };
 
   return (
-    <div className="overflow-x-auto -mx-3">
+    <div className="overflow-auto -mx-3 max-h-[calc(100vh-260px)] border-y">
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <table className="w-full text-xs">
-          <thead className="bg-primary/5 border-y">
+          <thead className="bg-primary/5 sticky top-0 z-10 shadow-sm">
             <tr>
               <th className={`${th} w-10 text-center`} title="Drag to reorder"></th>
               <th className={th}>Item</th>
