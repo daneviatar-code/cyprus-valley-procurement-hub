@@ -82,7 +82,9 @@ export default function RfqExcelExportButton({
           perTypeQty[at] = qty;
           itemQty += qty;
         });
-        if (itemQty === 0) return;
+        // Note: we no longer skip items with itemQty === 0 — every item in the
+        // selected category should appear in the export, even if no quantities
+        // are configured yet for the selected blocks / apartment types.
         const lineCost = itemQty * (i.unitPriceEur || 0);
         totalQty += itemQty;
         totalCost += lineCost;
