@@ -1026,9 +1026,9 @@ function TypeEditor({
   );
 
   return (
-    <div className="overflow-x-auto -mx-3">
+    <div className="overflow-auto -mx-3 max-h-[calc(100vh-260px)] border-y">
       <table className="w-full text-xs">
-        <thead className="bg-muted/50 border-y">
+        <thead className="bg-muted sticky top-0 z-10 shadow-sm">
           <tr>
             <th className={th}>Item</th>
             <th className={th}>Spec</th>
