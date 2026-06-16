@@ -999,7 +999,7 @@ function labelShort(at: ApartmentType): string {
 
 // ───────────────────────────── Type Editor (real apartment) ─────────────────────────────
 function TypeEditor({
-  items, qtysByItem, suppliers, apartmentType, unitCounts, onUpdateQty, onJumpToMaster,
+  items, qtysByItem, suppliers, apartmentType, unitCounts, onUpdateQty, onDeleteItem, onJumpToMaster,
 }: {
   items: StandardItem[];
   qtysByItem: Map<string, Record<ApartmentType, ApartmentTypeQuantity | undefined>>;
@@ -1007,6 +1007,7 @@ function TypeEditor({
   apartmentType: ApartmentType;
   unitCounts: Record<RoomSize, number>;
   onUpdateQty: (id: string, patch: Partial<ApartmentTypeQuantity>) => void;
+  onDeleteItem: (id: string) => void;
   onJumpToMaster: () => void;
 }) {
   const inputCls = 'w-full h-7 px-2 text-xs border rounded bg-background focus:outline-none focus:ring-1 focus:ring-primary';
