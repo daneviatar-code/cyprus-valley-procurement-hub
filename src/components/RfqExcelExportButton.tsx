@@ -68,8 +68,7 @@ export default function RfqExcelExportButton({
         return ca.localeCompare(cb) || (a.itemName || '').localeCompare(b.itemName || '');
       })
       .forEach(i => {
-        const row = qtysByItem.get(i.id);
-        if (!row) return;
+        const row = qtysByItem.get(i.id) || ({} as Record<ApartmentType, ApartmentTypeQuantity | undefined>);
         let itemQty = 0;
         const perTypeQty: Record<ApartmentType, number> = {
           studio: 0, '1br': 0, '2br': 0, '3br': 0, '4br': 0,
