@@ -1263,9 +1263,9 @@ function HotelTotalsView({
         <div><div className="text-[10px] text-muted-foreground uppercase">Hotel-wide Cost</div><div className="text-sm font-semibold font-mono">{eur(grandCost)}</div></div>
       </div>
 
-      <div className="bg-card border rounded-lg overflow-x-auto">
+      <div className="bg-card border rounded-lg overflow-auto max-h-[calc(100vh-260px)]">
         <table className="w-full text-xs">
-          <thead className="bg-muted/50">
+          <thead className="bg-muted sticky top-0 z-10 shadow-sm">
             <tr>
               <th className="text-left px-3 py-2 w-8"></th>
               <th className="text-right px-3 py-2 font-medium" dir="rtl">קטגוריה / Category</th>
