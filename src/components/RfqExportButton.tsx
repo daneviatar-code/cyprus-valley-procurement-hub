@@ -95,8 +95,7 @@ export default function RfqExportButton({
     items.forEach(i => {
       if (i.archived) return;
       if (categoryId !== '__all__' && i.categoryId !== categoryId) return;
-      const row = qtysByItem.get(i.id);
-      if (!row) return;
+      const row = qtysByItem.get(i.id) || ({} as Record<ApartmentType, ApartmentTypeQuantity | undefined>);
       const perType: Partial<Record<ApartmentType, { perUnit: number; units: number; qty: number }>> = {};
       let totalQty = 0;
       types.forEach(at => {
@@ -109,7 +108,8 @@ export default function RfqExportButton({
           totalQty += qty;
         }
       });
-      if (totalQty === 0) return;
+      // Include every item in the selected category, even if totalQty is 0,
+      // so nothing visible in the UI is missing from the export.
       rows.push({
         item: i,
         categoryName: categories.find(c => c.id === i.categoryId)?.nameEn || '—',
