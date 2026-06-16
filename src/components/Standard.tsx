@@ -1049,6 +1049,7 @@ function TypeEditor({
             <th className={`${th} text-right`}>Del</th>
             <th className={`${th} text-right`}>Outstd</th>
             <th className={th}>Notes</th>
+            <th className={`${th} text-center w-8`}></th>
           </tr>
         </thead>
         <tbody>
