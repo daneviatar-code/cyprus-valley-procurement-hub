@@ -782,10 +782,10 @@ function MasterEditor({
   };
 
   return (
-    <div className="overflow-x-auto -mx-3">
+    <div className="overflow-auto -mx-3 max-h-[calc(100vh-260px)] border-y">
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <table className="w-full text-xs">
-          <thead className="bg-primary/5 border-y">
+          <thead className="bg-primary/5 sticky top-0 z-10 shadow-sm">
             <tr>
               <th className={`${th} w-10 text-center`} title="Drag to reorder"></th>
               <th className={th}>Item</th>
@@ -1026,9 +1026,9 @@ function TypeEditor({
   );
 
   return (
-    <div className="overflow-x-auto -mx-3">
+    <div className="overflow-auto -mx-3 max-h-[calc(100vh-260px)] border-y">
       <table className="w-full text-xs">
-        <thead className="bg-muted/50 border-y">
+        <thead className="bg-muted sticky top-0 z-10 shadow-sm">
           <tr>
             <th className={th}>Item</th>
             <th className={th}>Spec</th>
@@ -1173,9 +1173,9 @@ function ByCategoryView({
         </div>
       </div>
 
-      <div className="bg-card border rounded-lg overflow-x-auto">
+      <div className="bg-card border rounded-lg overflow-auto max-h-[calc(100vh-260px)]">
         <table className="w-full text-xs">
-          <thead className="bg-muted/50">
+          <thead className="bg-muted sticky top-0 z-10 shadow-sm">
             <tr>
               <th className="text-left px-3 py-2 font-medium">Item</th>
               <th className="text-left px-3 py-2 font-medium">Spec</th>
@@ -1263,9 +1263,9 @@ function HotelTotalsView({
         <div><div className="text-[10px] text-muted-foreground uppercase">Hotel-wide Cost</div><div className="text-sm font-semibold font-mono">{eur(grandCost)}</div></div>
       </div>
 
-      <div className="bg-card border rounded-lg overflow-x-auto">
+      <div className="bg-card border rounded-lg overflow-auto max-h-[calc(100vh-260px)]">
         <table className="w-full text-xs">
-          <thead className="bg-muted/50">
+          <thead className="bg-muted sticky top-0 z-10 shadow-sm">
             <tr>
               <th className="text-left px-3 py-2 w-8"></th>
               <th className="text-right px-3 py-2 font-medium" dir="rtl">קטגוריה / Category</th>
