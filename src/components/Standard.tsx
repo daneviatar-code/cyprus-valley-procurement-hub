@@ -636,6 +636,7 @@ export default function Standard() {
                     apartmentType={view}
                     unitCounts={unitCounts}
                     onUpdateQty={updateQty}
+                    onDeleteItem={deleteMasterItem}
                     onJumpToMaster={() => setView('standard')}
                   />
                 )}
@@ -998,7 +999,7 @@ function labelShort(at: ApartmentType): string {
 
 // ───────────────────────────── Type Editor (real apartment) ─────────────────────────────
 function TypeEditor({
-  items, qtysByItem, suppliers, apartmentType, unitCounts, onUpdateQty, onJumpToMaster,
+  items, qtysByItem, suppliers, apartmentType, unitCounts, onUpdateQty, onDeleteItem, onJumpToMaster,
 }: {
   items: StandardItem[];
   qtysByItem: Map<string, Record<ApartmentType, ApartmentTypeQuantity | undefined>>;
@@ -1006,6 +1007,7 @@ function TypeEditor({
   apartmentType: ApartmentType;
   unitCounts: Record<RoomSize, number>;
   onUpdateQty: (id: string, patch: Partial<ApartmentTypeQuantity>) => void;
+  onDeleteItem: (id: string) => void;
   onJumpToMaster: () => void;
 }) {
   const inputCls = 'w-full h-7 px-2 text-xs border rounded bg-background focus:outline-none focus:ring-1 focus:ring-primary';
@@ -1047,6 +1049,7 @@ function TypeEditor({
             <th className={`${th} text-right`}>Del</th>
             <th className={`${th} text-right`}>Outstd</th>
             <th className={th}>Notes</th>
+            <th className={`${th} text-center w-8`}></th>
           </tr>
         </thead>
         <tbody>
@@ -1111,6 +1114,13 @@ function TypeEditor({
                 <td className={td}>
                   <Input className={inputCls + ' min-w-[100px]'} value={q.notes}
                     onChange={e => onUpdateQty(q.id, { notes: e.target.value })} />
+                </td>
+                <td className={`${td} text-center`}>
+                  <button onClick={() => onDeleteItem(it.id)}
+                    className="p-1 text-muted-foreground hover:text-destructive"
+                    title="מחק פריט מכל הסוגים · Delete item from all apartment types">
+                    <Trash2 className="w-3 h-3" />
+                  </button>
                 </td>
               </tr>
             );
