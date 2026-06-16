@@ -68,8 +68,7 @@ export default function RfqExcelExportButton({
         return ca.localeCompare(cb) || (a.itemName || '').localeCompare(b.itemName || '');
       })
       .forEach(i => {
-        const row = qtysByItem.get(i.id);
-        if (!row) return;
+        const row = qtysByItem.get(i.id) || ({} as Record<ApartmentType, ApartmentTypeQuantity | undefined>);
         let itemQty = 0;
         const perTypeQty: Record<ApartmentType, number> = {
           studio: 0, '1br': 0, '2br': 0, '3br': 0, '4br': 0,
@@ -82,7 +81,9 @@ export default function RfqExcelExportButton({
           perTypeQty[at] = qty;
           itemQty += qty;
         });
-        if (itemQty === 0) return;
+        // Note: we no longer skip items with itemQty === 0 — every item in the
+        // selected category should appear in the export, even if no quantities
+        // are configured yet for the selected blocks / apartment types.
         const lineCost = itemQty * (i.unitPriceEur || 0);
         totalQty += itemQty;
         totalCost += lineCost;
