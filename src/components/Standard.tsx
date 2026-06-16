@@ -1115,6 +1115,13 @@ function TypeEditor({
                   <Input className={inputCls + ' min-w-[100px]'} value={q.notes}
                     onChange={e => onUpdateQty(q.id, { notes: e.target.value })} />
                 </td>
+                <td className={`${td} text-center`}>
+                  <button onClick={() => onDeleteItem(it.id)}
+                    className="p-1 text-muted-foreground hover:text-destructive"
+                    title="מחק פריט מכל הסוגים · Delete item from all apartment types">
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </td>
               </tr>
             );
           })}
