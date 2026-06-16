@@ -1173,9 +1173,9 @@ function ByCategoryView({
         </div>
       </div>
 
-      <div className="bg-card border rounded-lg overflow-x-auto">
+      <div className="bg-card border rounded-lg overflow-auto max-h-[calc(100vh-260px)]">
         <table className="w-full text-xs">
-          <thead className="bg-muted/50">
+          <thead className="bg-muted sticky top-0 z-10 shadow-sm">
             <tr>
               <th className="text-left px-3 py-2 font-medium">Item</th>
               <th className="text-left px-3 py-2 font-medium">Spec</th>
