@@ -537,7 +537,7 @@ export default function Packages() {
               <div key={p.id} className={`border rounded-lg overflow-hidden flex flex-col gap-2 group ${isMockup ? 'bg-yellow-100 border-yellow-400 ring-2 ring-yellow-300' : 'bg-card'}`}>
                 {p.imageUrl ? (
                   <div className="w-full aspect-[16/9] bg-muted overflow-hidden border-b">
-                    <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" />
+                    <img src={p.imageUrl} alt={p.name} className="w-full h-full object-contain" />
                   </div>
                 ) : (
                   <div className="w-full aspect-[16/9] bg-muted/40 border-b flex items-center justify-center text-muted-foreground">
@@ -667,7 +667,7 @@ export default function Packages() {
               <Label>Cover Image <span className="text-xs text-muted-foreground font-normal">(or paste with Ctrl/Cmd+V)</span></Label>
               {form.imageUrl ? (
                 <div className="relative w-full aspect-[16/9] bg-muted rounded-md overflow-hidden border mt-1">
-                  <img src={form.imageUrl} alt="Package cover" className="w-full h-full object-cover" />
+                  <img src={form.imageUrl} alt="Package cover" className="w-full h-full object-contain" />
                   <div className="absolute top-2 right-2 flex gap-1">
                     <label className="cursor-pointer">
                       <input
@@ -1229,7 +1229,7 @@ export default function Packages() {
                     </div>
                     <div className="aspect-[4/3] bg-muted flex items-center justify-center overflow-hidden">
                       {p.imageUrl ? (
-                        <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
+                        <img src={p.imageUrl} alt={p.name} className="w-full h-full object-contain" loading="lazy" />
                       ) : (
                         <ImageIcon className="w-6 h-6 text-muted-foreground/40" />
                       )}
