@@ -534,7 +534,17 @@ export default function Packages() {
             const extraCount = p.items.filter(it => !!it.isExtra).length;
             const isMockup = /mock-?up/i.test(p.name) || /mock-?up/i.test(p.description);
             return (
-              <div key={p.id} className={`border rounded-lg p-4 flex flex-col gap-2 group ${isMockup ? 'bg-yellow-100 border-yellow-400 ring-2 ring-yellow-300' : 'bg-card'}`}>
+              <div key={p.id} className={`border rounded-lg overflow-hidden flex flex-col gap-2 group ${isMockup ? 'bg-yellow-100 border-yellow-400 ring-2 ring-yellow-300' : 'bg-card'}`}>
+                {p.imageUrl ? (
+                  <div className="w-full aspect-[16/9] bg-muted overflow-hidden border-b">
+                    <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" />
+                  </div>
+                ) : (
+                  <div className="w-full aspect-[16/9] bg-muted/40 border-b flex items-center justify-center text-muted-foreground">
+                    <ImageIcon className="w-8 h-8 opacity-40" />
+                  </div>
+                )}
+                <div className="p-4 pt-2 flex flex-col gap-2 flex-1">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <h3 className="text-sm font-semibold text-foreground truncate">{p.name}</h3>
