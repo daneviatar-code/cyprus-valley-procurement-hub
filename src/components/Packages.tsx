@@ -62,6 +62,7 @@ interface FormState {
   roomTypes: string[];
   buildings: string[];
   unitCoverage: UnitCoverageMap;
+  imageUrl: string;
 }
 
 const emptyForm = (): FormState => ({
@@ -71,6 +72,7 @@ const emptyForm = (): FormState => ({
   roomTypes: [],
   buildings: [],
   unitCoverage: {},
+  imageUrl: '',
 });
 
 function priceOf(p: CatalogProduct | undefined): number {
@@ -209,6 +211,7 @@ export default function Packages() {
       roomTypes: [...p.roomTypes],
       buildings: [...(p.buildings ?? [])],
       unitCoverage: { ...(p.unitCoverage ?? {}) },
+      imageUrl: p.imageUrl ?? '',
     });
     setRtSearch('');
     setExpandedFloors(new Set());
@@ -223,7 +226,7 @@ export default function Packages() {
     let next: Package[];
     if (editId) {
       next = packages.map(p => p.id === editId
-        ? { ...p, name: form.name.trim(), description: form.description, items: form.items, roomTypes: form.roomTypes, buildings: form.buildings, unitCoverage: form.unitCoverage }
+        ? { ...p, name: form.name.trim(), description: form.description, items: form.items, roomTypes: form.roomTypes, buildings: form.buildings, unitCoverage: form.unitCoverage, imageUrl: form.imageUrl }
         : p);
     } else {
       const newPkg: Package = {
@@ -235,12 +238,28 @@ export default function Packages() {
         roomTypes: form.roomTypes,
         buildings: form.buildings,
         unitCoverage: form.unitCoverage,
+        imageUrl: form.imageUrl,
       };
       next = [...packages, newPkg];
     }
     persist(next);
     setEditorOpen(false);
     toast({ title: editId ? 'Package updated' : 'Package created' });
+  };
+
+  const [uploadingPackageImg, setUploadingPackageImg] = useState(false);
+
+  const handlePackageImageUpload = async (file: File) => {
+    setUploadingPackageImg(true);
+    try {
+      const url = await uploadCatalogImage(file);
+      setForm(f => ({ ...f, imageUrl: url }));
+      toast({ title: 'Image uploaded' });
+    } catch (e: any) {
+      toast({ title: 'Upload failed', description: e?.message, variant: 'destructive' });
+    } finally {
+      setUploadingPackageImg(false);
+    }
   };
 
   const handleDelete = () => {
