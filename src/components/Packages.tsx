@@ -1055,7 +1055,7 @@ export default function Packages() {
                       setPickerDragId(null);
                       setPickerDragOverId(null);
                     }}
-                    onClick={() => addProductToForm(p.id)}
+                    onClick={() => addProductToForm(p.id, pickerMode === 'extra')}
                     className={`group relative bg-card border rounded-md overflow-hidden flex flex-col cursor-pointer hover:border-accent hover:shadow-sm transition-all ${
                       pickerDragOverId === p.id ? 'ring-2 ring-accent border-accent' : ''
                     } ${pickerDragId === p.id ? 'opacity-50' : ''}`}
