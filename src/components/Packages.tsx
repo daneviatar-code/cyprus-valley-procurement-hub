@@ -1351,7 +1351,7 @@ function CoveragePanel({
 
   /** Cost of a single package = Σ items × catalog price */
   const pkgCost = useCallback((p: Package): number => {
-    return p.items.reduce(
+    return p.items.filter(it => !it.isExtra).reduce(
       (s, it) => s + (catalogById.get(it.productId)?.unitPriceEur ?? 0) * it.quantity,
       0
     );
