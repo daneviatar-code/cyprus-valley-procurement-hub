@@ -354,6 +354,26 @@ function UnitPackageEditor({
                       />
                     </td>
                     <td className="px-1 py-1.5">
+                      <div className="flex items-center justify-center gap-0.5">
+                        <button
+                          onClick={() => moveItem(item.id, -1)}
+                          disabled={idx === 0}
+                          className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                          title="Move up"
+                        >
+                          <ArrowUp className="h-3 w-3" />
+                        </button>
+                        <button
+                          onClick={() => moveItem(item.id, 1)}
+                          disabled={idx === enrichedItems.length - 1}
+                          className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                          title="Move down"
+                        >
+                          <ArrowDown className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </td>
+                    <td className="px-1 py-1.5">
                       <button
                         onClick={() => deleteItem(item.id)}
                         className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
