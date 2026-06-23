@@ -635,7 +635,7 @@ export default function Packages() {
 
       {/* Editor dialog */}
       <Dialog open={editorOpen} onOpenChange={setEditorOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-6xl max-h-[90vh] overflow-y-auto overflow-x-hidden">
           <DialogHeader>
             <DialogTitle>{editId ? 'Edit Package' : 'Create Package'}</DialogTitle>
             <DialogDescription>
@@ -644,7 +644,7 @@ export default function Packages() {
           </DialogHeader>
 
           <div
-            className="space-y-4 py-2"
+            className="space-y-4 py-2 min-w-0"
             onPaste={(e) => {
               const target = e.target as HTMLElement;
               if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return;
@@ -771,7 +771,7 @@ export default function Packages() {
                       setDragOverIdx(null);
                     }}
                     onDragEnd={() => { setDragIdx(null); setDragOverIdx(null); }}
-                    className={`flex items-center gap-3 p-2 transition-colors ${dragIdx === absoluteIdx ? 'opacity-40' : ''} ${dragOverIdx === absoluteIdx && dragIdx !== absoluteIdx ? 'bg-accent/40 border-t-2 border-primary' : ''}`}
+                    className={`flex flex-wrap sm:flex-nowrap items-center gap-3 p-2 min-w-0 transition-colors ${dragIdx === absoluteIdx ? 'opacity-40' : ''} ${dragOverIdx === absoluteIdx && dragIdx !== absoluteIdx ? 'bg-accent/40 border-t-2 border-primary' : ''}`}
                   >
                     <div
                       className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground flex-shrink-0"
@@ -1053,7 +1053,7 @@ export default function Packages() {
                   }
                   return (
                     <div className="border rounded-md overflow-hidden">
-                      <table className="w-full text-xs">
+                      <table className="w-full table-fixed text-xs">
                         <thead className="bg-muted/40 text-muted-foreground">
                           <tr>
                             <th className="text-left px-2 py-1.5 font-medium">Building</th>
@@ -1947,7 +1947,7 @@ function SizeAssignmentsEditor({
         </p>
 
         <div className="border rounded-md overflow-hidden">
-          <table className="w-full text-xs">
+          <table className="w-full table-fixed text-xs">
             <thead className="bg-muted/40 text-muted-foreground">
               <tr>
                 <th className="text-left px-2 py-1.5 font-medium">Apt. Type</th>
