@@ -284,18 +284,30 @@ export default function Packages() {
     });
   };
 
-  const removeItem = (productId: string) => {
-    setForm({ ...form, items: form.items.filter(it => it.productId !== productId) });
+  const removeItemAt = (absoluteIdx: number) => {
+    setForm({ ...form, items: form.items.filter((_, i) => i !== absoluteIdx) });
   };
 
-  const moveItemInForm = (productId: string, direction: -1 | 1) => {
-    const idx = form.items.findIndex(it => it.productId === productId);
-    if (idx < 0) return;
-    const newIdx = idx + direction;
-    if (newIdx < 0 || newIdx >= form.items.length) return;
+  const moveItemInForm = (absoluteIdx: number, direction: -1 | 1) => {
+    if (absoluteIdx < 0 || absoluteIdx >= form.items.length) return;
+    const cur = form.items[absoluteIdx];
+    const curExtra = !!cur.isExtra;
+    // find nearest neighbor in same group
+    let neighbor = -1;
+    for (let i = absoluteIdx + direction; i >= 0 && i < form.items.length; i += direction) {
+      if (!!form.items[i].isExtra === curExtra) { neighbor = i; break; }
+    }
+    if (neighbor < 0) return;
     const items = [...form.items];
-    [items[idx], items[newIdx]] = [items[newIdx], items[idx]];
+    [items[absoluteIdx], items[neighbor]] = [items[neighbor], items[absoluteIdx]];
     setForm({ ...form, items });
+  };
+
+  const toggleItemExtraAt = (absoluteIdx: number) => {
+    setForm({
+      ...form,
+      items: form.items.map((it, i) => i === absoluteIdx ? { ...it, isExtra: !it.isExtra } : it),
+    });
   };
 
   const setTokens = (tokens: string[]) => {
@@ -312,7 +324,12 @@ export default function Packages() {
   };
 
   const formTotal = useMemo(
-    () => form.items.reduce((s, it) => s + priceOf(catalogById.get(it.productId)) * it.quantity, 0),
+    () => form.items.filter(it => !it.isExtra).reduce((s, it) => s + priceOf(catalogById.get(it.productId)) * it.quantity, 0),
+    [form.items, catalogById]
+  );
+
+  const formExtrasTotal = useMemo(
+    () => form.items.filter(it => !!it.isExtra).reduce((s, it) => s + priceOf(catalogById.get(it.productId)) * it.quantity, 0),
     [form.items, catalogById]
   );
 
