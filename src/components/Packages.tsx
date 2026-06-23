@@ -626,6 +626,7 @@ export default function Packages() {
                     <Trash2 className="w-3 h-3" />
                   </Button>
                 </div>
+                </div>
               </div>
             );
           })}
