@@ -272,6 +272,16 @@ export default function Packages() {
     setForm({ ...form, items: form.items.filter(it => it.productId !== productId) });
   };
 
+  const moveItemInForm = (productId: string, direction: -1 | 1) => {
+    const idx = form.items.findIndex(it => it.productId === productId);
+    if (idx < 0) return;
+    const newIdx = idx + direction;
+    if (newIdx < 0 || newIdx >= form.items.length) return;
+    const items = [...form.items];
+    [items[idx], items[newIdx]] = [items[newIdx], items[idx]];
+    setForm({ ...form, items });
+  };
+
   const setTokens = (tokens: string[]) => {
     setForm(f => ({ ...f, roomTypes: tokens }));
   };
