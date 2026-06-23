@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, Fragment } from 'react';
-import { Plus, Pencil, Trash2, Search, X, ImageIcon, Package as PackageIcon, GitCompare, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, X, ImageIcon, Package as PackageIcon, GitCompare, ArrowUp, ArrowDown, GripVertical } from 'lucide-react';
 import PackagesComparison from './PackagesComparison';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -300,6 +300,21 @@ export default function Packages() {
     if (neighbor < 0) return;
     const items = [...form.items];
     [items[absoluteIdx], items[neighbor]] = [items[neighbor], items[absoluteIdx]];
+    setForm({ ...form, items });
+  };
+
+  // Drag-and-drop reorder (within same group: main vs extra)
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+
+  const reorderItem = (fromIdx: number, toIdx: number) => {
+    if (fromIdx === toIdx || fromIdx < 0 || toIdx < 0) return;
+    if (fromIdx >= form.items.length || toIdx >= form.items.length) return;
+    // Only reorder within the same group
+    if (!!form.items[fromIdx].isExtra !== !!form.items[toIdx].isExtra) return;
+    const items = [...form.items];
+    const [moved] = items.splice(fromIdx, 1);
+    items.splice(toIdx, 0, moved);
     setForm({ ...form, items });
   };
 
@@ -634,8 +649,37 @@ export default function Packages() {
                 return (
                   <div
                     key={`${absoluteIdx}-${it.productId}`}
-                    className="flex items-center gap-3 p-2 transition-colors"
+                    draggable
+                    onDragStart={(e) => {
+                      setDragIdx(absoluteIdx);
+                      e.dataTransfer.effectAllowed = 'move';
+                    }}
+                    onDragOver={(e) => {
+                      if (dragIdx === null) return;
+                      // Only allow dropping within same group
+                      if (!!form.items[dragIdx].isExtra !== !!it.isExtra) return;
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'move';
+                      if (dragOverIdx !== absoluteIdx) setDragOverIdx(absoluteIdx);
+                    }}
+                    onDragLeave={() => {
+                      if (dragOverIdx === absoluteIdx) setDragOverIdx(null);
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      if (dragIdx !== null) reorderItem(dragIdx, absoluteIdx);
+                      setDragIdx(null);
+                      setDragOverIdx(null);
+                    }}
+                    onDragEnd={() => { setDragIdx(null); setDragOverIdx(null); }}
+                    className={`flex items-center gap-3 p-2 transition-colors ${dragIdx === absoluteIdx ? 'opacity-40' : ''} ${dragOverIdx === absoluteIdx && dragIdx !== absoluteIdx ? 'bg-accent/40 border-t-2 border-primary' : ''}`}
                   >
+                    <div
+                      className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground flex-shrink-0"
+                      title="Drag to reorder"
+                    >
+                      <GripVertical className="w-4 h-4" />
+                    </div>
                     <div className="w-12 h-12 bg-muted rounded flex items-center justify-center overflow-hidden flex-shrink-0">
                       <ProductThumb src={prod?.imageUrl} alt={prod?.name || ''} />
                     </div>
@@ -659,14 +703,6 @@ export default function Packages() {
                     />
                     <div className="w-20 text-right text-sm font-semibold whitespace-nowrap">
                       €{lineTotal.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </div>
-                    <div className="flex items-center gap-0.5">
-                      <Button type="button" variant="ghost" size="sm" className="h-8 w-7 p-0 text-muted-foreground hover:text-foreground disabled:opacity-30" onClick={() => moveItemInForm(absoluteIdx, -1)} disabled={positionInGroup === 0} title="Move up">
-                        <ArrowUp className="w-4 h-4" />
-                      </Button>
-                      <Button type="button" variant="ghost" size="sm" className="h-8 w-7 p-0 text-muted-foreground hover:text-foreground disabled:opacity-30" onClick={() => moveItemInForm(absoluteIdx, 1)} disabled={positionInGroup === groupIndices.length - 1} title="Move down">
-                        <ArrowDown className="w-4 h-4" />
-                      </Button>
                     </div>
                     <Button type="button" variant="ghost" size="sm" className="h-8 px-2 text-[10px] text-muted-foreground hover:text-foreground" onClick={() => toggleItemExtraAt(absoluteIdx)} title={it.isExtra ? 'Move to package items' : 'Mark as extra (excluded from package price)'}>
                       {it.isExtra ? '↑ Pkg' : '↓ Extra'}
