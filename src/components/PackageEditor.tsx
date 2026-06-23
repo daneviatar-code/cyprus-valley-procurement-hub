@@ -17,7 +17,7 @@ import {
   createNewItem,
 } from '@/data/packageData';
 import ZoomableImage from './ZoomableImage';
-import { Plus, Trash2, Package, Download } from 'lucide-react';
+import { Plus, Trash2, Package, Download, ArrowUp, ArrowDown } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 const CONCEPTS: { id: Concept; label: string; color: string }[] = [
@@ -210,6 +210,16 @@ function UnitPackageEditor({
     update({ items: pkg.items.filter(it => it.id !== id) });
   };
 
+  const moveItem = (id: string, direction: -1 | 1) => {
+    const idx = pkg.items.findIndex(it => it.id === id);
+    if (idx < 0) return;
+    const newIdx = idx + direction;
+    if (newIdx < 0 || newIdx >= pkg.items.length) return;
+    const items = [...pkg.items];
+    [items[idx], items[newIdx]] = [items[newIdx], items[idx]];
+    update({ items });
+  };
+
   const floorPlanUrl = getUnitFloorPlanUrl(concept, unitCode);
   const unit = units.find(u => u.code === unitCode);
 
@@ -274,11 +284,12 @@ function UnitPackageEditor({
                   <th className="text-right px-3 py-2 font-medium text-muted-foreground w-24">Total €</th>
                   <th className="text-left px-3 py-2 font-medium text-muted-foreground w-28">Supplier</th>
                   <th className="text-left px-3 py-2 font-medium text-muted-foreground w-32">Notes</th>
+                  <th className="w-16 px-1 text-center font-medium text-muted-foreground">Order</th>
                   <th className="w-8"></th>
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {enrichedItems.map(item => (
+                {enrichedItems.map((item, idx) => (
                   <tr key={item.id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-3 py-1.5">
                       <input
@@ -341,6 +352,26 @@ function UnitPackageEditor({
                         onChange={e => updateItem(item.id, 'notes', e.target.value)}
                         placeholder="—"
                       />
+                    </td>
+                    <td className="px-1 py-1.5">
+                      <div className="flex items-center justify-center gap-0.5">
+                        <button
+                          onClick={() => moveItem(item.id, -1)}
+                          disabled={idx === 0}
+                          className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                          title="Move up"
+                        >
+                          <ArrowUp className="h-3 w-3" />
+                        </button>
+                        <button
+                          onClick={() => moveItem(item.id, 1)}
+                          disabled={idx === enrichedItems.length - 1}
+                          className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                          title="Move down"
+                        >
+                          <ArrowDown className="h-3 w-3" />
+                        </button>
+                      </div>
                     </td>
                     <td className="px-1 py-1.5">
                       <button
