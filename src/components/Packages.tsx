@@ -495,6 +495,9 @@ export default function Packages() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {visiblePackages.map(p => {
             const total = computeCardTotal(p);
+            const extrasTotal = computeCardExtrasTotal(p);
+            const mainCount = p.items.filter(it => !it.isExtra).length;
+            const extraCount = p.items.filter(it => !!it.isExtra).length;
             const isMockup = /mock-?up/i.test(p.name) || /mock-?up/i.test(p.description);
             return (
               <div key={p.id} className={`border rounded-lg p-4 flex flex-col gap-2 group ${isMockup ? 'bg-yellow-100 border-yellow-400 ring-2 ring-yellow-300' : 'bg-card'}`}>
@@ -505,14 +508,22 @@ export default function Packages() {
                       <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{p.description}</p>
                     )}
                   </div>
-                  <span className="text-sm font-bold text-foreground whitespace-nowrap">
-                    €{total.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </span>
+                  <div className="text-right whitespace-nowrap">
+                    <div className="text-sm font-bold text-foreground">
+                      €{total.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                    {extrasTotal > 0 && (
+                      <div className="text-[10px] text-muted-foreground mt-0.5">
+                        + €{extrasTotal.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} extras
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="text-xs text-muted-foreground">
-                  {p.items.length} item{p.items.length === 1 ? '' : 's'}
+                  {mainCount} item{mainCount === 1 ? '' : 's'}{extraCount > 0 ? ` · ${extraCount} extra${extraCount === 1 ? '' : 's'}` : ''}
                 </div>
+
 
                 {(() => {
                   const sizeMap: Record<string, number> = {};
