@@ -250,16 +250,31 @@ export default function Packages() {
     toast({ title: 'Package deleted' });
   };
 
-  const addProductToForm = (productId: string) => {
-    const existing = form.items.find(it => it.productId === productId);
+  const addProductToForm = (productId: string, asExtra: boolean = false) => {
+    const existing = form.items.find(it => it.productId === productId && !!it.isExtra === asExtra);
     if (existing) {
       setForm({
         ...form,
-        items: form.items.map(it => it.productId === productId ? { ...it, quantity: it.quantity + 1 } : it),
+        items: form.items.map(it =>
+          it.productId === productId && !!it.isExtra === asExtra
+            ? { ...it, quantity: it.quantity + 1 }
+            : it
+        ),
       });
     } else {
-      setForm({ ...form, items: [...form.items, { productId, quantity: 1 }] });
+      setForm({ ...form, items: [...form.items, { productId, quantity: 1, isExtra: asExtra }] });
     }
+  };
+
+  const toggleItemExtra = (productId: string, currentExtra: boolean) => {
+    setForm({
+      ...form,
+      items: form.items.map(it =>
+        it.productId === productId && !!it.isExtra === currentExtra
+          ? { ...it, isExtra: !currentExtra }
+          : it
+      ),
+    });
   };
 
   const updateItemQty = (productId: string, qty: number) => {
