@@ -643,10 +643,28 @@ export default function Packages() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-2">
+          <div
+            className="space-y-4 py-2"
+            onPaste={(e) => {
+              const target = e.target as HTMLElement;
+              if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return;
+              const items = e.clipboardData?.items;
+              if (!items) return;
+              for (const it of Array.from(items)) {
+                if (it.type.startsWith('image/')) {
+                  const f = it.getAsFile();
+                  if (f) {
+                    e.preventDefault();
+                    handlePackageImageUpload(f);
+                    break;
+                  }
+                }
+              }
+            }}
+          >
             {/* Cover image */}
             <div>
-              <Label>Cover Image</Label>
+              <Label>Cover Image <span className="text-xs text-muted-foreground font-normal">(or paste with Ctrl/Cmd+V)</span></Label>
               {form.imageUrl ? (
                 <div className="relative w-full aspect-[16/9] bg-muted rounded-md overflow-hidden border mt-1">
                   <img src={form.imageUrl} alt="Package cover" className="w-full h-full object-cover" />
