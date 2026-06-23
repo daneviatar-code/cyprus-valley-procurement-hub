@@ -284,11 +284,12 @@ function UnitPackageEditor({
                   <th className="text-right px-3 py-2 font-medium text-muted-foreground w-24">Total €</th>
                   <th className="text-left px-3 py-2 font-medium text-muted-foreground w-28">Supplier</th>
                   <th className="text-left px-3 py-2 font-medium text-muted-foreground w-32">Notes</th>
+                  <th className="w-16 px-1 text-center font-medium text-muted-foreground">Order</th>
                   <th className="w-8"></th>
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {enrichedItems.map(item => (
+                {enrichedItems.map((item, idx) => (
                   <tr key={item.id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-3 py-1.5">
                       <input
