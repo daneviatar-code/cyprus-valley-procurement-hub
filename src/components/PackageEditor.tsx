@@ -210,6 +210,16 @@ function UnitPackageEditor({
     update({ items: pkg.items.filter(it => it.id !== id) });
   };
 
+  const moveItem = (id: string, direction: -1 | 1) => {
+    const idx = pkg.items.findIndex(it => it.id === id);
+    if (idx < 0) return;
+    const newIdx = idx + direction;
+    if (newIdx < 0 || newIdx >= pkg.items.length) return;
+    const items = [...pkg.items];
+    [items[idx], items[newIdx]] = [items[newIdx], items[idx]];
+    update({ items });
+  };
+
   const floorPlanUrl = getUnitFloorPlanUrl(concept, unitCode);
   const unit = units.find(u => u.code === unitCode);
 
