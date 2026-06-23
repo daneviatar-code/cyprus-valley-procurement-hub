@@ -635,6 +635,14 @@ export default function Packages() {
                         <div className="w-20 text-right text-sm font-semibold whitespace-nowrap">
                           €{lineTotal.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
+                        <div className="flex items-center gap-0.5">
+                          <Button type="button" variant="ghost" size="sm" className="h-8 w-7 p-0 text-muted-foreground hover:text-foreground disabled:opacity-30" onClick={() => moveItemInForm(it.productId, -1)} disabled={idx === 0} title="Move up">
+                            <ArrowUp className="w-4 h-4" />
+                          </Button>
+                          <Button type="button" variant="ghost" size="sm" className="h-8 w-7 p-0 text-muted-foreground hover:text-foreground disabled:opacity-30" onClick={() => moveItemInForm(it.productId, 1)} disabled={idx === form.items.length - 1} title="Move down">
+                            <ArrowDown className="w-4 h-4" />
+                          </Button>
+                        </div>
                         <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground" onClick={() => openProductEditor(it.productId)} title="Edit product (image, price, supplier...)">
                           <Pencil className="w-4 h-4" />
                         </Button>
