@@ -644,6 +644,57 @@ export default function Packages() {
           </DialogHeader>
 
           <div className="space-y-4 py-2">
+            {/* Cover image */}
+            <div>
+              <Label>Cover Image</Label>
+              {form.imageUrl ? (
+                <div className="relative w-full aspect-[16/9] bg-muted rounded-md overflow-hidden border mt-1">
+                  <img src={form.imageUrl} alt="Package cover" className="w-full h-full object-cover" />
+                  <div className="absolute top-2 right-2 flex gap-1">
+                    <label className="cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) handlePackageImageUpload(f);
+                          e.target.value = '';
+                        }}
+                      />
+                      <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-background/90 border rounded shadow-sm hover:bg-background">
+                        <Upload className="w-3 h-3" /> Replace
+                      </span>
+                    </label>
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-background/90 border rounded shadow-sm hover:bg-destructive hover:text-destructive-foreground"
+                      onClick={() => setForm(f => ({ ...f, imageUrl: '' }))}
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <label className="mt-1 flex flex-col items-center justify-center w-full aspect-[16/9] bg-muted/40 border-2 border-dashed rounded-md cursor-pointer hover:bg-muted/60 transition-colors">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) handlePackageImageUpload(f);
+                      e.target.value = '';
+                    }}
+                  />
+                  <Upload className="w-6 h-6 text-muted-foreground mb-1" />
+                  <span className="text-xs text-muted-foreground">
+                    {uploadingPackageImg ? 'Uploading…' : 'Upload a reference photo of the room'}
+                  </span>
+                </label>
+              )}
+            </div>
+
             <div>
               <Label>Name *</Label>
               <Input
