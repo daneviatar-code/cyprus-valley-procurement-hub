@@ -430,7 +430,10 @@ export default function Packages() {
   }, [catalog, pickerSearch, pickerSort]);
 
   const computeCardTotal = (p: Package): number =>
-    p.items.reduce((s, it) => s + priceOf(catalogById.get(it.productId)) * it.quantity, 0);
+    p.items.filter(it => !it.isExtra).reduce((s, it) => s + priceOf(catalogById.get(it.productId)) * it.quantity, 0);
+
+  const computeCardExtrasTotal = (p: Package): number =>
+    p.items.filter(it => !!it.isExtra).reduce((s, it) => s + priceOf(catalogById.get(it.productId)) * it.quantity, 0);
 
   const roomTypeLabel = (code: string) => {
     const rt = blockRoomTypes.find(r => r.code === code);
