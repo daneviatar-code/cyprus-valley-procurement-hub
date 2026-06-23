@@ -303,6 +303,21 @@ export default function Packages() {
     setForm({ ...form, items });
   };
 
+  // Drag-and-drop reorder (within same group: main vs extra)
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+
+  const reorderItem = (fromIdx: number, toIdx: number) => {
+    if (fromIdx === toIdx || fromIdx < 0 || toIdx < 0) return;
+    if (fromIdx >= form.items.length || toIdx >= form.items.length) return;
+    // Only reorder within the same group
+    if (!!form.items[fromIdx].isExtra !== !!form.items[toIdx].isExtra) return;
+    const items = [...form.items];
+    const [moved] = items.splice(fromIdx, 1);
+    items.splice(toIdx, 0, moved);
+    setForm({ ...form, items });
+  };
+
   const toggleItemExtraAt = (absoluteIdx: number) => {
     setForm({
       ...form,
