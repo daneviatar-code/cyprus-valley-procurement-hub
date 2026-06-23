@@ -87,6 +87,7 @@ export default function Packages() {
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm());
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerMode, setPickerMode] = useState<'main' | 'extra'>('main');
   const [pickerSearch, setPickerSearch] = useState('');
   const [pickerSort, setPickerSort] = useState<'default' | 'name-asc' | 'name-desc' | 'price-asc' | 'price-desc' | 'supplier' | 'discipline'>('default');
   const [pickerDragMode, setPickerDragMode] = useState<'merge' | 'reorder'>('merge');
@@ -249,16 +250,31 @@ export default function Packages() {
     toast({ title: 'Package deleted' });
   };
 
-  const addProductToForm = (productId: string) => {
-    const existing = form.items.find(it => it.productId === productId);
+  const addProductToForm = (productId: string, asExtra: boolean = false) => {
+    const existing = form.items.find(it => it.productId === productId && !!it.isExtra === asExtra);
     if (existing) {
       setForm({
         ...form,
-        items: form.items.map(it => it.productId === productId ? { ...it, quantity: it.quantity + 1 } : it),
+        items: form.items.map(it =>
+          it.productId === productId && !!it.isExtra === asExtra
+            ? { ...it, quantity: it.quantity + 1 }
+            : it
+        ),
       });
     } else {
-      setForm({ ...form, items: [...form.items, { productId, quantity: 1 }] });
+      setForm({ ...form, items: [...form.items, { productId, quantity: 1, isExtra: asExtra }] });
     }
+  };
+
+  const toggleItemExtra = (productId: string, currentExtra: boolean) => {
+    setForm({
+      ...form,
+      items: form.items.map(it =>
+        it.productId === productId && !!it.isExtra === currentExtra
+          ? { ...it, isExtra: !currentExtra }
+          : it
+      ),
+    });
   };
 
   const updateItemQty = (productId: string, qty: number) => {
@@ -268,18 +284,30 @@ export default function Packages() {
     });
   };
 
-  const removeItem = (productId: string) => {
-    setForm({ ...form, items: form.items.filter(it => it.productId !== productId) });
+  const removeItemAt = (absoluteIdx: number) => {
+    setForm({ ...form, items: form.items.filter((_, i) => i !== absoluteIdx) });
   };
 
-  const moveItemInForm = (productId: string, direction: -1 | 1) => {
-    const idx = form.items.findIndex(it => it.productId === productId);
-    if (idx < 0) return;
-    const newIdx = idx + direction;
-    if (newIdx < 0 || newIdx >= form.items.length) return;
+  const moveItemInForm = (absoluteIdx: number, direction: -1 | 1) => {
+    if (absoluteIdx < 0 || absoluteIdx >= form.items.length) return;
+    const cur = form.items[absoluteIdx];
+    const curExtra = !!cur.isExtra;
+    // find nearest neighbor in same group
+    let neighbor = -1;
+    for (let i = absoluteIdx + direction; i >= 0 && i < form.items.length; i += direction) {
+      if (!!form.items[i].isExtra === curExtra) { neighbor = i; break; }
+    }
+    if (neighbor < 0) return;
     const items = [...form.items];
-    [items[idx], items[newIdx]] = [items[newIdx], items[idx]];
+    [items[absoluteIdx], items[neighbor]] = [items[neighbor], items[absoluteIdx]];
     setForm({ ...form, items });
+  };
+
+  const toggleItemExtraAt = (absoluteIdx: number) => {
+    setForm({
+      ...form,
+      items: form.items.map((it, i) => i === absoluteIdx ? { ...it, isExtra: !it.isExtra } : it),
+    });
   };
 
   const setTokens = (tokens: string[]) => {
@@ -296,7 +324,12 @@ export default function Packages() {
   };
 
   const formTotal = useMemo(
-    () => form.items.reduce((s, it) => s + priceOf(catalogById.get(it.productId)) * it.quantity, 0),
+    () => form.items.filter(it => !it.isExtra).reduce((s, it) => s + priceOf(catalogById.get(it.productId)) * it.quantity, 0),
+    [form.items, catalogById]
+  );
+
+  const formExtrasTotal = useMemo(
+    () => form.items.filter(it => !!it.isExtra).reduce((s, it) => s + priceOf(catalogById.get(it.productId)) * it.quantity, 0),
     [form.items, catalogById]
   );
 
@@ -397,7 +430,10 @@ export default function Packages() {
   }, [catalog, pickerSearch, pickerSort]);
 
   const computeCardTotal = (p: Package): number =>
-    p.items.reduce((s, it) => s + priceOf(catalogById.get(it.productId)) * it.quantity, 0);
+    p.items.filter(it => !it.isExtra).reduce((s, it) => s + priceOf(catalogById.get(it.productId)) * it.quantity, 0);
+
+  const computeCardExtrasTotal = (p: Package): number =>
+    p.items.filter(it => !!it.isExtra).reduce((s, it) => s + priceOf(catalogById.get(it.productId)) * it.quantity, 0);
 
   const roomTypeLabel = (code: string) => {
     const rt = blockRoomTypes.find(r => r.code === code);
@@ -459,6 +495,9 @@ export default function Packages() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {visiblePackages.map(p => {
             const total = computeCardTotal(p);
+            const extrasTotal = computeCardExtrasTotal(p);
+            const mainCount = p.items.filter(it => !it.isExtra).length;
+            const extraCount = p.items.filter(it => !!it.isExtra).length;
             const isMockup = /mock-?up/i.test(p.name) || /mock-?up/i.test(p.description);
             return (
               <div key={p.id} className={`border rounded-lg p-4 flex flex-col gap-2 group ${isMockup ? 'bg-yellow-100 border-yellow-400 ring-2 ring-yellow-300' : 'bg-card'}`}>
@@ -469,14 +508,22 @@ export default function Packages() {
                       <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{p.description}</p>
                     )}
                   </div>
-                  <span className="text-sm font-bold text-foreground whitespace-nowrap">
-                    €{total.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </span>
+                  <div className="text-right whitespace-nowrap">
+                    <div className="text-sm font-bold text-foreground">
+                      €{total.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                    {extrasTotal > 0 && (
+                      <div className="text-[10px] text-muted-foreground mt-0.5">
+                        + €{extrasTotal.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} extras
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="text-xs text-muted-foreground">
-                  {p.items.length} item{p.items.length === 1 ? '' : 's'}
+                  {mainCount} item{mainCount === 1 ? '' : 's'}{extraCount > 0 ? ` · ${extraCount} extra${extraCount === 1 ? '' : 's'}` : ''}
                 </div>
+
 
                 {(() => {
                   const sizeMap: Record<string, number> = {};
@@ -572,95 +619,127 @@ export default function Packages() {
             </div>
 
             {/* Items */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Items</Label>
-                <Button type="button" variant="outline" size="sm" onClick={() => { setPickerSearch(''); setPickerOpen(true); }} className="gap-1">
-                  <Plus className="w-3 h-3" /> Add Item
-                </Button>
-              </div>
+            {(() => {
+              const mainIndices: number[] = [];
+              const extraIndices: number[] = [];
+              form.items.forEach((it, i) => {
+                if (it.isExtra) extraIndices.push(i); else mainIndices.push(i);
+              });
 
-              {form.items.length === 0 ? (
-                <div className="text-xs text-muted-foreground border rounded-md p-4 text-center">
-                  No items yet. Click "Add Item" to pick from the Catalog.
-                </div>
-              ) : (
-                <div className="border rounded-md divide-y">
-                  {form.items.map((it, idx) => {
-                    const prod = catalogById.get(it.productId);
-                    const price = priceOf(prod);
-                    const lineTotal = price * it.quantity;
-                    return (
-                      <div
-                        key={it.productId}
-                        draggable
-                        onDragStart={(e) => { setDragProductId(it.productId); e.dataTransfer.effectAllowed = 'move'; }}
-                        onDragEnd={() => { setDragProductId(null); setDragOverProductId(null); }}
-                        onDragOver={(e) => {
-                          if (dragProductId && dragProductId !== it.productId) {
-                            e.preventDefault();
-                            e.dataTransfer.dropEffect = 'move';
-                            if (dragOverProductId !== it.productId) setDragOverProductId(it.productId);
-                          }
-                        }}
-                        onDragLeave={() => { if (dragOverProductId === it.productId) setDragOverProductId(null); }}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          if (dragProductId) mergeItems(dragProductId, it.productId);
-                          setDragProductId(null);
-                          setDragOverProductId(null);
-                        }}
-                        className={`flex items-center gap-3 p-2 cursor-move transition-colors ${
-                          dragOverProductId === it.productId ? 'bg-accent/30 ring-2 ring-accent ring-inset' : ''
-                        } ${dragProductId === it.productId ? 'opacity-50' : ''}`}
-                      >
-                        <div className="w-12 h-12 bg-muted rounded flex items-center justify-center overflow-hidden flex-shrink-0">
-                          <ProductThumb src={prod?.imageUrl} alt={prod?.name || ''} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-foreground truncate">
-                            {prod?.name || <span className="italic text-muted-foreground">Deleted product</span>}
-                          </div>
-                          <div className="text-[11px] text-muted-foreground truncate">
-                            {prod?.supplierName || '—'} · €{price.toFixed(2)}
-                          </div>
-                        </div>
-                        <Input
-                          type="number"
-                          min={1}
-                          value={it.quantity}
-                          onChange={e => updateItemQty(it.productId, parseInt(e.target.value) || 1)}
-                          className="w-16 h-8 text-sm text-center"
-                        />
-                        <div className="w-20 text-right text-sm font-semibold whitespace-nowrap">
-                          €{lineTotal.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </div>
-                        <div className="flex items-center gap-0.5">
-                          <Button type="button" variant="ghost" size="sm" className="h-8 w-7 p-0 text-muted-foreground hover:text-foreground disabled:opacity-30" onClick={() => moveItemInForm(it.productId, -1)} disabled={idx === 0} title="Move up">
-                            <ArrowUp className="w-4 h-4" />
-                          </Button>
-                          <Button type="button" variant="ghost" size="sm" className="h-8 w-7 p-0 text-muted-foreground hover:text-foreground disabled:opacity-30" onClick={() => moveItemInForm(it.productId, 1)} disabled={idx === form.items.length - 1} title="Move down">
-                            <ArrowDown className="w-4 h-4" />
-                          </Button>
-                        </div>
-                        <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground" onClick={() => openProductEditor(it.productId)} title="Edit product (image, price, supplier...)">
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive" onClick={() => removeItem(it.productId)}>
-                          <X className="w-4 h-4" />
-                        </Button>
+              const renderRow = (absoluteIdx: number, groupIndices: number[], positionInGroup: number) => {
+                const it = form.items[absoluteIdx];
+                const prod = catalogById.get(it.productId);
+                const price = priceOf(prod);
+                const lineTotal = price * it.quantity;
+                return (
+                  <div
+                    key={`${absoluteIdx}-${it.productId}`}
+                    className="flex items-center gap-3 p-2 transition-colors"
+                  >
+                    <div className="w-12 h-12 bg-muted rounded flex items-center justify-center overflow-hidden flex-shrink-0">
+                      <ProductThumb src={prod?.imageUrl} alt={prod?.name || ''} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-foreground truncate">
+                        {prod?.name || <span className="italic text-muted-foreground">Deleted product</span>}
                       </div>
-                    );
-                  })}
-                  <div className="flex justify-between items-center px-3 py-2 bg-muted/30">
-                    <span className="text-xs font-medium text-muted-foreground">Total</span>
-                    <span className="text-base font-bold text-foreground">
-                      €{formTotal.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
+                      <div className="text-[11px] text-muted-foreground truncate">
+                        {prod?.supplierName || '—'} · €{price.toFixed(2)}
+                      </div>
+                    </div>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={it.quantity}
+                      onChange={e => {
+                        const qty = Math.max(1, parseInt(e.target.value) || 1);
+                        setForm({ ...form, items: form.items.map((x, i) => i === absoluteIdx ? { ...x, quantity: qty } : x) });
+                      }}
+                      className="w-16 h-8 text-sm text-center"
+                    />
+                    <div className="w-20 text-right text-sm font-semibold whitespace-nowrap">
+                      €{lineTotal.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                    <div className="flex items-center gap-0.5">
+                      <Button type="button" variant="ghost" size="sm" className="h-8 w-7 p-0 text-muted-foreground hover:text-foreground disabled:opacity-30" onClick={() => moveItemInForm(absoluteIdx, -1)} disabled={positionInGroup === 0} title="Move up">
+                        <ArrowUp className="w-4 h-4" />
+                      </Button>
+                      <Button type="button" variant="ghost" size="sm" className="h-8 w-7 p-0 text-muted-foreground hover:text-foreground disabled:opacity-30" onClick={() => moveItemInForm(absoluteIdx, 1)} disabled={positionInGroup === groupIndices.length - 1} title="Move down">
+                        <ArrowDown className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <Button type="button" variant="ghost" size="sm" className="h-8 px-2 text-[10px] text-muted-foreground hover:text-foreground" onClick={() => toggleItemExtraAt(absoluteIdx)} title={it.isExtra ? 'Move to package items' : 'Mark as extra (excluded from package price)'}>
+                      {it.isExtra ? '↑ Pkg' : '↓ Extra'}
+                    </Button>
+                    <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground" onClick={() => openProductEditor(it.productId)} title="Edit product (image, price, supplier...)">
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive" onClick={() => removeItemAt(absoluteIdx)}>
+                      <X className="w-4 h-4" />
+                    </Button>
                   </div>
-                </div>
-              )}
-            </div>
+                );
+              };
+
+              return (
+                <>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label>Package Items</Label>
+                      <Button type="button" variant="outline" size="sm" onClick={() => { setPickerSearch(''); setPickerMode('main'); setPickerOpen(true); }} className="gap-1">
+                        <Plus className="w-3 h-3" /> Add Item
+                      </Button>
+                    </div>
+                    {mainIndices.length === 0 ? (
+                      <div className="text-xs text-muted-foreground border rounded-md p-4 text-center">
+                        No items yet. Click "Add Item" to pick from the Catalog.
+                      </div>
+                    ) : (
+                      <div className="border rounded-md divide-y">
+                        {mainIndices.map((absIdx, pos) => renderRow(absIdx, mainIndices, pos))}
+                        <div className="flex justify-between items-center px-3 py-2 bg-muted/30">
+                          <span className="text-xs font-medium text-muted-foreground">Package Total</span>
+                          <span className="text-base font-bold text-foreground">
+                            €{formTotal.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Divider between package items and extras */}
+                  <div className="flex items-center gap-3 py-2">
+                    <div className="flex-1 border-t border-dashed border-border" />
+                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Extras (not included in package price)</span>
+                    <div className="flex-1 border-t border-dashed border-border" />
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label>Extra Items</Label>
+                      <Button type="button" variant="outline" size="sm" onClick={() => { setPickerSearch(''); setPickerMode('extra'); setPickerOpen(true); }} className="gap-1">
+                        <Plus className="w-3 h-3" /> Add Extra
+                      </Button>
+                    </div>
+                    {extraIndices.length === 0 ? (
+                      <div className="text-xs text-muted-foreground border border-dashed rounded-md p-4 text-center">
+                        No extras. Add items here to list them separately — their price is shown on the side and not included in the package total.
+                      </div>
+                    ) : (
+                      <div className="border rounded-md divide-y bg-muted/10">
+                        {extraIndices.map((absIdx, pos) => renderRow(absIdx, extraIndices, pos))}
+                        <div className="flex justify-between items-center px-3 py-2 bg-muted/30">
+                          <span className="text-xs font-medium text-muted-foreground">Extras Total (separate)</span>
+                          <span className="text-base font-bold text-foreground">
+                            €{formExtrasTotal.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </>
+              );
+            })()}
 
             {/* Size Assignments — building + room size + desired qty */}
             <SizeAssignmentsEditor
@@ -990,7 +1069,7 @@ export default function Packages() {
                       setPickerDragId(null);
                       setPickerDragOverId(null);
                     }}
-                    onClick={() => addProductToForm(p.id)}
+                    onClick={() => addProductToForm(p.id, pickerMode === 'extra')}
                     className={`group relative bg-card border rounded-md overflow-hidden flex flex-col cursor-pointer hover:border-accent hover:shadow-sm transition-all ${
                       pickerDragOverId === p.id ? 'ring-2 ring-accent border-accent' : ''
                     } ${pickerDragId === p.id ? 'opacity-50' : ''}`}
@@ -1272,7 +1351,7 @@ function CoveragePanel({
 
   /** Cost of a single package = Σ items × catalog price */
   const pkgCost = useCallback((p: Package): number => {
-    return p.items.reduce(
+    return p.items.filter(it => !it.isExtra).reduce(
       (s, it) => s + (catalogById.get(it.productId)?.unitPriceEur ?? 0) * it.quantity,
       0
     );

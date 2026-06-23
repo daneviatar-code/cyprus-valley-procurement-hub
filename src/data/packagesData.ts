@@ -18,6 +18,8 @@ import {
 export interface PackageLineItem {
   productId: string;
   quantity: number;
+  /** When true, this item is shown as an "extra" — its cost is excluded from the package total. */
+  isExtra?: boolean;
 }
 
 /** Key format: `${building}::${unitCode}` -> number of physical units covered */
