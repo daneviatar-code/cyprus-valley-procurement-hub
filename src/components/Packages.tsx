@@ -586,7 +586,7 @@ export default function Packages() {
                 </div>
               ) : (
                 <div className="border rounded-md divide-y">
-                  {form.items.map(it => {
+                  {form.items.map((it, idx) => {
                     const prod = catalogById.get(it.productId);
                     const price = priceOf(prod);
                     const lineTotal = price * it.quantity;
