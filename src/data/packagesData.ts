@@ -36,6 +36,8 @@ export interface Package {
   buildings: string[];
   /** How many physical instances of (building, unitCode) this package covers. Key = "B1::A". */
   unitCoverage: UnitCoverageMap;
+  /** Optional cover image (room reference photo). */
+  imageUrl?: string;
   createdAt?: string;
 }
 
@@ -101,6 +103,7 @@ function fromDb(r: any): Package {
     roomTypes: Array.isArray(r.room_types) ? r.room_types : [],
     buildings: Array.isArray(r.buildings) ? r.buildings : [],
     unitCoverage: (r.unit_coverage && typeof r.unit_coverage === 'object') ? r.unit_coverage : {},
+    imageUrl: r.image_url ?? '',
     createdAt: r.created_at,
   };
 }
@@ -115,6 +118,7 @@ function toDb(p: Package) {
     room_types: p.roomTypes,
     buildings: p.buildings ?? [],
     unit_coverage: p.unitCoverage ?? {},
+    image_url: p.imageUrl || null,
   };
 }
 

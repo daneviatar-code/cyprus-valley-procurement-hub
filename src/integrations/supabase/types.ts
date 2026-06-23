@@ -264,6 +264,7 @@ export type Database = {
           created_at: string
           description: string
           id: string
+          image_url: string | null
           items: Json
           name: string
           room_types: Json
@@ -276,6 +277,7 @@ export type Database = {
           created_at?: string
           description?: string
           id: string
+          image_url?: string | null
           items?: Json
           name?: string
           room_types?: Json
@@ -288,6 +290,7 @@ export type Database = {
           created_at?: string
           description?: string
           id?: string
+          image_url?: string | null
           items?: Json
           name?: string
           room_types?: Json

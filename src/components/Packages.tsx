@@ -62,6 +62,7 @@ interface FormState {
   roomTypes: string[];
   buildings: string[];
   unitCoverage: UnitCoverageMap;
+  imageUrl: string;
 }
 
 const emptyForm = (): FormState => ({
@@ -71,6 +72,7 @@ const emptyForm = (): FormState => ({
   roomTypes: [],
   buildings: [],
   unitCoverage: {},
+  imageUrl: '',
 });
 
 function priceOf(p: CatalogProduct | undefined): number {
@@ -209,6 +211,7 @@ export default function Packages() {
       roomTypes: [...p.roomTypes],
       buildings: [...(p.buildings ?? [])],
       unitCoverage: { ...(p.unitCoverage ?? {}) },
+      imageUrl: p.imageUrl ?? '',
     });
     setRtSearch('');
     setExpandedFloors(new Set());
@@ -223,7 +226,7 @@ export default function Packages() {
     let next: Package[];
     if (editId) {
       next = packages.map(p => p.id === editId
-        ? { ...p, name: form.name.trim(), description: form.description, items: form.items, roomTypes: form.roomTypes, buildings: form.buildings, unitCoverage: form.unitCoverage }
+        ? { ...p, name: form.name.trim(), description: form.description, items: form.items, roomTypes: form.roomTypes, buildings: form.buildings, unitCoverage: form.unitCoverage, imageUrl: form.imageUrl }
         : p);
     } else {
       const newPkg: Package = {
@@ -235,12 +238,28 @@ export default function Packages() {
         roomTypes: form.roomTypes,
         buildings: form.buildings,
         unitCoverage: form.unitCoverage,
+        imageUrl: form.imageUrl,
       };
       next = [...packages, newPkg];
     }
     persist(next);
     setEditorOpen(false);
     toast({ title: editId ? 'Package updated' : 'Package created' });
+  };
+
+  const [uploadingPackageImg, setUploadingPackageImg] = useState(false);
+
+  const handlePackageImageUpload = async (file: File) => {
+    setUploadingPackageImg(true);
+    try {
+      const url = await uploadCatalogImage(file);
+      setForm(f => ({ ...f, imageUrl: url }));
+      toast({ title: 'Image uploaded' });
+    } catch (e: any) {
+      toast({ title: 'Upload failed', description: e?.message, variant: 'destructive' });
+    } finally {
+      setUploadingPackageImg(false);
+    }
   };
 
   const handleDelete = () => {
@@ -515,7 +534,17 @@ export default function Packages() {
             const extraCount = p.items.filter(it => !!it.isExtra).length;
             const isMockup = /mock-?up/i.test(p.name) || /mock-?up/i.test(p.description);
             return (
-              <div key={p.id} className={`border rounded-lg p-4 flex flex-col gap-2 group ${isMockup ? 'bg-yellow-100 border-yellow-400 ring-2 ring-yellow-300' : 'bg-card'}`}>
+              <div key={p.id} className={`border rounded-lg overflow-hidden flex flex-col gap-2 group ${isMockup ? 'bg-yellow-100 border-yellow-400 ring-2 ring-yellow-300' : 'bg-card'}`}>
+                {p.imageUrl ? (
+                  <div className="w-full aspect-[16/9] bg-muted overflow-hidden border-b">
+                    <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" />
+                  </div>
+                ) : (
+                  <div className="w-full aspect-[16/9] bg-muted/40 border-b flex items-center justify-center text-muted-foreground">
+                    <ImageIcon className="w-8 h-8 opacity-40" />
+                  </div>
+                )}
+                <div className="p-4 pt-2 flex flex-col gap-2 flex-1">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <h3 className="text-sm font-semibold text-foreground truncate">{p.name}</h3>
@@ -597,6 +626,7 @@ export default function Packages() {
                     <Trash2 className="w-3 h-3" />
                   </Button>
                 </div>
+                </div>
               </div>
             );
           })}
@@ -614,6 +644,57 @@ export default function Packages() {
           </DialogHeader>
 
           <div className="space-y-4 py-2">
+            {/* Cover image */}
+            <div>
+              <Label>Cover Image</Label>
+              {form.imageUrl ? (
+                <div className="relative w-full aspect-[16/9] bg-muted rounded-md overflow-hidden border mt-1">
+                  <img src={form.imageUrl} alt="Package cover" className="w-full h-full object-cover" />
+                  <div className="absolute top-2 right-2 flex gap-1">
+                    <label className="cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) handlePackageImageUpload(f);
+                          e.target.value = '';
+                        }}
+                      />
+                      <span className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-background/90 border rounded shadow-sm hover:bg-background">
+                        <Upload className="w-3 h-3" /> Replace
+                      </span>
+                    </label>
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-background/90 border rounded shadow-sm hover:bg-destructive hover:text-destructive-foreground"
+                      onClick={() => setForm(f => ({ ...f, imageUrl: '' }))}
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <label className="mt-1 flex flex-col items-center justify-center w-full aspect-[16/9] bg-muted/40 border-2 border-dashed rounded-md cursor-pointer hover:bg-muted/60 transition-colors">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) handlePackageImageUpload(f);
+                      e.target.value = '';
+                    }}
+                  />
+                  <Upload className="w-6 h-6 text-muted-foreground mb-1" />
+                  <span className="text-xs text-muted-foreground">
+                    {uploadingPackageImg ? 'Uploading…' : 'Upload a reference photo of the room'}
+                  </span>
+                </label>
+              )}
+            </div>
+
             <div>
               <Label>Name *</Label>
               <Input
