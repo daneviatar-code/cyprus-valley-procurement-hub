@@ -942,17 +942,40 @@ function SortableItemRow({
         </select>
       </td>
       <td className={td}>
-        <button
-          onClick={() => onOpenOffers(it)}
-          className={`text-[11px] px-2 py-1 rounded whitespace-nowrap transition-colors ${
-            offersCount > 0
-              ? 'bg-accent/20 hover:bg-accent/30 text-accent-foreground font-semibold'
-              : 'bg-muted hover:bg-muted/80 text-muted-foreground'
-          }`}
-          title="Compare supplier offers"
-        >
-          Offers ({offersCount})
-        </button>
+        <div className="flex items-center gap-1">
+          {offers.length > 0 && (
+            <select
+              className={inputCls + ' min-w-[160px]'}
+              value={offers.find(o => o.isSelected)?.id || ''}
+              onChange={e => {
+                const id = e.target.value;
+                if (id) void selectItemOffer(id);
+              }}
+              title="בחר הצעת מחיר מהרשימה · Pick an offer from Price Comparison"
+            >
+              <option value="">— Pick offer —</option>
+              {offers.map(o => {
+                const sup = suppliers.find(s => s.id === o.supplierId)?.name || 'No supplier';
+                return (
+                  <option key={o.id} value={o.id}>
+                    {sup} · {o.productName || '(no name)'} · {formatMoney(o.priceEur, 'EUR')}
+                  </option>
+                );
+              })}
+            </select>
+          )}
+          <button
+            onClick={() => onOpenOffers(it)}
+            className={`text-[11px] px-2 py-1 rounded whitespace-nowrap transition-colors ${
+              offersCount > 0
+                ? 'bg-accent/20 hover:bg-accent/30 text-accent-foreground font-semibold'
+                : 'bg-muted hover:bg-muted/80 text-muted-foreground'
+            }`}
+            title="Compare supplier offers"
+          >
+            {offersCount > 0 ? `(${offersCount})` : '+ Add'}
+          </button>
+        </div>
       </td>
       <td className={td}>
         <Popover>
