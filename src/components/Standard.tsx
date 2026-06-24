@@ -20,8 +20,9 @@ import {
 } from '@/data/standardItemsData';
 import { Supplier, loadSuppliers } from '@/data/supplierData';
 import {
-  ItemOffer, loadItemOffers, subscribeItemOffers,
+  ItemOffer, loadItemOffers, subscribeItemOffers, selectItemOffer,
 } from '@/data/itemOffersData';
+import { formatMoney } from '@/lib/fxRates';
 import ItemOffersDialog from '@/components/ItemOffersDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -105,6 +106,17 @@ export default function Standard() {
     allOffers.forEach(o => m.set(o.standardItemId, (m.get(o.standardItemId) || 0) + 1));
     return m;
   }, [allOffers]);
+
+  const offersByItem = useMemo(() => {
+    const m = new Map<string, ItemOffer[]>();
+    allOffers.forEach(o => {
+      const arr = m.get(o.standardItemId) || [];
+      arr.push(o);
+      m.set(o.standardItemId, arr);
+    });
+    return m;
+  }, [allOffers]);
+
 
   const handleManualSave = useCallback(() => {
     saveCategories(categories);
@@ -626,6 +638,7 @@ export default function Standard() {
                     onReorder={(ids) => reorderMasterItems(selectedCategoryId, ids)}
                     unitCounts={unitCounts}
                     offersCountByItem={offersCountByItem}
+                    offersByItem={offersByItem}
                     onOpenOffers={setOffersDialogItem}
                   />
                 ) : (
@@ -749,7 +762,7 @@ function SummaryBar({ s, typeLabel, isMaster, perBuilding, onBuildingClick }: {
 // ───────────────────────────── Master Editor ─────────────────────────────
 function MasterEditor({
   items, qtysByItem, suppliers, onUpdateItem, onDeleteItem, onUpdateQty, onMoveItem, onReorder, unitCounts,
-  offersCountByItem, onOpenOffers,
+  offersCountByItem, offersByItem, onOpenOffers,
 }: {
   items: StandardItem[];
   qtysByItem: Map<string, Record<ApartmentType, ApartmentTypeQuantity | undefined>>;
@@ -761,6 +774,7 @@ function MasterEditor({
   onReorder: (orderedIds: string[]) => void;
   unitCounts: Record<RoomSize, number>;
   offersCountByItem: Map<string, number>;
+  offersByItem: Map<string, ItemOffer[]>;
   onOpenOffers: (item: StandardItem) => void;
 }) {
   const th = 'text-left text-[10px] font-medium uppercase tracking-wider text-muted-foreground px-2 py-1.5 whitespace-nowrap';
@@ -814,6 +828,7 @@ function MasterEditor({
                   onUpdateQty={onUpdateQty}
                   onMoveItem={onMoveItem}
                   offersCount={offersCountByItem.get(it.id) || 0}
+                  offers={offersByItem.get(it.id) || []}
                   onOpenOffers={onOpenOffers}
                 />
               ))}
@@ -828,7 +843,7 @@ function MasterEditor({
 // One sortable row inside MasterEditor
 function SortableItemRow({
   it, idx, isLast, qtysByItem, suppliers, onUpdateItem, onDeleteItem, onUpdateQty, onMoveItem,
-  offersCount, onOpenOffers,
+  offersCount, offers, onOpenOffers,
 }: {
   it: StandardItem;
   idx: number;
@@ -840,6 +855,7 @@ function SortableItemRow({
   onUpdateQty: (id: string, patch: Partial<ApartmentTypeQuantity>) => void;
   onMoveItem: (id: string, direction: -1 | 1) => void;
   offersCount: number;
+  offers: ItemOffer[];
   onOpenOffers: (item: StandardItem) => void;
 }) {
   const inputCls = 'w-full h-7 px-2 text-xs border rounded bg-background focus:outline-none focus:ring-1 focus:ring-primary';
@@ -926,17 +942,40 @@ function SortableItemRow({
         </select>
       </td>
       <td className={td}>
-        <button
-          onClick={() => onOpenOffers(it)}
-          className={`text-[11px] px-2 py-1 rounded whitespace-nowrap transition-colors ${
-            offersCount > 0
-              ? 'bg-accent/20 hover:bg-accent/30 text-accent-foreground font-semibold'
-              : 'bg-muted hover:bg-muted/80 text-muted-foreground'
-          }`}
-          title="Compare supplier offers"
-        >
-          Offers ({offersCount})
-        </button>
+        <div className="flex items-center gap-1">
+          {offers.length > 0 && (
+            <select
+              className={inputCls + ' min-w-[160px]'}
+              value={offers.find(o => o.isSelected)?.id || ''}
+              onChange={e => {
+                const id = e.target.value;
+                if (id) void selectItemOffer(id);
+              }}
+              title="בחר הצעת מחיר מהרשימה · Pick an offer from Price Comparison"
+            >
+              <option value="">— Pick offer —</option>
+              {offers.map(o => {
+                const sup = suppliers.find(s => s.id === o.supplierId)?.name || 'No supplier';
+                return (
+                  <option key={o.id} value={o.id}>
+                    {sup} · {o.productName || '(no name)'} · {formatMoney(o.priceEur, 'EUR')}
+                  </option>
+                );
+              })}
+            </select>
+          )}
+          <button
+            onClick={() => onOpenOffers(it)}
+            className={`text-[11px] px-2 py-1 rounded whitespace-nowrap transition-colors ${
+              offersCount > 0
+                ? 'bg-accent/20 hover:bg-accent/30 text-accent-foreground font-semibold'
+                : 'bg-muted hover:bg-muted/80 text-muted-foreground'
+            }`}
+            title="Compare supplier offers"
+          >
+            {offersCount > 0 ? `(${offersCount})` : '+ Add'}
+          </button>
+        </div>
       </td>
       <td className={td}>
         <Popover>
