@@ -107,6 +107,17 @@ export default function Standard() {
     return m;
   }, [allOffers]);
 
+  const offersByItem = useMemo(() => {
+    const m = new Map<string, ItemOffer[]>();
+    allOffers.forEach(o => {
+      const arr = m.get(o.standardItemId) || [];
+      arr.push(o);
+      m.set(o.standardItemId, arr);
+    });
+    return m;
+  }, [allOffers]);
+
+
   const handleManualSave = useCallback(() => {
     saveCategories(categories);
     saveStandardItems(items);
