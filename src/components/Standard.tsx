@@ -638,6 +638,8 @@ export default function Standard() {
                     onReorder={(ids) => reorderMasterItems(selectedCategoryId, ids)}
                     unitCounts={unitCounts}
                     offersCountByItem={offersCountByItem}
+                    offersByItem={offersByItem}
+                    suppliersById={suppliers}
                     onOpenOffers={setOffersDialogItem}
                   />
                 ) : (
