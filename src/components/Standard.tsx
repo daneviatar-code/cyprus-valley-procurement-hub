@@ -828,6 +828,7 @@ function MasterEditor({
                   onUpdateQty={onUpdateQty}
                   onMoveItem={onMoveItem}
                   offersCount={offersCountByItem.get(it.id) || 0}
+                  offers={offersByItem.get(it.id) || []}
                   onOpenOffers={onOpenOffers}
                 />
               ))}
