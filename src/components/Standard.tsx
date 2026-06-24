@@ -639,7 +639,6 @@ export default function Standard() {
                     unitCounts={unitCounts}
                     offersCountByItem={offersCountByItem}
                     offersByItem={offersByItem}
-                    suppliersById={suppliers}
                     onOpenOffers={setOffersDialogItem}
                   />
                 ) : (
