@@ -843,7 +843,7 @@ function MasterEditor({
 // One sortable row inside MasterEditor
 function SortableItemRow({
   it, idx, isLast, qtysByItem, suppliers, onUpdateItem, onDeleteItem, onUpdateQty, onMoveItem,
-  offersCount, onOpenOffers,
+  offersCount, offers, onOpenOffers,
 }: {
   it: StandardItem;
   idx: number;
@@ -855,6 +855,7 @@ function SortableItemRow({
   onUpdateQty: (id: string, patch: Partial<ApartmentTypeQuantity>) => void;
   onMoveItem: (id: string, direction: -1 | 1) => void;
   offersCount: number;
+  offers: ItemOffer[];
   onOpenOffers: (item: StandardItem) => void;
 }) {
   const inputCls = 'w-full h-7 px-2 text-xs border rounded bg-background focus:outline-none focus:ring-1 focus:ring-primary';
