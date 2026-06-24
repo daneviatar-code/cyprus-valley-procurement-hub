@@ -762,7 +762,7 @@ function SummaryBar({ s, typeLabel, isMaster, perBuilding, onBuildingClick }: {
 // ───────────────────────────── Master Editor ─────────────────────────────
 function MasterEditor({
   items, qtysByItem, suppliers, onUpdateItem, onDeleteItem, onUpdateQty, onMoveItem, onReorder, unitCounts,
-  offersCountByItem, onOpenOffers,
+  offersCountByItem, offersByItem, onOpenOffers,
 }: {
   items: StandardItem[];
   qtysByItem: Map<string, Record<ApartmentType, ApartmentTypeQuantity | undefined>>;
@@ -774,6 +774,7 @@ function MasterEditor({
   onReorder: (orderedIds: string[]) => void;
   unitCounts: Record<RoomSize, number>;
   offersCountByItem: Map<string, number>;
+  offersByItem: Map<string, ItemOffer[]>;
   onOpenOffers: (item: StandardItem) => void;
 }) {
   const th = 'text-left text-[10px] font-medium uppercase tracking-wider text-muted-foreground px-2 py-1.5 whitespace-nowrap';
