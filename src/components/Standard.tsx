@@ -20,8 +20,9 @@ import {
 } from '@/data/standardItemsData';
 import { Supplier, loadSuppliers } from '@/data/supplierData';
 import {
-  ItemOffer, loadItemOffers, subscribeItemOffers,
+  ItemOffer, loadItemOffers, subscribeItemOffers, selectItemOffer,
 } from '@/data/itemOffersData';
+import { formatMoney } from '@/lib/fxRates';
 import ItemOffersDialog from '@/components/ItemOffersDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
