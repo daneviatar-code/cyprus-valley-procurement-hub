@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useCallback, Fragment } from 'react';
-import { Plus, Pencil, Trash2, Search, X, ImageIcon, Package as PackageIcon, GitCompare, ArrowUp, ArrowDown, GripVertical } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, X, ImageIcon, Package as PackageIcon, GitCompare, ArrowUp, ArrowDown, GripVertical, FileDown, FileSpreadsheet } from 'lucide-react';
+import { exportPackageToPdf, exportPackageToExcel } from '@/lib/packageExport';
 import PackagesComparison from './PackagesComparison';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -617,6 +618,22 @@ export default function Packages() {
                 <div className="flex gap-1 mt-2 pt-2 border-t opacity-0 group-hover:opacity-100 transition-opacity">
                   <Button variant="outline" size="sm" className="flex-1 h-7 text-xs gap-1" onClick={() => openEdit(p)}>
                     <Pencil className="w-3 h-3" /> Edit
+                  </Button>
+                  <Button
+                    variant="outline" size="sm"
+                    className="h-7 text-xs gap-1"
+                    onClick={() => exportPackageToPdf(p, catalogById)}
+                    title="Export to PDF"
+                  >
+                    <FileDown className="w-3 h-3" /> PDF
+                  </Button>
+                  <Button
+                    variant="outline" size="sm"
+                    className="h-7 text-xs gap-1"
+                    onClick={() => exportPackageToExcel(p, catalogById)}
+                    title="Export to Excel"
+                  >
+                    <FileSpreadsheet className="w-3 h-3" /> Excel
                   </Button>
                   <Button
                     variant="outline" size="sm"
