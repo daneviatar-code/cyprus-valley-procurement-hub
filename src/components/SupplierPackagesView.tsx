@@ -374,16 +374,33 @@ export default function SupplierPackagesView({
                                   const isCheapest = r.cheapest?.supplierId === sid
                                     && (o?.priceEur ?? Infinity) === (r.cheapest?.priceEur ?? Infinity);
                                   if (!o || o.priceEur == null) {
-                                    return <td key={sid} className="px-2 py-1.5 text-right text-muted-foreground">—</td>;
+                                    return <td key={sid} className="px-2 py-1.5 text-right text-muted-foreground align-top">—</td>;
                                   }
+                                  const specTitle = [
+                                    o.productName,
+                                    o.productSku ? `SKU: ${o.productSku}` : '',
+                                    o.dimensions ? `Dim: ${o.dimensions}` : '',
+                                    o.spec || '',
+                                  ].filter(Boolean).join('\n');
                                   return (
-                                    <td key={sid} className={`px-2 py-1.5 text-right font-mono ${
+                                    <td key={sid} className={`px-2 py-1.5 text-right font-mono align-top ${
                                       isCheapest && r.included ? 'text-green-600 font-semibold' : ''
-                                    }`}>
+                                    }`} title={specTitle}>
                                       <div>{formatMoney(o.priceEur * r.hotelQty, 'EUR')}</div>
                                       <div className="text-[10px] text-muted-foreground">
                                         {formatMoney(o.priceEur, 'EUR')}/u
                                       </div>
+                                      {(o.productName || o.spec || o.dimensions) && (
+                                        <div className="mt-1 text-[10px] text-left font-sans text-muted-foreground max-w-[180px] whitespace-normal break-words" dir="auto">
+                                          {o.productName && (
+                                            <div className="text-foreground/80 font-medium truncate" title={o.productName}>
+                                              {o.productName}
+                                            </div>
+                                          )}
+                                          {o.dimensions && <div className="truncate" title={o.dimensions}>{o.dimensions}</div>}
+                                          {o.spec && <div className="line-clamp-2" title={o.spec}>{o.spec}</div>}
+                                        </div>
+                                      )}
                                     </td>
                                   );
                                 })}
