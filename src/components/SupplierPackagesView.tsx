@@ -66,8 +66,25 @@ export default function SupplierPackagesView({
   categories, items, qtysByItem, offersByItem, suppliers, unitCounts,
 }: Props) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  // Per-category set of EXCLUDED item ids (unchecked). Default = all included.
+  const [excluded, setExcluded] = useState<Record<string, Set<string>>>({});
   const supplierName = (id?: string | null) =>
     suppliers.find(s => s.id === id)?.name || '—';
+
+  const isExcluded = (catId: string, itemId: string) =>
+    excluded[catId]?.has(itemId) ?? false;
+
+  const toggleItem = (catId: string, itemId: string) => {
+    setExcluded(prev => {
+      const cur = new Set(prev[catId] || []);
+      cur.has(itemId) ? cur.delete(itemId) : cur.add(itemId);
+      return { ...prev, [catId]: cur };
+    });
+  };
+
+  const setCategoryExcluded = (catId: string, itemIds: string[]) => {
+    setExcluded(prev => ({ ...prev, [catId]: new Set(itemIds) }));
+  };
 
   const perCategory = useMemo(() => {
     return categories.map(cat => {
@@ -81,7 +98,6 @@ export default function SupplierPackagesView({
         const real = offersByItem.get(item.id) || [];
         const base = baseOfferFromItem(item);
         const allOffers = base ? [base, ...real] : real;
-        // Best price per supplier for this item
         const bySupplier = new Map<string, ItemOffer>();
         allOffers.forEach(o => {
           if (!o.supplierId) return;
@@ -91,22 +107,26 @@ export default function SupplierPackagesView({
           }
         });
         const cheapest = getCheapestOffer(allOffers);
-        return { item, hotelQty, bySupplier, cheapest, allOffers };
+        const included = !isExcluded(cat.id, item.id);
+        return { item, hotelQty, bySupplier, cheapest, allOffers, included };
       });
 
-      // Collect the union of suppliers appearing anywhere in this category
+      // Only rows the user has included AND that have hotel qty > 0
+      const activeRows = itemRows.filter(r => r.included && r.hotelQty > 0);
+
+      // Suppliers appearing anywhere in this category (based on ALL rows so
+      // columns don't collapse when a user toggles items).
       const supplierIds = new Set<string>();
       itemRows.forEach(r => r.bySupplier.forEach((_, sid) => supplierIds.add(sid)));
       const supplierList = [...supplierIds].sort((a, b) =>
         supplierName(a).localeCompare(supplierName(b)));
 
-      // Totals per supplier (only items where supplier offers, plus coverage)
       const supplierTotals = supplierList.map(sid => {
         let total = 0;
         let covered = 0;
-        itemRows.forEach(r => {
+        activeRows.forEach(r => {
           const o = r.bySupplier.get(sid);
-          if (o && o.priceEur != null && r.hotelQty > 0) {
+          if (o && o.priceEur != null) {
             total += o.priceEur * r.hotelQty;
             covered++;
           }
@@ -116,31 +136,29 @@ export default function SupplierPackagesView({
           name: supplierName(sid),
           total,
           covered,
-          totalItems: itemRows.filter(r => r.hotelQty > 0).length,
+          totalItems: activeRows.length,
         };
       }).sort((a, b) => a.total - b.total);
 
-      // Cheapest-mix total
       let cheapestTotal = 0;
       let cheapestCovered = 0;
-      itemRows.forEach(r => {
-        if (r.cheapest && r.cheapest.priceEur != null && r.hotelQty > 0) {
+      activeRows.forEach(r => {
+        if (r.cheapest && r.cheapest.priceEur != null) {
           cheapestTotal += r.cheapest.priceEur * r.hotelQty;
           cheapestCovered++;
         }
       });
 
-      // Full-coverage suppliers only, for "best single supplier"
       const fullCoverage = supplierTotals.filter(s => s.covered === s.totalItems && s.totalItems > 0);
       const bestSingle = fullCoverage[0];
       const savingsVsSingle = bestSingle ? Math.max(0, bestSingle.total - cheapestTotal) : 0;
 
       return {
-        cat, itemRows, supplierList, supplierTotals,
+        cat, itemRows, activeRows, supplierList, supplierTotals,
         cheapestTotal, cheapestCovered, bestSingle, savingsVsSingle,
       };
     });
-  }, [categories, items, qtysByItem, offersByItem, suppliers, unitCounts]);
+  }, [categories, items, qtysByItem, offersByItem, suppliers, unitCounts, excluded]);
 
   const toggle = (id: string) => setExpanded(prev => {
     const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n;
@@ -164,7 +182,8 @@ export default function SupplierPackagesView({
 
       {perCategory.map(pc => {
         const open = expanded.has(pc.cat.id);
-        const totalItems = pc.itemRows.filter(r => r.hotelQty > 0).length;
+        const totalItemsWithQty = pc.itemRows.filter(r => r.hotelQty > 0).length;
+        const activeCount = pc.activeRows.length;
         return (
           <div key={pc.cat.id} className="bg-card border rounded-lg">
             <button
@@ -178,7 +197,7 @@ export default function SupplierPackagesView({
                     {pc.cat.nameHe}
                   </div>
                   <div className="text-[10px] text-muted-foreground">
-                    {pc.cat.nameEn} · {totalItems} items with qty
+                    {pc.cat.nameEn} · {activeCount}/{totalItemsWithQty} items included
                   </div>
                 </div>
               </div>
@@ -219,6 +238,58 @@ export default function SupplierPackagesView({
                   </div>
                 ) : (
                   <>
+                    {/* Quick selection controls */}
+                    <div className="flex items-center flex-wrap gap-1.5 text-[11px]">
+                      <span className="text-muted-foreground mr-1">Quick select:</span>
+                      <button
+                        onClick={() => setCategoryExcluded(pc.cat.id, [])}
+                        className="px-2 py-1 rounded border border-border hover:bg-muted text-foreground"
+                      >
+                        All items
+                      </button>
+                      <button
+                        onClick={() => setCategoryExcluded(
+                          pc.cat.id,
+                          pc.itemRows.filter(r => r.hotelQty > 0).map(r => r.item.id),
+                        )}
+                        className="px-2 py-1 rounded border border-border hover:bg-muted text-foreground"
+                      >
+                        None
+                      </button>
+                      {pc.supplierList.length >= 2 && (
+                        <button
+                          onClick={() => {
+                            // Include only items every supplier offers
+                            const exclude = pc.itemRows
+                              .filter(r => r.hotelQty > 0)
+                              .filter(r => pc.supplierList.some(sid => !r.bySupplier.get(sid)))
+                              .map(r => r.item.id);
+                            setCategoryExcluded(pc.cat.id, exclude);
+                          }}
+                          className="px-2 py-1 rounded border border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary"
+                          title="Include only items every supplier offers — apples-to-apples comparison"
+                        >
+                          Common to all suppliers
+                        </button>
+                      )}
+                      {pc.supplierList.map(sid => (
+                        <button
+                          key={sid}
+                          onClick={() => {
+                            // Include only items THIS supplier offers
+                            const exclude = pc.itemRows
+                              .filter(r => r.hotelQty > 0 && !r.bySupplier.get(sid))
+                              .map(r => r.item.id);
+                            setCategoryExcluded(pc.cat.id, exclude);
+                          }}
+                          className="px-2 py-1 rounded border border-border hover:bg-muted text-foreground"
+                          title={`Include only items offered by ${supplierName(sid)}`}
+                        >
+                          Only {supplierName(sid)}'s items
+                        </button>
+                      ))}
+                    </div>
+
                     {/* Suppliers summary bar */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                       <div className="rounded-md border-2 border-green-500/40 bg-green-50 dark:bg-green-950/20 p-2">
@@ -229,11 +300,11 @@ export default function SupplierPackagesView({
                           {formatMoney(pc.cheapestTotal, 'EUR')}
                         </div>
                         <div className="text-[10px] text-muted-foreground">
-                          {pc.cheapestCovered}/{totalItems} items covered
+                          {pc.cheapestCovered}/{activeCount} items covered
                         </div>
                       </div>
                       {pc.supplierTotals.map(s => {
-                        const full = s.covered === s.totalItems;
+                        const full = s.covered === s.totalItems && s.totalItems > 0;
                         return (
                           <div
                             key={s.supplierId}
@@ -260,6 +331,7 @@ export default function SupplierPackagesView({
                       <table className="w-full text-xs">
                         <thead className="bg-muted/50 border-b">
                           <tr className="text-left text-[10px] uppercase tracking-wider text-muted-foreground">
+                            <th className="px-2 py-1.5 w-8"></th>
                             <th className="px-2 py-1.5">Item</th>
                             <th className="px-2 py-1.5 text-right">Hotel Qty</th>
                             {pc.supplierList.map(sid => (
@@ -273,41 +345,59 @@ export default function SupplierPackagesView({
                           </tr>
                         </thead>
                         <tbody>
-                          {pc.itemRows.map(r => (
-                            <tr key={r.item.id} className="border-b hover:bg-muted/20">
-                              <td className="px-2 py-1.5">
-                                <div className="font-medium truncate max-w-[240px]">
-                                  {r.item.itemName || '(unnamed)'}
-                                </div>
-                              </td>
-                              <td className="px-2 py-1.5 text-right font-mono">{r.hotelQty}</td>
-                              {pc.supplierList.map(sid => {
-                                const o = r.bySupplier.get(sid);
-                                const isCheapest = r.cheapest?.supplierId === sid
-                                  && (o?.priceEur ?? Infinity) === (r.cheapest?.priceEur ?? Infinity);
-                                if (!o || o.priceEur == null) {
-                                  return <td key={sid} className="px-2 py-1.5 text-right text-muted-foreground">—</td>;
-                                }
-                                return (
-                                  <td key={sid} className={`px-2 py-1.5 text-right font-mono ${
-                                    isCheapest ? 'text-green-600 font-semibold' : ''
-                                  }`}>
-                                    <div>{formatMoney(o.priceEur * r.hotelQty, 'EUR')}</div>
-                                    <div className="text-[10px] text-muted-foreground">
-                                      {formatMoney(o.priceEur, 'EUR')}/u
-                                    </div>
-                                  </td>
-                                );
-                              })}
-                              <td className="px-2 py-1.5 text-right font-mono bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-400 font-semibold">
-                                {r.cheapest && r.cheapest.priceEur != null
-                                  ? formatMoney(r.cheapest.priceEur * r.hotelQty, 'EUR')
-                                  : '—'}
-                              </td>
-                            </tr>
-                          ))}
+                          {pc.itemRows.map(r => {
+                            const disabled = r.hotelQty === 0;
+                            const dim = disabled || !r.included;
+                            return (
+                              <tr
+                                key={r.item.id}
+                                className={`border-b hover:bg-muted/20 ${dim ? 'opacity-50' : ''}`}
+                              >
+                                <td className="px-2 py-1.5">
+                                  <input
+                                    type="checkbox"
+                                    checked={r.included && !disabled}
+                                    disabled={disabled}
+                                    onChange={() => toggleItem(pc.cat.id, r.item.id)}
+                                    className="w-3.5 h-3.5 accent-primary cursor-pointer disabled:cursor-not-allowed"
+                                    title={disabled ? 'No hotel quantity' : 'Include in package totals'}
+                                  />
+                                </td>
+                                <td className="px-2 py-1.5">
+                                  <div className="font-medium truncate max-w-[240px]">
+                                    {r.item.itemName || '(unnamed)'}
+                                  </div>
+                                </td>
+                                <td className="px-2 py-1.5 text-right font-mono">{r.hotelQty}</td>
+                                {pc.supplierList.map(sid => {
+                                  const o = r.bySupplier.get(sid);
+                                  const isCheapest = r.cheapest?.supplierId === sid
+                                    && (o?.priceEur ?? Infinity) === (r.cheapest?.priceEur ?? Infinity);
+                                  if (!o || o.priceEur == null) {
+                                    return <td key={sid} className="px-2 py-1.5 text-right text-muted-foreground">—</td>;
+                                  }
+                                  return (
+                                    <td key={sid} className={`px-2 py-1.5 text-right font-mono ${
+                                      isCheapest && r.included ? 'text-green-600 font-semibold' : ''
+                                    }`}>
+                                      <div>{formatMoney(o.priceEur * r.hotelQty, 'EUR')}</div>
+                                      <div className="text-[10px] text-muted-foreground">
+                                        {formatMoney(o.priceEur, 'EUR')}/u
+                                      </div>
+                                    </td>
+                                  );
+                                })}
+                                <td className="px-2 py-1.5 text-right font-mono bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-400 font-semibold">
+                                  {r.cheapest && r.cheapest.priceEur != null
+                                    ? formatMoney(r.cheapest.priceEur * r.hotelQty, 'EUR')
+                                    : '—'}
+                                </td>
+                              </tr>
+                            );
+                          })}
                           <tr className="bg-muted/30 font-semibold">
-                            <td className="px-2 py-2">Package total</td>
+                            <td></td>
+                            <td className="px-2 py-2">Package total ({activeCount} items)</td>
                             <td></td>
                             {pc.supplierList.map(sid => {
                               const s = pc.supplierTotals.find(x => x.supplierId === sid);
