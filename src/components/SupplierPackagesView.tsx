@@ -66,8 +66,25 @@ export default function SupplierPackagesView({
   categories, items, qtysByItem, offersByItem, suppliers, unitCounts,
 }: Props) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  // Per-category set of EXCLUDED item ids (unchecked). Default = all included.
+  const [excluded, setExcluded] = useState<Record<string, Set<string>>>({});
   const supplierName = (id?: string | null) =>
     suppliers.find(s => s.id === id)?.name || '—';
+
+  const isExcluded = (catId: string, itemId: string) =>
+    excluded[catId]?.has(itemId) ?? false;
+
+  const toggleItem = (catId: string, itemId: string) => {
+    setExcluded(prev => {
+      const cur = new Set(prev[catId] || []);
+      cur.has(itemId) ? cur.delete(itemId) : cur.add(itemId);
+      return { ...prev, [catId]: cur };
+    });
+  };
+
+  const setCategoryExcluded = (catId: string, itemIds: string[]) => {
+    setExcluded(prev => ({ ...prev, [catId]: new Set(itemIds) }));
+  };
 
   const perCategory = useMemo(() => {
     return categories.map(cat => {
@@ -81,7 +98,6 @@ export default function SupplierPackagesView({
         const real = offersByItem.get(item.id) || [];
         const base = baseOfferFromItem(item);
         const allOffers = base ? [base, ...real] : real;
-        // Best price per supplier for this item
         const bySupplier = new Map<string, ItemOffer>();
         allOffers.forEach(o => {
           if (!o.supplierId) return;
@@ -91,22 +107,26 @@ export default function SupplierPackagesView({
           }
         });
         const cheapest = getCheapestOffer(allOffers);
-        return { item, hotelQty, bySupplier, cheapest, allOffers };
+        const included = !isExcluded(cat.id, item.id);
+        return { item, hotelQty, bySupplier, cheapest, allOffers, included };
       });
 
-      // Collect the union of suppliers appearing anywhere in this category
+      // Only rows the user has included AND that have hotel qty > 0
+      const activeRows = itemRows.filter(r => r.included && r.hotelQty > 0);
+
+      // Suppliers appearing anywhere in this category (based on ALL rows so
+      // columns don't collapse when a user toggles items).
       const supplierIds = new Set<string>();
       itemRows.forEach(r => r.bySupplier.forEach((_, sid) => supplierIds.add(sid)));
       const supplierList = [...supplierIds].sort((a, b) =>
         supplierName(a).localeCompare(supplierName(b)));
 
-      // Totals per supplier (only items where supplier offers, plus coverage)
       const supplierTotals = supplierList.map(sid => {
         let total = 0;
         let covered = 0;
-        itemRows.forEach(r => {
+        activeRows.forEach(r => {
           const o = r.bySupplier.get(sid);
-          if (o && o.priceEur != null && r.hotelQty > 0) {
+          if (o && o.priceEur != null) {
             total += o.priceEur * r.hotelQty;
             covered++;
           }
@@ -116,31 +136,29 @@ export default function SupplierPackagesView({
           name: supplierName(sid),
           total,
           covered,
-          totalItems: itemRows.filter(r => r.hotelQty > 0).length,
+          totalItems: activeRows.length,
         };
       }).sort((a, b) => a.total - b.total);
 
-      // Cheapest-mix total
       let cheapestTotal = 0;
       let cheapestCovered = 0;
-      itemRows.forEach(r => {
-        if (r.cheapest && r.cheapest.priceEur != null && r.hotelQty > 0) {
+      activeRows.forEach(r => {
+        if (r.cheapest && r.cheapest.priceEur != null) {
           cheapestTotal += r.cheapest.priceEur * r.hotelQty;
           cheapestCovered++;
         }
       });
 
-      // Full-coverage suppliers only, for "best single supplier"
       const fullCoverage = supplierTotals.filter(s => s.covered === s.totalItems && s.totalItems > 0);
       const bestSingle = fullCoverage[0];
       const savingsVsSingle = bestSingle ? Math.max(0, bestSingle.total - cheapestTotal) : 0;
 
       return {
-        cat, itemRows, supplierList, supplierTotals,
+        cat, itemRows, activeRows, supplierList, supplierTotals,
         cheapestTotal, cheapestCovered, bestSingle, savingsVsSingle,
       };
     });
-  }, [categories, items, qtysByItem, offersByItem, suppliers, unitCounts]);
+  }, [categories, items, qtysByItem, offersByItem, suppliers, unitCounts, excluded]);
 
   const toggle = (id: string) => setExpanded(prev => {
     const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n;
