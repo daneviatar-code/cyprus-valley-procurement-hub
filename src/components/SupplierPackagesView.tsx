@@ -149,6 +149,32 @@ export default function SupplierPackagesView({
         }
       });
 
+      // Per apartment-type package cost (for ONE apartment of that type).
+      // Per supplier: sum over active rows of (qtyPerPackage+spare) * price if offered.
+      // Per "cheapest": sum using each item's cheapest offer.
+      const perAptType: Record<ApartmentType, {
+        perSupplier: Record<string, number>;
+        cheapest: number;
+      }> = {} as any;
+      APARTMENT_TYPES.forEach(at => {
+        const perSupplier: Record<string, number> = {};
+        supplierList.forEach(sid => { perSupplier[sid] = 0; });
+        let cheapest = 0;
+        activeRows.forEach(r => {
+          const qtyRow = qtysByItem.get(r.item.id)?.[at];
+          const pkgQty = (qtyRow?.qtyPerPackage || 0) + (qtyRow?.sparePerPackage || 0);
+          if (pkgQty <= 0) return;
+          supplierList.forEach(sid => {
+            const o = r.bySupplier.get(sid);
+            if (o && o.priceEur != null) perSupplier[sid] += o.priceEur * pkgQty;
+          });
+          if (r.cheapest && r.cheapest.priceEur != null) {
+            cheapest += r.cheapest.priceEur * pkgQty;
+          }
+        });
+        perAptType[at] = { perSupplier, cheapest };
+      });
+
       const fullCoverage = supplierTotals.filter(s => s.covered === s.totalItems && s.totalItems > 0);
       const bestSingle = fullCoverage[0];
       const savingsVsSingle = bestSingle ? Math.max(0, bestSingle.total - cheapestTotal) : 0;
@@ -156,9 +182,20 @@ export default function SupplierPackagesView({
       return {
         cat, itemRows, activeRows, supplierList, supplierTotals,
         cheapestTotal, cheapestCovered, bestSingle, savingsVsSingle,
+        perAptType,
       };
     });
   }, [categories, items, qtysByItem, offersByItem, suppliers, unitCounts, excluded]);
+
+  const aptLabel = (at: ApartmentType): string => {
+    switch (at) {
+      case 'studio': return 'Studio';
+      case '1br': return '1 BR';
+      case '2br': return '2 BR';
+      case '3br': return '3 BR';
+      case '4br': return '4 BR';
+    }
+  };
 
   const toggle = (id: string) => setExpanded(prev => {
     const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n;
@@ -408,6 +445,29 @@ export default function SupplierPackagesView({
                                   {r.cheapest && r.cheapest.priceEur != null
                                     ? formatMoney(r.cheapest.priceEur * r.hotelQty, 'EUR')
                                     : '—'}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                          {APARTMENT_TYPES.map(at => {
+                            const row = pc.perAptType[at];
+                            const anyValue = pc.supplierList.some(sid => row.perSupplier[sid] > 0) || row.cheapest > 0;
+                            if (!anyValue) return null;
+                            const units = unitCounts[at] || 0;
+                            return (
+                              <tr key={`apt-${at}`} className="bg-muted/10 border-b">
+                                <td></td>
+                                <td className="px-2 py-1.5 text-[11px] text-muted-foreground">
+                                  Package / {aptLabel(at)} <span className="opacity-60">({units} units)</span>
+                                </td>
+                                <td></td>
+                                {pc.supplierList.map(sid => (
+                                  <td key={sid} className="px-2 py-1.5 text-right font-mono text-[11px]">
+                                    {row.perSupplier[sid] > 0 ? formatMoney(row.perSupplier[sid], 'EUR') : '—'}
+                                  </td>
+                                ))}
+                                <td className="px-2 py-1.5 text-right font-mono text-[11px] bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-400">
+                                  {row.cheapest > 0 ? formatMoney(row.cheapest, 'EUR') : '—'}
                                 </td>
                               </tr>
                             );
