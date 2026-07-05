@@ -53,10 +53,11 @@ import { CSS } from '@dnd-kit/utilities';
 import BuildingDetailDialog from '@/components/BuildingDetailDialog';
 import RfqExportButton from '@/components/RfqExportButton';
 import RfqExcelExportButton from '@/components/RfqExcelExportButton';
+import SupplierPackagesView from '@/components/SupplierPackagesView';
 
 const FragmentRow = Fragment;
 
-type SubView = 'byApartment' | 'byCategory' | 'hotelTotals';
+type SubView = 'byApartment' | 'byCategory' | 'hotelTotals' | 'supplierPackages';
 type View = 'standard' | ApartmentType; // 'standard' = master
 
 const APARTMENT_LABELS_HE: Record<ApartmentType, string> = {
@@ -475,6 +476,7 @@ export default function Standard() {
                 ['byApartment', 'By Apartment Type'],
                 ['byCategory', 'By Category'],
                 ['hotelTotals', 'Hotel Totals'],
+                ['supplierPackages', 'Supplier Packages'],
               ] as [SubView, string][]).map(([k, label]) => (
                 <button key={k} onClick={() => setSubView(k)}
                   className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
@@ -667,6 +669,17 @@ export default function Standard() {
         {subView === 'hotelTotals' && (
           <HotelTotalsView categories={visibleCategories} items={items}
             qtysByItem={qtysByItem} unitCounts={unitCounts} />
+        )}
+
+        {subView === 'supplierPackages' && (
+          <SupplierPackagesView
+            categories={visibleCategories}
+            items={items}
+            qtysByItem={qtysByItem}
+            offersByItem={offersByItem}
+            suppliers={suppliers}
+            unitCounts={unitCounts}
+          />
         )}
 
         <BuildingDetailDialog
