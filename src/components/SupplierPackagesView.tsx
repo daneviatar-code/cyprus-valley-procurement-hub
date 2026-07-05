@@ -449,6 +449,29 @@ export default function SupplierPackagesView({
                               </tr>
                             );
                           })}
+                          {APARTMENT_TYPES.map(at => {
+                            const row = pc.perAptType[at];
+                            const anyValue = pc.supplierList.some(sid => row.perSupplier[sid] > 0) || row.cheapest > 0;
+                            if (!anyValue) return null;
+                            const units = unitCounts[at] || 0;
+                            return (
+                              <tr key={`apt-${at}`} className="bg-muted/10 border-b">
+                                <td></td>
+                                <td className="px-2 py-1.5 text-[11px] text-muted-foreground">
+                                  Package / {aptLabel(at)} <span className="opacity-60">({units} units)</span>
+                                </td>
+                                <td></td>
+                                {pc.supplierList.map(sid => (
+                                  <td key={sid} className="px-2 py-1.5 text-right font-mono text-[11px]">
+                                    {row.perSupplier[sid] > 0 ? formatMoney(row.perSupplier[sid], 'EUR') : '—'}
+                                  </td>
+                                ))}
+                                <td className="px-2 py-1.5 text-right font-mono text-[11px] bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-400">
+                                  {row.cheapest > 0 ? formatMoney(row.cheapest, 'EUR') : '—'}
+                                </td>
+                              </tr>
+                            );
+                          })}
                           <tr className="bg-muted/30 font-semibold">
                             <td></td>
                             <td className="px-2 py-2">Package total ({activeCount} items)</td>
