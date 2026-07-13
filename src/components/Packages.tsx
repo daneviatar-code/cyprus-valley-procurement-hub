@@ -206,7 +206,6 @@ export default function Packages() {
   };
 
   const openEdit = (p: Package) => {
-    if (guardLocked()) return;
     setEditId(p.id);
     setForm({
       name: p.name,
