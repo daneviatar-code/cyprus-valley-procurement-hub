@@ -672,7 +672,7 @@ export default function Packages() {
 
 
                 <div className="flex gap-1 mt-2 pt-2 border-t opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button variant="outline" size="sm" className="flex-1 h-7 text-xs gap-1" onClick={() => openEdit(p)}>
+                  <Button variant="outline" size="sm" className="flex-1 h-7 text-xs gap-1" onClick={() => openEdit(p)} disabled={locked}>
                     <Pencil className="w-3 h-3" /> Edit
                   </Button>
                   <Button
