@@ -198,9 +198,13 @@ export default function Packages() {
   useEffect(() => subscribeCatalog(setCatalog), []);
 
   const persist = useCallback((data: Package[]) => {
+    if (locked) {
+      toast({ title: 'Packages are locked', description: 'Unlock with password to make changes.', variant: 'destructive' });
+      return;
+    }
     setPackages(data);
     savePackages(data);
-  }, []);
+  }, [locked]);
 
   const catalogById = useMemo(() => {
     const m = new Map<string, CatalogProduct>();
