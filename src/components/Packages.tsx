@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, Fragment } from 'react';
-import { Plus, Pencil, Trash2, Search, X, ImageIcon, Package as PackageIcon, GitCompare, ArrowUp, ArrowDown, GripVertical, FileDown, FileSpreadsheet, Lock, Unlock } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, X, ImageIcon, Package as PackageIcon, GitCompare, ArrowUp, ArrowDown, GripVertical, FileDown, FileSpreadsheet } from 'lucide-react';
 import { exportPackageToPdf, exportPackageToExcel } from '@/lib/packageExport';
 import PackagesComparison from './PackagesComparison';
 import { Button } from '@/components/ui/button';
