@@ -85,40 +85,7 @@ export default function Packages() {
   const [catalog, setCatalog] = useState<CatalogProduct[]>(loadCatalog);
   const [activeBlock, setActiveBlock] = useState<Concept>('A');
   const [view, setView] = useState<'packages' | 'comparison'>('packages');
-  const [locked, setLocked] = useState<boolean>(() => localStorage.getItem('packages-locked') !== '0');
-  const [unlockOpen, setUnlockOpen] = useState(false);
-  const [unlockPwd, setUnlockPwd] = useState('');
 
-  const toggleLock = () => {
-    if (!locked) {
-      setLocked(true);
-      localStorage.setItem('packages-locked', '1');
-      toast({ title: 'Packages locked' });
-    } else {
-      setUnlockPwd('');
-      setUnlockOpen(true);
-    }
-  };
-
-  const tryUnlock = () => {
-    if (unlockPwd === '123') {
-      setLocked(false);
-      localStorage.setItem('packages-locked', '0');
-      setUnlockOpen(false);
-      setUnlockPwd('');
-      toast({ title: 'Packages unlocked' });
-    } else {
-      toast({ title: 'Incorrect password', variant: 'destructive' });
-    }
-  };
-
-  const guardLocked = (): boolean => {
-    if (locked) {
-      toast({ title: 'Packages are locked', description: 'Unlock with password to make changes.', variant: 'destructive' });
-      return true;
-    }
-    return false;
-  };
 
 
   const [editorOpen, setEditorOpen] = useState(false);
