@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, Fragment } from 'react';
-import { Plus, Pencil, Trash2, Search, X, ImageIcon, Package as PackageIcon, GitCompare, ArrowUp, ArrowDown, GripVertical, FileDown, FileSpreadsheet } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, X, ImageIcon, Package as PackageIcon, GitCompare, ArrowUp, ArrowDown, GripVertical, FileDown, FileSpreadsheet, Lock, Unlock } from 'lucide-react';
 import { exportPackageToPdf, exportPackageToExcel } from '@/lib/packageExport';
 import PackagesComparison from './PackagesComparison';
 import { Button } from '@/components/ui/button';
@@ -85,6 +85,41 @@ export default function Packages() {
   const [catalog, setCatalog] = useState<CatalogProduct[]>(loadCatalog);
   const [activeBlock, setActiveBlock] = useState<Concept>('A');
   const [view, setView] = useState<'packages' | 'comparison'>('packages');
+  const [locked, setLocked] = useState<boolean>(() => localStorage.getItem('packages-locked') !== '0');
+  const [unlockOpen, setUnlockOpen] = useState(false);
+  const [unlockPwd, setUnlockPwd] = useState('');
+
+  const toggleLock = () => {
+    if (!locked) {
+      setLocked(true);
+      localStorage.setItem('packages-locked', '1');
+      toast({ title: 'Packages locked' });
+    } else {
+      setUnlockPwd('');
+      setUnlockOpen(true);
+    }
+  };
+
+  const tryUnlock = () => {
+    if (unlockPwd === '123') {
+      setLocked(false);
+      localStorage.setItem('packages-locked', '0');
+      setUnlockOpen(false);
+      setUnlockPwd('');
+      toast({ title: 'Packages unlocked' });
+    } else {
+      toast({ title: 'Incorrect password', variant: 'destructive' });
+    }
+  };
+
+  const guardLocked = (): boolean => {
+    if (locked) {
+      toast({ title: 'Packages are locked', description: 'Unlock with password to make changes.', variant: 'destructive' });
+      return true;
+    }
+    return false;
+  };
+
 
   const [editorOpen, setEditorOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -163,9 +198,13 @@ export default function Packages() {
   useEffect(() => subscribeCatalog(setCatalog), []);
 
   const persist = useCallback((data: Package[]) => {
+    if (locked) {
+      toast({ title: 'Packages are locked', description: 'Unlock with password to make changes.', variant: 'destructive' });
+      return;
+    }
     setPackages(data);
     savePackages(data);
-  }, []);
+  }, [locked]);
 
   const catalogById = useMemo(() => {
     const m = new Map<string, CatalogProduct>();
@@ -196,6 +235,7 @@ export default function Packages() {
   );
 
   const openCreate = () => {
+    if (guardLocked()) return;
     setEditId(null);
     setForm(emptyForm());
     setRtSearch('');
@@ -204,6 +244,7 @@ export default function Packages() {
   };
 
   const openEdit = (p: Package) => {
+    if (guardLocked()) return;
     setEditId(p.id);
     setForm({
       name: p.name,
@@ -493,11 +534,26 @@ export default function Packages() {
           <span className="text-xs text-muted-foreground">
             Reusable furniture packages built from the Catalog
           </span>
+          {locked && (
+            <Badge variant="secondary" className="gap-1 text-[10px]">
+              <Lock className="w-3 h-3" /> Locked
+            </Badge>
+          )}
         </div>
-        <Button onClick={openCreate} className="gap-1.5">
-          <Plus className="w-4 h-4" /> Create Package
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={toggleLock}
+            variant={locked ? 'outline' : 'secondary'}
+            className="gap-1.5"
+          >
+            {locked ? <><Unlock className="w-4 h-4" /> Unlock</> : <><Lock className="w-4 h-4" /> Lock</>}
+          </Button>
+          <Button onClick={openCreate} className="gap-1.5" disabled={locked}>
+            <Plus className="w-4 h-4" /> Create Package
+          </Button>
+        </div>
       </div>
+
 
       <Tabs value={activeBlock} onValueChange={(v) => setActiveBlock(v as Concept)}>
         <TabsList>
@@ -616,7 +672,7 @@ export default function Packages() {
 
 
                 <div className="flex gap-1 mt-2 pt-2 border-t opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button variant="outline" size="sm" className="flex-1 h-7 text-xs gap-1" onClick={() => openEdit(p)}>
+                  <Button variant="outline" size="sm" className="flex-1 h-7 text-xs gap-1" onClick={() => openEdit(p)} disabled={locked}>
                     <Pencil className="w-3 h-3" /> Edit
                   </Button>
                   <Button
@@ -638,7 +694,8 @@ export default function Packages() {
                   <Button
                     variant="outline" size="sm"
                     className="h-7 text-xs gap-1 text-destructive hover:text-destructive"
-                    onClick={() => setDeleteId(p.id)}
+                    onClick={() => { if (guardLocked()) return; setDeleteId(p.id); }}
+                    disabled={locked}
                   >
                     <Trash2 className="w-3 h-3" />
                   </Button>
@@ -1416,6 +1473,30 @@ export default function Packages() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Unlock password */}
+      <Dialog open={unlockOpen} onOpenChange={setUnlockOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Lock className="w-4 h-4" /> Unlock Packages</DialogTitle>
+            <DialogDescription>Enter the password to allow changes.</DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            <Input
+              type="password"
+              autoFocus
+              placeholder="Password"
+              value={unlockPwd}
+              onChange={(e) => setUnlockPwd(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') tryUnlock(); }}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUnlockOpen(false)}>Cancel</Button>
+            <Button onClick={tryUnlock}>Unlock</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Merge confirmation */}
       <AlertDialog open={!!mergeConfirm} onOpenChange={(o) => !o && setMergeConfirm(null)}>
