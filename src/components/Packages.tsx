@@ -1474,6 +1474,30 @@ export default function Packages() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Unlock password */}
+      <Dialog open={unlockOpen} onOpenChange={setUnlockOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Lock className="w-4 h-4" /> Unlock Packages</DialogTitle>
+            <DialogDescription>Enter the password to allow changes.</DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            <Input
+              type="password"
+              autoFocus
+              placeholder="Password"
+              value={unlockPwd}
+              onChange={(e) => setUnlockPwd(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') tryUnlock(); }}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUnlockOpen(false)}>Cancel</Button>
+            <Button onClick={tryUnlock}>Unlock</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Merge confirmation */}
       <AlertDialog open={!!mergeConfirm} onOpenChange={(o) => !o && setMergeConfirm(null)}>
         <AlertDialogContent>
