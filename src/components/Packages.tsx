@@ -235,6 +235,7 @@ export default function Packages() {
   );
 
   const openCreate = () => {
+    if (guardLocked()) return;
     setEditId(null);
     setForm(emptyForm());
     setRtSearch('');
@@ -243,6 +244,7 @@ export default function Packages() {
   };
 
   const openEdit = (p: Package) => {
+    if (guardLocked()) return;
     setEditId(p.id);
     setForm({
       name: p.name,
