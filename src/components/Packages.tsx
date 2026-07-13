@@ -495,24 +495,10 @@ export default function Packages() {
           <span className="text-xs text-muted-foreground">
             Reusable furniture packages built from the Catalog
           </span>
-          {locked && (
-            <Badge variant="secondary" className="gap-1 text-[10px]">
-              <Lock className="w-3 h-3" /> Locked
-            </Badge>
-          )}
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={toggleLock}
-            variant={locked ? 'outline' : 'secondary'}
-            className="gap-1.5"
-          >
-            {locked ? <><Unlock className="w-4 h-4" /> Unlock</> : <><Lock className="w-4 h-4" /> Lock</>}
-          </Button>
-          <Button onClick={openCreate} className="gap-1.5" disabled={locked}>
-            <Plus className="w-4 h-4" /> Create Package
-          </Button>
-        </div>
+        <Button onClick={openCreate} className="gap-1.5">
+          <Plus className="w-4 h-4" /> Create Package
+        </Button>
       </div>
 
 
