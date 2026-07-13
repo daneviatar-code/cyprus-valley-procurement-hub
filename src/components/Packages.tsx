@@ -619,7 +619,7 @@ export default function Packages() {
 
 
                 <div className="flex gap-1 mt-2 pt-2 border-t opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button variant="outline" size="sm" className="flex-1 h-7 text-xs gap-1" onClick={() => openEdit(p)} disabled={locked}>
+                  <Button variant="outline" size="sm" className="flex-1 h-7 text-xs gap-1" onClick={() => openEdit(p)}>
                     <Pencil className="w-3 h-3" /> Edit
                   </Button>
                   <Button
@@ -641,8 +641,7 @@ export default function Packages() {
                   <Button
                     variant="outline" size="sm"
                     className="h-7 text-xs gap-1 text-destructive hover:text-destructive"
-                    onClick={() => { if (guardLocked()) return; setDeleteId(p.id); }}
-                    disabled={locked}
+                    onClick={() => setDeleteId(p.id)}
                   >
                     <Trash2 className="w-3 h-3" />
                   </Button>
