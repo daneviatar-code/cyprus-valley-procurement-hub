@@ -694,7 +694,8 @@ export default function Packages() {
                   <Button
                     variant="outline" size="sm"
                     className="h-7 text-xs gap-1 text-destructive hover:text-destructive"
-                    onClick={() => setDeleteId(p.id)}
+                    onClick={() => { if (guardLocked()) return; setDeleteId(p.id); }}
+                    disabled={locked}
                   >
                     <Trash2 className="w-3 h-3" />
                   </Button>
