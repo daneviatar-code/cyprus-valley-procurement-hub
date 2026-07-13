@@ -198,7 +198,6 @@ export default function Packages() {
   );
 
   const openCreate = () => {
-    if (guardLocked()) return;
     setEditId(null);
     setForm(emptyForm());
     setRtSearch('');
