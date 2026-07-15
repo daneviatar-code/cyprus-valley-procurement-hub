@@ -512,7 +512,7 @@ export default function Standard() {
 
         {subView === 'byApartment' && (
           <>
-            <SummaryBar s={typeSummary} typeLabel={viewLabel} isMaster={view === 'standard'} perBuilding={perBuildingSummary} onBuildingClick={setOpenBuilding} />
+            <SummaryBar s={typeSummary} typeLabel={viewLabel} isMaster={view === 'standard'} perBuilding={perBuildingSummary} onBuildingClick={setOpenBuilding} categoryLabel={categories.find(c => c.id === selectedCategoryId)?.nameEn} />
 
             <div className="grid grid-cols-12 gap-4">
               {/* Left: master + apartment types */}
