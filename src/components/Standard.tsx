@@ -301,10 +301,15 @@ export default function Standard() {
   // Apartment-type / master summary
   const typeSummary = useMemo(() => {
     // Cost of one package for each apartment type — "כמה עולה חבילה פר דירה"
+    // Scoped to the currently selected category so clicking a category shows
+    // only that category's per-apartment cost.
     const costPerApartment: Record<ApartmentType, number> = {
       studio: 0, '1br': 0, '2br': 0, '3br': 0, '4br': 0,
     };
-    items.forEach(i => {
+    const scopedItems = selectedCategoryId
+      ? items.filter(i => !i.archived && i.categoryId === selectedCategoryId)
+      : items;
+    scopedItems.forEach(i => {
       const row = qtysByItem.get(i.id); if (!row) return;
       APARTMENT_TYPES.forEach(at => {
         const q = row[at]; if (!q) return;
@@ -312,6 +317,7 @@ export default function Standard() {
         costPerApartment[at] += c.packageCost;
       });
     });
+
 
     if (view === 'standard') {
       // master: aggregate across all 5 types
@@ -364,7 +370,7 @@ export default function Standard() {
       outstandingValue: Math.max(0, totalHotelCost - deliveredValue),
       costPerApartment,
     };
-  }, [view, items, qtysByItem, unitCounts]);
+  }, [view, items, qtysByItem, unitCounts, selectedCategoryId]);
 
   // Per-building breakdown of Hotel Qty + Hotel Cost
   const perBuildingSummary = useMemo(() => {
@@ -506,7 +512,7 @@ export default function Standard() {
 
         {subView === 'byApartment' && (
           <>
-            <SummaryBar s={typeSummary} typeLabel={viewLabel} isMaster={view === 'standard'} perBuilding={perBuildingSummary} onBuildingClick={setOpenBuilding} />
+            <SummaryBar s={typeSummary} typeLabel={viewLabel} isMaster={view === 'standard'} perBuilding={perBuildingSummary} onBuildingClick={setOpenBuilding} categoryLabel={categories.find(c => c.id === selectedCategoryId)?.nameEn} />
 
             <div className="grid grid-cols-12 gap-4">
               {/* Left: master + apartment types */}
@@ -727,10 +733,11 @@ type TypeSummary = {
   orderedValue: number; deliveredValue: number; outstandingValue: number;
   costPerApartment: Record<ApartmentType, number>;
 };
-function SummaryBar({ s, typeLabel, isMaster, perBuilding, onBuildingClick }: {
+function SummaryBar({ s, typeLabel, isMaster, perBuilding, onBuildingClick, categoryLabel }: {
   s: TypeSummary; typeLabel: string; isMaster: boolean;
   perBuilding?: Record<string, { qty: number; cost: number; units: number }>;
   onBuildingClick?: (b: string) => void;
+  categoryLabel?: string;
 }) {
   const cells = [
     [isMaster ? 'Units (all types)' : 'Units in Hotel', s.units.toLocaleString()],
@@ -770,6 +777,9 @@ function SummaryBar({ s, typeLabel, isMaster, perBuilding, onBuildingClick }: {
       <div className="mt-3 pt-3 border-t border-border">
         <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">
           Cost per Apartment · עלות חבילה פר דירה
+          {categoryLabel && (
+            <span className="ml-2 normal-case text-primary font-semibold">— {categoryLabel}</span>
+          )}
         </div>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
           {APARTMENT_TYPES.map(at => (
