@@ -300,6 +300,19 @@ export default function Standard() {
 
   // Apartment-type / master summary
   const typeSummary = useMemo(() => {
+    // Cost of one package for each apartment type — "כמה עולה חבילה פר דירה"
+    const costPerApartment: Record<ApartmentType, number> = {
+      studio: 0, '1br': 0, '2br': 0, '3br': 0, '4br': 0,
+    };
+    items.forEach(i => {
+      const row = qtysByItem.get(i.id); if (!row) return;
+      APARTMENT_TYPES.forEach(at => {
+        const q = row[at]; if (!q) return;
+        const c = computeQuantity(q, i, unitCounts);
+        costPerApartment[at] += c.packageCost;
+      });
+    });
+
     if (view === 'standard') {
       // master: aggregate across all 5 types
       let totalHotelQty = 0, totalHotelCost = 0, totalPackageCost = 0;
@@ -324,6 +337,7 @@ export default function Standard() {
         qtyPerSingle: 0, totalHotelQty, totalPackageCost, totalHotelCost,
         orderedValue, deliveredValue,
         outstandingValue: Math.max(0, totalHotelCost - deliveredValue),
+        costPerApartment,
       };
     }
     // real apartment type
@@ -348,6 +362,7 @@ export default function Standard() {
       qtyPerSingle, totalHotelQty, totalPackageCost, totalHotelCost,
       orderedValue, deliveredValue,
       outstandingValue: Math.max(0, totalHotelCost - deliveredValue),
+      costPerApartment,
     };
   }, [view, items, qtysByItem, unitCounts]);
 
@@ -705,10 +720,12 @@ export default function Standard() {
 }
 
 // ───────────────────────────── Summary Bar ─────────────────────────────
+
 type TypeSummary = {
   units: number; numCategories: number; numItems: number; qtyPerSingle: number;
   totalHotelQty: number; totalPackageCost: number; totalHotelCost: number;
   orderedValue: number; deliveredValue: number; outstandingValue: number;
+  costPerApartment: Record<ApartmentType, number>;
 };
 function SummaryBar({ s, typeLabel, isMaster, perBuilding, onBuildingClick }: {
   s: TypeSummary; typeLabel: string; isMaster: boolean;
@@ -721,12 +738,19 @@ function SummaryBar({ s, typeLabel, isMaster, perBuilding, onBuildingClick }: {
     ['# Items', s.numItems.toLocaleString()],
     ...(isMaster ? [] : [['Qty / Apartment', s.qtyPerSingle.toLocaleString()] as const]),
     ['Hotel Qty', s.totalHotelQty.toLocaleString()],
-    ['Package Cost', eur(s.totalPackageCost)],
+    ...(isMaster ? [] : [['Cost / Apartment', eur(s.totalPackageCost)] as const]),
     ['Hotel Cost', eur(s.totalHotelCost)],
     ['Ordered', eur(s.orderedValue)],
     ['Delivered', eur(s.deliveredValue)],
     ['Outstanding', eur(s.outstandingValue)],
   ] as const;
+  const APT_LABELS: Record<ApartmentType, string> = {
+    studio: 'סטודיו · Studio',
+    '1br': 'דירת חדר · 1BR',
+    '2br': 'דירת 2 חדרים · 2BR',
+    '3br': 'דירת 3 חדרים · 3BR',
+    '4br': 'דירת 4 חדרים · 4BR',
+  };
   return (
     <div className={`bg-card border rounded-lg p-3 ${isMaster ? 'border-primary/40' : ''}`}>
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1">
@@ -740,6 +764,23 @@ function SummaryBar({ s, typeLabel, isMaster, perBuilding, onBuildingClick }: {
             <div className="text-sm font-semibold text-foreground font-mono">{val}</div>
           </div>
         ))}
+      </div>
+
+      {/* Cost per apartment breakdown — כמה עולה חבילה פר דירה */}
+      <div className="mt-3 pt-3 border-t border-border">
+        <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">
+          Cost per Apartment · עלות חבילה פר דירה
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+          {APARTMENT_TYPES.map(at => (
+            <div key={at} className="bg-muted/40 rounded px-2 py-1.5 border border-border/50">
+              <div className="text-[10px] text-muted-foreground">{APT_LABELS[at]}</div>
+              <div className="text-sm font-mono font-semibold text-foreground">
+                {eur(s.costPerApartment[at] || 0)}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {perBuilding && (
