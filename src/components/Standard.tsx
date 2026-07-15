@@ -778,9 +778,6 @@ function SummaryBar({ s, typeLabel, isMaster, perBuilding, onBuildingClick }: {
               <div className="text-sm font-mono font-semibold text-foreground">
                 {eur(s.costPerApartment[at] || 0)}
               </div>
-              <div className="text-[9px] text-muted-foreground mt-0.5">
-                × {(s.costPerApartment[at] > 0 ? '' : '')}{eur((s.costPerApartment[at] || 0) * ((typeof window !== 'undefined' ? 0 : 0) || 0))}
-              </div>
             </div>
           ))}
         </div>
