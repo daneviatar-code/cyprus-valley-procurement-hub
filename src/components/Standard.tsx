@@ -733,10 +733,11 @@ type TypeSummary = {
   orderedValue: number; deliveredValue: number; outstandingValue: number;
   costPerApartment: Record<ApartmentType, number>;
 };
-function SummaryBar({ s, typeLabel, isMaster, perBuilding, onBuildingClick }: {
+function SummaryBar({ s, typeLabel, isMaster, perBuilding, onBuildingClick, categoryLabel }: {
   s: TypeSummary; typeLabel: string; isMaster: boolean;
   perBuilding?: Record<string, { qty: number; cost: number; units: number }>;
   onBuildingClick?: (b: string) => void;
+  categoryLabel?: string;
 }) {
   const cells = [
     [isMaster ? 'Units (all types)' : 'Units in Hotel', s.units.toLocaleString()],
