@@ -720,21 +720,7 @@ export default function Standard() {
 }
 
 // ───────────────────────────── Summary Bar ─────────────────────────────
-type TypeSummary = {
-  units: number; numCategories: number; numItems: number; qtyPerSingle: number;
-  totalHotelQty: number; totalPackageCost: number; totalHotelCost: number;
-  orderedValue: number; deliveredValue: number; outstandingValue: number;
-};
-function SummaryBar({ s, typeLabel, isMaster, perBuilding, onBuildingClick }: {
-  s: TypeSummary; typeLabel: string; isMaster: boolean;
-  perBuilding?: Record<string, { qty: number; cost: number; units: number }>;
-  onBuildingClick?: (b: string) => void;
-}) {
-  const cells = [
-    [isMaster ? 'Units (all types)' : 'Units in Hotel', s.units.toLocaleString()],
-    ['# Categories', s.numCategories.toLocaleString()],
-    ['# Items', s.numItems.toLocaleString()],
-    ...(isMaster ? [] : [['Qty / Apartment', s.qtyPerSingle.toLocaleString()] as const]),
+
 type TypeSummary = {
   units: number; numCategories: number; numItems: number; qtyPerSingle: number;
   totalHotelQty: number; totalPackageCost: number; totalHotelCost: number;
