@@ -777,6 +777,9 @@ function SummaryBar({ s, typeLabel, isMaster, perBuilding, onBuildingClick, cate
       <div className="mt-3 pt-3 border-t border-border">
         <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">
           Cost per Apartment · עלות חבילה פר דירה
+          {categoryLabel && (
+            <span className="ml-2 normal-case text-primary font-semibold">— {categoryLabel}</span>
+          )}
         </div>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
           {APARTMENT_TYPES.map(at => (
