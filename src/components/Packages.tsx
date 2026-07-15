@@ -560,13 +560,41 @@ export default function Packages() {
                     <div className="text-sm font-bold text-foreground">
                       €{total.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
+                    <div className="text-[10px] text-muted-foreground mt-0.5">per apartment</div>
                     {extrasTotal > 0 && (
                       <div className="text-[10px] text-muted-foreground mt-0.5">
-                        + €{extrasTotal.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} extras
+                        + €{extrasTotal.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} extras / apt
                       </div>
                     )}
                   </div>
                 </div>
+
+                {(() => {
+                  const totalApts = Object.entries(p.unitCoverage ?? {})
+                    .filter(([k]) => !isSizeKey(k))
+                    .reduce((s, [, v]) => s + (Number(v) || 0), 0);
+                  const grand = total * totalApts;
+                  const grandExtras = extrasTotal * totalApts;
+                  return (
+                    <div className="flex items-center justify-between gap-2 rounded-md bg-muted/40 px-2 py-1.5">
+                      <div className="text-[11px] text-muted-foreground">
+                        {totalApts > 0 ? `× ${totalApts} apartment${totalApts === 1 ? '' : 's'}` : 'No apartments assigned'}
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs font-semibold text-foreground">
+                          {totalApts > 0
+                            ? `€${grand.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                            : '—'}
+                        </div>
+                        {grandExtras > 0 && (
+                          <div className="text-[10px] text-muted-foreground">
+                            + €{grandExtras.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} extras
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 <div className="text-xs text-muted-foreground">
                   {mainCount} item{mainCount === 1 ? '' : 's'}{extraCount > 0 ? ` · ${extraCount} extra${extraCount === 1 ? '' : 's'}` : ''}
