@@ -300,6 +300,19 @@ export default function Standard() {
 
   // Apartment-type / master summary
   const typeSummary = useMemo(() => {
+    // Cost of one package for each apartment type — "כמה עולה חבילה פר דירה"
+    const costPerApartment: Record<ApartmentType, number> = {
+      studio: 0, '1br': 0, '2br': 0, '3br': 0, '4br': 0,
+    };
+    items.forEach(i => {
+      const row = qtysByItem.get(i.id); if (!row) return;
+      APARTMENT_TYPES.forEach(at => {
+        const q = row[at]; if (!q) return;
+        const c = computeQuantity(q, i, unitCounts);
+        costPerApartment[at] += c.packageCost;
+      });
+    });
+
     if (view === 'standard') {
       // master: aggregate across all 5 types
       let totalHotelQty = 0, totalHotelCost = 0, totalPackageCost = 0;
@@ -324,6 +337,7 @@ export default function Standard() {
         qtyPerSingle: 0, totalHotelQty, totalPackageCost, totalHotelCost,
         orderedValue, deliveredValue,
         outstandingValue: Math.max(0, totalHotelCost - deliveredValue),
+        costPerApartment,
       };
     }
     // real apartment type
@@ -348,6 +362,7 @@ export default function Standard() {
       qtyPerSingle, totalHotelQty, totalPackageCost, totalHotelCost,
       orderedValue, deliveredValue,
       outstandingValue: Math.max(0, totalHotelCost - deliveredValue),
+      costPerApartment,
     };
   }, [view, items, qtysByItem, unitCounts]);
 
