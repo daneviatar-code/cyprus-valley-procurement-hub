@@ -301,10 +301,15 @@ export default function Standard() {
   // Apartment-type / master summary
   const typeSummary = useMemo(() => {
     // Cost of one package for each apartment type — "כמה עולה חבילה פר דירה"
+    // Scoped to the currently selected category so clicking a category shows
+    // only that category's per-apartment cost.
     const costPerApartment: Record<ApartmentType, number> = {
       studio: 0, '1br': 0, '2br': 0, '3br': 0, '4br': 0,
     };
-    items.forEach(i => {
+    const scopedItems = selectedCategoryId
+      ? items.filter(i => !i.archived && i.categoryId === selectedCategoryId)
+      : items;
+    scopedItems.forEach(i => {
       const row = qtysByItem.get(i.id); if (!row) return;
       APARTMENT_TYPES.forEach(at => {
         const q = row[at]; if (!q) return;
@@ -312,6 +317,7 @@ export default function Standard() {
         costPerApartment[at] += c.packageCost;
       });
     });
+
 
     if (view === 'standard') {
       // master: aggregate across all 5 types
