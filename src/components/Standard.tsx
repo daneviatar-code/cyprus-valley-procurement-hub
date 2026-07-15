@@ -735,13 +735,36 @@ function SummaryBar({ s, typeLabel, isMaster, perBuilding, onBuildingClick }: {
     ['# Categories', s.numCategories.toLocaleString()],
     ['# Items', s.numItems.toLocaleString()],
     ...(isMaster ? [] : [['Qty / Apartment', s.qtyPerSingle.toLocaleString()] as const]),
+type TypeSummary = {
+  units: number; numCategories: number; numItems: number; qtyPerSingle: number;
+  totalHotelQty: number; totalPackageCost: number; totalHotelCost: number;
+  orderedValue: number; deliveredValue: number; outstandingValue: number;
+  costPerApartment: Record<ApartmentType, number>;
+};
+function SummaryBar({ s, typeLabel, isMaster, perBuilding, onBuildingClick }: {
+  s: TypeSummary; typeLabel: string; isMaster: boolean;
+  perBuilding?: Record<string, { qty: number; cost: number; units: number }>;
+  onBuildingClick?: (b: string) => void;
+}) {
+  const cells = [
+    [isMaster ? 'Units (all types)' : 'Units in Hotel', s.units.toLocaleString()],
+    ['# Categories', s.numCategories.toLocaleString()],
+    ['# Items', s.numItems.toLocaleString()],
+    ...(isMaster ? [] : [['Qty / Apartment', s.qtyPerSingle.toLocaleString()] as const]),
     ['Hotel Qty', s.totalHotelQty.toLocaleString()],
-    ['Package Cost', eur(s.totalPackageCost)],
+    ...(isMaster ? [] : [['Cost / Apartment', eur(s.totalPackageCost)] as const]),
     ['Hotel Cost', eur(s.totalHotelCost)],
     ['Ordered', eur(s.orderedValue)],
     ['Delivered', eur(s.deliveredValue)],
     ['Outstanding', eur(s.outstandingValue)],
   ] as const;
+  const APT_LABELS: Record<ApartmentType, string> = {
+    studio: 'סטודיו · Studio',
+    '1br': 'דירת חדר · 1BR',
+    '2br': 'דירת 2 חדרים · 2BR',
+    '3br': 'דירת 3 חדרים · 3BR',
+    '4br': 'דירת 4 חדרים · 4BR',
+  };
   return (
     <div className={`bg-card border rounded-lg p-3 ${isMaster ? 'border-primary/40' : ''}`}>
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1">
@@ -755,6 +778,26 @@ function SummaryBar({ s, typeLabel, isMaster, perBuilding, onBuildingClick }: {
             <div className="text-sm font-semibold text-foreground font-mono">{val}</div>
           </div>
         ))}
+      </div>
+
+      {/* Cost per apartment breakdown — כמה עולה חבילה פר דירה */}
+      <div className="mt-3 pt-3 border-t border-border">
+        <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">
+          Cost per Apartment · עלות חבילה פר דירה
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+          {APARTMENT_TYPES.map(at => (
+            <div key={at} className="bg-muted/40 rounded px-2 py-1.5 border border-border/50">
+              <div className="text-[10px] text-muted-foreground">{APT_LABELS[at]}</div>
+              <div className="text-sm font-mono font-semibold text-foreground">
+                {eur(s.costPerApartment[at] || 0)}
+              </div>
+              <div className="text-[9px] text-muted-foreground mt-0.5">
+                × {(s.costPerApartment[at] > 0 ? '' : '')}{eur((s.costPerApartment[at] || 0) * ((typeof window !== 'undefined' ? 0 : 0) || 0))}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {perBuilding && (
