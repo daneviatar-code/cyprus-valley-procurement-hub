@@ -370,7 +370,7 @@ export default function Standard() {
       outstandingValue: Math.max(0, totalHotelCost - deliveredValue),
       costPerApartment,
     };
-  }, [view, items, qtysByItem, unitCounts]);
+  }, [view, items, qtysByItem, unitCounts, selectedCategoryId]);
 
   // Per-building breakdown of Hotel Qty + Hotel Cost
   const perBuildingSummary = useMemo(() => {
