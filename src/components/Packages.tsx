@@ -1827,6 +1827,7 @@ function CoveragePanel({
           </div>
 
           {/* === Per-building room counts + cost === */}
+          {showTotals && (
           <div>
             <div className="text-xs font-semibold mb-2 uppercase tracking-wide text-muted-foreground">
               Cost by Building & Apartment Type
