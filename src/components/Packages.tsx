@@ -1758,7 +1758,7 @@ function CoveragePanel({
                         </tr>
                         {isOpen && (
                           <tr className="bg-muted/20 border-t">
-                            <td colSpan={7} className="px-2 py-2">
+                            <td colSpan={showTotals ? 7 : 5} className="px-2 py-2">
                               {s.contributions.length === 0 ? (
                                 <div className="text-xs text-muted-foreground px-2 py-1">No packages assigned yet.</div>
                               ) : (
@@ -1767,8 +1767,8 @@ function CoveragePanel({
                                     <tr>
                                       <th className="text-left px-2 py-1 font-medium">Package</th>
                                       <th className="text-right px-2 py-1 font-medium">Units</th>
-                                      <th className="text-right px-2 py-1 font-medium">€ / Package</th>
-                                      <th className="text-right px-2 py-1 font-medium">Subtotal</th>
+                                      {showTotals && <th className="text-right px-2 py-1 font-medium">€ / Package</th>}
+                                      {showTotals && <th className="text-right px-2 py-1 font-medium">Subtotal</th>}
                                     </tr>
                                   </thead>
                                   <tbody>
@@ -1784,15 +1784,15 @@ function CoveragePanel({
                                           </button>
                                         </td>
                                         <td className="px-2 py-1 text-right text-foreground">{c.units}</td>
-                                        <td className="px-2 py-1 text-right text-muted-foreground">{fmtEur(c.pkgCost)}</td>
-                                        <td className="px-2 py-1 text-right font-semibold text-foreground">{fmtEur(c.subtotal)}</td>
+                                        {showTotals && <td className="px-2 py-1 text-right text-muted-foreground">{fmtEur(c.pkgCost)}</td>}
+                                        {showTotals && <td className="px-2 py-1 text-right font-semibold text-foreground">{fmtEur(c.subtotal)}</td>}
                                       </tr>
                                     ))}
                                     <tr className="border-t bg-muted/30">
                                       <td className="px-2 py-1 font-bold text-foreground">Total</td>
                                       <td className="px-2 py-1 text-right font-bold text-foreground">{s.selected}</td>
-                                      <td className="px-2 py-1" />
-                                      <td className="px-2 py-1 text-right font-bold text-foreground">{fmtEur(s.totalCost)}</td>
+                                      {showTotals && <td className="px-2 py-1" />}
+                                      {showTotals && <td className="px-2 py-1 text-right font-bold text-foreground">{fmtEur(s.totalCost)}</td>}
                                     </tr>
                                   </tbody>
                                 </table>
