@@ -1661,13 +1661,22 @@ function CoveragePanel({
           <span className="text-xs text-muted-foreground">
             {overall.covered} / {overall.total} units assigned
           </span>
-          {overall.totalCost > 0 && (
+          {showTotals && overall.totalCost > 0 && (
             <span className="text-xs font-semibold text-foreground ml-2">
               · Total {fmtEur(overall.totalCost)}
             </span>
           )}
         </div>
         <div className="flex items-center gap-2">
+          <span
+            role="button"
+            tabIndex={0}
+            onClick={(e) => { e.stopPropagation(); setShowTotals(v => !v); }}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); setShowTotals(v => !v); } }}
+            className="text-[11px] px-2 py-1 rounded border bg-background hover:bg-muted/40 cursor-pointer select-none"
+          >
+            {showTotals ? 'Hide totals' : 'Show totals'}
+          </span>
           {overall.covered >= overall.total ? (
             <Badge className="bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/15 border-emerald-500/30">Complete</Badge>
           ) : overall.covered === 0 ? (
