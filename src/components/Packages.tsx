@@ -1529,6 +1529,7 @@ function CoveragePanel({
   catalogById: Map<string, CatalogProduct>;
 }) {
   const [open, setOpen] = useState(true);
+  const [showTotals, setShowTotals] = useState(false);
 
   const fmtEur = (n: number) =>
     `€${n.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -1660,13 +1661,22 @@ function CoveragePanel({
           <span className="text-xs text-muted-foreground">
             {overall.covered} / {overall.total} units assigned
           </span>
-          {overall.totalCost > 0 && (
+          {showTotals && overall.totalCost > 0 && (
             <span className="text-xs font-semibold text-foreground ml-2">
               · Total {fmtEur(overall.totalCost)}
             </span>
           )}
         </div>
         <div className="flex items-center gap-2">
+          <span
+            role="button"
+            tabIndex={0}
+            onClick={(e) => { e.stopPropagation(); setShowTotals(v => !v); }}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); setShowTotals(v => !v); } }}
+            className="text-[11px] px-2 py-1 rounded border bg-background hover:bg-muted/40 cursor-pointer select-none"
+          >
+            {showTotals ? 'Hide totals' : 'Show totals'}
+          </span>
           {overall.covered >= overall.total ? (
             <Badge className="bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/15 border-emerald-500/30">Complete</Badge>
           ) : overall.covered === 0 ? (
@@ -1695,8 +1705,8 @@ function CoveragePanel({
                     <th className="text-right px-2 py-1.5 font-medium">Required</th>
                     <th className="text-right px-2 py-1.5 font-medium">Selected</th>
                     <th className="text-right px-2 py-1.5 font-medium">Remaining</th>
-                    <th className="text-right px-2 py-1.5 font-medium">€ / Unit</th>
-                    <th className="text-right px-2 py-1.5 font-medium">Total €</th>
+                    {showTotals && <th className="text-right px-2 py-1.5 font-medium">€ / Unit</th>}
+                    {showTotals && <th className="text-right px-2 py-1.5 font-medium">Total €</th>}
                     <th className="text-right px-2 py-1.5 font-medium">Status</th>
                   </tr>
                 </thead>
@@ -1722,12 +1732,16 @@ function CoveragePanel({
                           <td className={`px-2 py-1.5 text-right font-semibold ${s.remaining < 0 ? 'text-destructive' : s.remaining === 0 ? 'text-emerald-600' : 'text-amber-600'}`}>
                             {s.remaining}
                           </td>
-                          <td className="px-2 py-1.5 text-right text-muted-foreground">
-                            {s.unitCost > 0 ? fmtEur(s.unitCost) : '—'}
-                          </td>
-                          <td className="px-2 py-1.5 text-right font-semibold text-foreground">
-                            {s.totalCost > 0 ? fmtEur(s.totalCost) : '—'}
-                          </td>
+                          {showTotals && (
+                            <td className="px-2 py-1.5 text-right text-muted-foreground">
+                              {s.unitCost > 0 ? fmtEur(s.unitCost) : '—'}
+                            </td>
+                          )}
+                          {showTotals && (
+                            <td className="px-2 py-1.5 text-right font-semibold text-foreground">
+                              {s.totalCost > 0 ? fmtEur(s.totalCost) : '—'}
+                            </td>
+                          )}
                           <td className="px-2 py-1.5 text-right">
                             {done ? (
                               <Badge className="bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/15 border-emerald-500/30">Complete</Badge>
@@ -1744,7 +1758,7 @@ function CoveragePanel({
                         </tr>
                         {isOpen && (
                           <tr className="bg-muted/20 border-t">
-                            <td colSpan={7} className="px-2 py-2">
+                            <td colSpan={showTotals ? 7 : 5} className="px-2 py-2">
                               {s.contributions.length === 0 ? (
                                 <div className="text-xs text-muted-foreground px-2 py-1">No packages assigned yet.</div>
                               ) : (
@@ -1753,8 +1767,8 @@ function CoveragePanel({
                                     <tr>
                                       <th className="text-left px-2 py-1 font-medium">Package</th>
                                       <th className="text-right px-2 py-1 font-medium">Units</th>
-                                      <th className="text-right px-2 py-1 font-medium">€ / Package</th>
-                                      <th className="text-right px-2 py-1 font-medium">Subtotal</th>
+                                      {showTotals && <th className="text-right px-2 py-1 font-medium">€ / Package</th>}
+                                      {showTotals && <th className="text-right px-2 py-1 font-medium">Subtotal</th>}
                                     </tr>
                                   </thead>
                                   <tbody>
@@ -1770,15 +1784,15 @@ function CoveragePanel({
                                           </button>
                                         </td>
                                         <td className="px-2 py-1 text-right text-foreground">{c.units}</td>
-                                        <td className="px-2 py-1 text-right text-muted-foreground">{fmtEur(c.pkgCost)}</td>
-                                        <td className="px-2 py-1 text-right font-semibold text-foreground">{fmtEur(c.subtotal)}</td>
+                                        {showTotals && <td className="px-2 py-1 text-right text-muted-foreground">{fmtEur(c.pkgCost)}</td>}
+                                        {showTotals && <td className="px-2 py-1 text-right font-semibold text-foreground">{fmtEur(c.subtotal)}</td>}
                                       </tr>
                                     ))}
                                     <tr className="border-t bg-muted/30">
                                       <td className="px-2 py-1 font-bold text-foreground">Total</td>
                                       <td className="px-2 py-1 text-right font-bold text-foreground">{s.selected}</td>
-                                      <td className="px-2 py-1" />
-                                      <td className="px-2 py-1 text-right font-bold text-foreground">{fmtEur(s.totalCost)}</td>
+                                      {showTotals && <td className="px-2 py-1" />}
+                                      {showTotals && <td className="px-2 py-1 text-right font-bold text-foreground">{fmtEur(s.totalCost)}</td>}
                                     </tr>
                                   </tbody>
                                 </table>
@@ -1798,10 +1812,12 @@ function CoveragePanel({
                       {sizeCoverage.reduce((s, r) => s + r.selected, 0)}
                     </td>
                     <td className="px-2 py-1.5" />
-                    <td className="px-2 py-1.5" />
-                    <td className="px-2 py-1.5 text-right font-bold text-foreground">
-                      {fmtEur(overall.totalCost)}
-                    </td>
+                    {showTotals && <td className="px-2 py-1.5" />}
+                    {showTotals && (
+                      <td className="px-2 py-1.5 text-right font-bold text-foreground">
+                        {fmtEur(overall.totalCost)}
+                      </td>
+                    )}
                     <td className="px-2 py-1.5" />
                   </tr>
                 </tbody>
@@ -1811,6 +1827,7 @@ function CoveragePanel({
           </div>
 
           {/* === Per-building room counts + cost === */}
+          {showTotals && (
           <div>
             <div className="text-xs font-semibold mb-2 uppercase tracking-wide text-muted-foreground">
               Cost by Building & Apartment Type
@@ -1905,6 +1922,7 @@ function CoveragePanel({
               );
             })()}
           </div>
+          )}
 
         </div>
       )}
