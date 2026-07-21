@@ -1732,12 +1732,16 @@ function CoveragePanel({
                           <td className={`px-2 py-1.5 text-right font-semibold ${s.remaining < 0 ? 'text-destructive' : s.remaining === 0 ? 'text-emerald-600' : 'text-amber-600'}`}>
                             {s.remaining}
                           </td>
-                          <td className="px-2 py-1.5 text-right text-muted-foreground">
-                            {s.unitCost > 0 ? fmtEur(s.unitCost) : '—'}
-                          </td>
-                          <td className="px-2 py-1.5 text-right font-semibold text-foreground">
-                            {s.totalCost > 0 ? fmtEur(s.totalCost) : '—'}
-                          </td>
+                          {showTotals && (
+                            <td className="px-2 py-1.5 text-right text-muted-foreground">
+                              {s.unitCost > 0 ? fmtEur(s.unitCost) : '—'}
+                            </td>
+                          )}
+                          {showTotals && (
+                            <td className="px-2 py-1.5 text-right font-semibold text-foreground">
+                              {s.totalCost > 0 ? fmtEur(s.totalCost) : '—'}
+                            </td>
+                          )}
                           <td className="px-2 py-1.5 text-right">
                             {done ? (
                               <Badge className="bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/15 border-emerald-500/30">Complete</Badge>
