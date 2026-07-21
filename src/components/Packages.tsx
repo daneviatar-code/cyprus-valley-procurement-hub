@@ -1812,10 +1812,12 @@ function CoveragePanel({
                       {sizeCoverage.reduce((s, r) => s + r.selected, 0)}
                     </td>
                     <td className="px-2 py-1.5" />
-                    <td className="px-2 py-1.5" />
-                    <td className="px-2 py-1.5 text-right font-bold text-foreground">
-                      {fmtEur(overall.totalCost)}
-                    </td>
+                    {showTotals && <td className="px-2 py-1.5" />}
+                    {showTotals && (
+                      <td className="px-2 py-1.5 text-right font-bold text-foreground">
+                        {fmtEur(overall.totalCost)}
+                      </td>
+                    )}
                     <td className="px-2 py-1.5" />
                   </tr>
                 </tbody>
