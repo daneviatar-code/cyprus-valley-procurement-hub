@@ -1922,6 +1922,7 @@ function CoveragePanel({
               );
             })()}
           </div>
+          )}
 
         </div>
       )}
