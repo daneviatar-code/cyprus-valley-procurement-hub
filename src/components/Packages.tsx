@@ -1529,6 +1529,7 @@ function CoveragePanel({
   catalogById: Map<string, CatalogProduct>;
 }) {
   const [open, setOpen] = useState(true);
+  const [showTotals, setShowTotals] = useState(false);
 
   const fmtEur = (n: number) =>
     `€${n.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
