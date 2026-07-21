@@ -1705,8 +1705,8 @@ function CoveragePanel({
                     <th className="text-right px-2 py-1.5 font-medium">Required</th>
                     <th className="text-right px-2 py-1.5 font-medium">Selected</th>
                     <th className="text-right px-2 py-1.5 font-medium">Remaining</th>
-                    <th className="text-right px-2 py-1.5 font-medium">€ / Unit</th>
-                    <th className="text-right px-2 py-1.5 font-medium">Total €</th>
+                    {showTotals && <th className="text-right px-2 py-1.5 font-medium">€ / Unit</th>}
+                    {showTotals && <th className="text-right px-2 py-1.5 font-medium">Total €</th>}
                     <th className="text-right px-2 py-1.5 font-medium">Status</th>
                   </tr>
                 </thead>
