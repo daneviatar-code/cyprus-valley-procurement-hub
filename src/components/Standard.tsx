@@ -365,7 +365,7 @@ export default function Standard() {
         qtyPerSingle: 0, totalHotelQty, totalPackageCost, totalHotelCost,
         orderedValue, deliveredValue,
         outstandingValue: Math.max(0, totalHotelCost - deliveredValue),
-        costPerApartment,
+        costPerApartment, categoryTotals,
       };
     }
     // real apartment type
@@ -390,7 +390,7 @@ export default function Standard() {
       qtyPerSingle, totalHotelQty, totalPackageCost, totalHotelCost,
       orderedValue, deliveredValue,
       outstandingValue: Math.max(0, totalHotelCost - deliveredValue),
-      costPerApartment,
+      costPerApartment, categoryTotals,
     };
   }, [view, items, qtysByItem, unitCounts, selectedCategoryId]);
 
