@@ -306,6 +306,15 @@ export default function Standard() {
     const costPerApartment: Record<ApartmentType, number> = {
       studio: 0, '1br': 0, '2br': 0, '3br': 0, '4br': 0,
     };
+    const qtyPerApartment: Record<ApartmentType, number> = {
+      studio: 0, '1br': 0, '2br': 0, '3br': 0, '4br': 0,
+    };
+    const hotelQtyByType: Record<ApartmentType, number> = {
+      studio: 0, '1br': 0, '2br': 0, '3br': 0, '4br': 0,
+    };
+    const hotelCostByType: Record<ApartmentType, number> = {
+      studio: 0, '1br': 0, '2br': 0, '3br': 0, '4br': 0,
+    };
     const scopedItems = selectedCategoryId
       ? items.filter(i => !i.archived && i.categoryId === selectedCategoryId)
       : items;
@@ -315,8 +324,21 @@ export default function Standard() {
         const q = row[at]; if (!q) return;
         const c = computeQuantity(q, i, unitCounts);
         costPerApartment[at] += c.packageCost;
+        qtyPerApartment[at] += c.totalPerPkg;
+        hotelQtyByType[at] += c.hotelQty;
+        hotelCostByType[at] += c.hotelCost;
       });
     });
+    const scopeTypes: ApartmentType[] = view === 'standard' ? [...APARTMENT_TYPES] : [view as ApartmentType];
+    const categoryTotals = {
+      numItems: scopedItems.length,
+      hotelQty: scopeTypes.reduce((s, at) => s + hotelQtyByType[at], 0),
+      hotelCost: scopeTypes.reduce((s, at) => s + hotelCostByType[at], 0),
+      qtyPerApartment,
+      hotelQtyByType,
+      hotelCostByType,
+    };
+
 
 
     if (view === 'standard') {
@@ -343,7 +365,7 @@ export default function Standard() {
         qtyPerSingle: 0, totalHotelQty, totalPackageCost, totalHotelCost,
         orderedValue, deliveredValue,
         outstandingValue: Math.max(0, totalHotelCost - deliveredValue),
-        costPerApartment,
+        costPerApartment, categoryTotals,
       };
     }
     // real apartment type
@@ -368,7 +390,7 @@ export default function Standard() {
       qtyPerSingle, totalHotelQty, totalPackageCost, totalHotelCost,
       orderedValue, deliveredValue,
       outstandingValue: Math.max(0, totalHotelCost - deliveredValue),
-      costPerApartment,
+      costPerApartment, categoryTotals,
     };
   }, [view, items, qtysByItem, unitCounts, selectedCategoryId]);
 
@@ -732,7 +754,14 @@ type TypeSummary = {
   totalHotelQty: number; totalPackageCost: number; totalHotelCost: number;
   orderedValue: number; deliveredValue: number; outstandingValue: number;
   costPerApartment: Record<ApartmentType, number>;
+  categoryTotals: {
+    numItems: number; hotelQty: number; hotelCost: number;
+    qtyPerApartment: Record<ApartmentType, number>;
+    hotelQtyByType: Record<ApartmentType, number>;
+    hotelCostByType: Record<ApartmentType, number>;
+  };
 };
+
 function SummaryBar({ s, typeLabel, isMaster, perBuilding, onBuildingClick, categoryLabel }: {
   s: TypeSummary; typeLabel: string; isMaster: boolean;
   perBuilding?: Record<string, { qty: number; cost: number; units: number }>;
@@ -788,9 +817,31 @@ function SummaryBar({ s, typeLabel, isMaster, perBuilding, onBuildingClick, cate
               <div className="text-sm font-mono font-semibold text-foreground">
                 {eur(s.costPerApartment[at] || 0)}
               </div>
+              <div className="text-[9px] font-mono text-muted-foreground">
+                {(s.categoryTotals.qtyPerApartment[at] || 0).toLocaleString()} pcs/apt ·{' '}
+                {(s.categoryTotals.hotelQtyByType[at] || 0).toLocaleString()} pcs ·{' '}
+                {eur(s.categoryTotals.hotelCostByType[at] || 0)}
+              </div>
             </div>
           ))}
         </div>
+
+        {/* Category grand total — סה"כ הקטגוריה כולל כמויות */}
+        <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-1 bg-primary/5 border border-primary/30 rounded px-3 py-2">
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            {categoryLabel ? `Total · ${categoryLabel}` : 'Total · All Categories'}
+          </div>
+          <div className="text-[10px] text-muted-foreground">
+            Items: <span className="font-mono font-semibold text-foreground">{s.categoryTotals.numItems.toLocaleString()}</span>
+          </div>
+          <div className="text-[10px] text-muted-foreground">
+            Total Qty: <span className="font-mono font-semibold text-foreground">{s.categoryTotals.hotelQty.toLocaleString()}</span>
+          </div>
+          <div className="text-[10px] text-muted-foreground">
+            Total Cost: <span className="text-sm font-mono font-bold text-foreground">{eur(s.categoryTotals.hotelCost)}</span>
+          </div>
+        </div>
+
       </div>
 
       {perBuilding && (
