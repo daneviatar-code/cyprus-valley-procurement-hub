@@ -817,9 +817,31 @@ function SummaryBar({ s, typeLabel, isMaster, perBuilding, onBuildingClick, cate
               <div className="text-sm font-mono font-semibold text-foreground">
                 {eur(s.costPerApartment[at] || 0)}
               </div>
+              <div className="text-[9px] font-mono text-muted-foreground">
+                {(s.categoryTotals.qtyPerApartment[at] || 0).toLocaleString()} pcs/apt ·{' '}
+                {(s.categoryTotals.hotelQtyByType[at] || 0).toLocaleString()} pcs ·{' '}
+                {eur(s.categoryTotals.hotelCostByType[at] || 0)}
+              </div>
             </div>
           ))}
         </div>
+
+        {/* Category grand total — סה"כ הקטגוריה כולל כמויות */}
+        <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-1 bg-primary/5 border border-primary/30 rounded px-3 py-2">
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            {categoryLabel ? `Total · ${categoryLabel}` : 'Total · All Categories'}
+          </div>
+          <div className="text-[10px] text-muted-foreground">
+            Items: <span className="font-mono font-semibold text-foreground">{s.categoryTotals.numItems.toLocaleString()}</span>
+          </div>
+          <div className="text-[10px] text-muted-foreground">
+            Total Qty: <span className="font-mono font-semibold text-foreground">{s.categoryTotals.hotelQty.toLocaleString()}</span>
+          </div>
+          <div className="text-[10px] text-muted-foreground">
+            Total Cost: <span className="text-sm font-mono font-bold text-foreground">{eur(s.categoryTotals.hotelCost)}</span>
+          </div>
+        </div>
+
       </div>
 
       {perBuilding && (
